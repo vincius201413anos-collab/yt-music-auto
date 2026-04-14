@@ -1,5 +1,8 @@
 name: YouTube Shorts Automation
 
+permissions:
+  contents: write
+
 on:
   schedule:
     - cron: '0 */4 * * *'
@@ -16,7 +19,7 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         run: |
@@ -24,3 +27,11 @@ jobs:
 
       - name: Run Bot
         run: python main.py
+
+      - name: Commit changes
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git add state.json
+          git commit -m "Update state" || echo "No changes to commit"
+          git push
