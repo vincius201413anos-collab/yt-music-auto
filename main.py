@@ -1,105 +1,58 @@
 import os
-import json
-from pathlib import Path
-from drive_service import get_drive_service, find_folder_id, list_mp3_files_in_folder
+import random
 
-STATE_FILE = Path("state.json")
-SHORTS_PER_TRACK = 3
-DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+BASE_PATH = "assets/backgrounds"
 
 
-def load_state():
-    if not STATE_FILE.exists():
-        return {"tracks": []}
+def detect_style(filename):
 
-    with STATE_FILE.open("r", encoding="utf-8") as f:
-        return json.load(f)
+    name = filename.lower()
 
+    if "phonk" in name:
+        return "phonk"
 
-def save_state(state):
-    with STATE_FILE.open("w", encoding="utf-8") as f:
-        json.dump(state, f, ensure_ascii=False, indent=2)
+    if "trap" in name:
+        return "trap"
 
+    if "lofi" in name:
+        return "lofi"
 
-def get_next_track(state):
-    for track in state["tracks"]:
-        if not track.get("done", False):
-            return track
-    return None
+    if "dark" in name:
+        return "dark"
 
+    if "rock" in name:
+        return "rock"
 
-def scan_drive_folder():
-    print("Escaneando Google Drive...")
+    if "pop" in name:
+        return "pop"
 
-    service = get_drive_service()
+    if "electronic" in name:
+        return "electronic"
 
-    inbox_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
-    if not inbox_folder_id:
-        raise ValueError("Pasta 'inbox' não encontrada dentro da pasta principal do Drive.")
-
-    mp3_files = list_mp3_files_in_folder(service, inbox_folder_id)
-
-    names = [file["name"] for file in mp3_files]
-    print(f"Músicas encontradas no inbox: {names}")
-
-    return names
+    return "ai_generated"
 
 
-def sync_tracks(state, drive_files):
-    existing_names = [track["name"] for track in state["tracks"]]
+def get_random_background(style):
 
-    for file_name in drive_files:
-        if file_name not in existing_names:
-            print(f"Nova música detectada: {file_name}")
-            state["tracks"].append({
-                "name": file_name,
-                "shorts_done": 0,
-                "done": False
-            })
+    folder = os.path.join(BASE_PATH, style)
 
+    if not os.path.exists(folder):
+        folder = os.path.join(BASE_PATH, "ai_generated")
 
-def main():
-    print("Bot iniciado")
+    files = [
+        f for f in os.listdir(folder)
+        if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov"))
+    ]
 
-    if not DRIVE_FOLDER_ID:
-        raise ValueError("Drive folder ID não encontrado")
+    if not files:
+        folder = os.path.join(BASE_PATH, "ai_generated")
 
-    print("Drive folder ID carregado")
+        files = [
+            f for f in os.listdir(folder)
+            if f.lower().endswith((".jpg", ".jpeg", ".png", ".webp", ".mp4", ".mov"))
+        ]
 
-    state = load_state()
-    drive_files = scan_drive_folder()
-    sync_tracks(state, drive_files)
+    if not files:
+        raise ValueError("Nenhum background encontrado")
 
-    track = get_next_track(state)
-
-    if not track:
-        print("Nenhuma música pendente")
-        save_state(state)
-        return
-
-    name = track["name"]
-    shorts_done = track.get("shorts_done", 0)
-
-    if shorts_done >= SHORTS_PER_TRACK:
-        track["done"] = True
-        save_state(state)
-        print(f"Música {name} já estava concluída")
-        return
-
-    short_number = shorts_done + 1
-
-    print(f"Processando: {name}")
-    print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
-
-    track["shorts_done"] = short_number
-
-    if track["shorts_done"] >= SHORTS_PER_TRACK:
-        track["done"] = True
-        print("Música finalizada")
-
-    save_state(state)
-    print("Execução finalizada")
-
-
-if __name__ == "__main__":
-    main()
+    return os.path.join(folder, random.choice(files))
