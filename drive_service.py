@@ -5,6 +5,15 @@ from googleapiclient.discovery import build
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
+SUPPORTED_AUDIO = (
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".aac",
+    ".flac",
+    ".ogg"
+)
+
 
 def get_drive_service():
     credentials_json = os.getenv("GOOGLE_CREDENTIALS")
@@ -40,7 +49,7 @@ def find_folder_id(service, parent_folder_id, folder_name):
     return files[0]["id"]
 
 
-def list_mp3_files_in_folder(service, folder_id):
+def list_audio_files_in_folder(service, folder_id):
     query = (
         f"'{folder_id}' in parents and "
         f"trashed = false and "
@@ -55,9 +64,9 @@ def list_mp3_files_in_folder(service, folder_id):
 
     files = results.get("files", [])
 
-    mp3_files = []
+    audio_files = []
     for file in files:
-        if file["name"].lower().endswith(".mp3"):
-            mp3_files.append(file)
+        if file["name"].lower().endswith(SUPPORTED_AUDIO):
+            audio_files.append(file)
 
-    return mp3_files
+    return audio_files
