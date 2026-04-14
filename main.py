@@ -8,6 +8,7 @@ from drive_service import (
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
+    delete_drive_file,
 )
 from background_selector import detect_style, get_random_background
 from video_generator import create_short
@@ -68,7 +69,6 @@ def sync_tracks(state, drive_files):
                 "done": False
             })
         else:
-            # Corrige tracks antigas que não tinham id
             if "id" not in existing_by_name[file_name]:
                 existing_by_name[file_name]["id"] = file["id"]
 
@@ -90,6 +90,10 @@ def build_video_metadata(filename, short_number, style):
     )
     tags = ["music", "shorts", "youtube", style, base_title.lower().replace(" ", "")]
     return title, description, tags
+
+
+def remove_track_from_state(state, track_name):
+    state["tracks"] = [track for track in state["tracks"] if track["name"] != track_name]
 
 
 def main():
@@ -114,7 +118,6 @@ def main():
     name = track["name"]
 
     if "id" not in track:
-        # Segurança extra caso ainda falte id
         matched = next((f for f in drive_files if f["name"] == name), None)
         if not matched:
             raise ValueError(f"Não foi possível encontrar o ID do arquivo no Drive para: {name}")
@@ -169,7 +172,17 @@ def main():
 
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
-        print("Áudio finalizado")
+        print(f"Áudio finalizado: {name}")
+
+        try:
+            print("Apagando música do Google Drive...")
+            delete_drive_file(service, file_id)
+            print("Música apagada do Drive com sucesso")
+        except Exception as e:
+            print(f"Erro ao apagar música do Drive: {e}")
+
+        remove_track_from_state(state, name)
+        print("Música removida do state.json")
 
     save_state(state)
     print("Execução finalizada")
