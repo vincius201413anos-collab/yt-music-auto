@@ -16,12 +16,34 @@ SUPPORTED_EXTENSIONS = (
 
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
 
+KNOWN_STYLES = [
+    "phonk",
+    "rock",
+    "electronic",
+    "trap",
+    "lofi",
+    "dark",
+    "pop",
+    "ai_generated"
+]
+
 
 def extract_style_from_filename(filename):
-    match = re.search(r"\[(.*?)\]", filename.lower())
+    filename_lower = filename.lower()
+
+    # Primeiro tenta [phonk]
+    match = re.search(r"\[(.*?)\]", filename_lower)
     if match:
-        return match.group(1).strip()
-    return "random"
+        style = match.group(1).strip()
+        if style in KNOWN_STYLES:
+            return style
+
+    # Depois tenta palavra no nome
+    for style in KNOWN_STYLES:
+        if style in filename_lower:
+            return style
+
+    return "dark"
 
 
 def get_backgrounds_for_style(style):
@@ -44,7 +66,7 @@ def get_all_backgrounds():
     backgrounds = []
 
     if not os.path.exists(BASE_PATH):
-        print(f"Pasta não encontrada: {BASE_PATH}. Usando fundo automático.")
+        print(f"Pasta não encontrada: {BASE_PATH}")
         return backgrounds
 
     for root, dirs, files in os.walk(BASE_PATH):
@@ -57,7 +79,7 @@ def get_all_backgrounds():
 
 def detect_style(filename):
     style = extract_style_from_filename(filename)
-    print(f"Estilo detectado pelo nome: {style}")
+    print(f"Estilo detectado: {style}")
     return style
 
 
@@ -65,7 +87,7 @@ def get_random_background(style):
     backgrounds = get_backgrounds_for_style(style)
 
     if not backgrounds:
-        print("Nenhum background do estilo encontrado. Usando random.")
+        print("Nenhum background do estilo encontrado. Usando fallback.")
         backgrounds = get_all_backgrounds()
 
     if not backgrounds:
