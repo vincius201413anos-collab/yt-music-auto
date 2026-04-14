@@ -1,5 +1,6 @@
 import os
 import random
+import re
 
 BASE_PATH = "assets/backgrounds"
 
@@ -14,6 +15,29 @@ SUPPORTED_EXTENSIONS = (
 )
 
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
+
+
+def extract_style_from_filename(filename):
+    match = re.search(r"\[(.*?)\]", filename.lower())
+    if match:
+        return match.group(1).strip()
+    return "random"
+
+
+def get_backgrounds_for_style(style):
+    style_path = os.path.join(BASE_PATH, style)
+
+    backgrounds = []
+
+    if not os.path.exists(style_path):
+        print(f"Pasta de estilo não encontrada: {style_path}")
+        return backgrounds
+
+    for file in os.listdir(style_path):
+        if file.lower().endswith(SUPPORTED_EXTENSIONS):
+            backgrounds.append(os.path.join(style_path, file))
+
+    return backgrounds
 
 
 def get_all_backgrounds():
@@ -32,11 +56,17 @@ def get_all_backgrounds():
 
 
 def detect_style(filename):
-    return "random"
+    style = extract_style_from_filename(filename)
+    print(f"Estilo detectado pelo nome: {style}")
+    return style
 
 
 def get_random_background(style):
-    backgrounds = get_all_backgrounds()
+    backgrounds = get_backgrounds_for_style(style)
+
+    if not backgrounds:
+        print("Nenhum background do estilo encontrado. Usando random.")
+        backgrounds = get_all_backgrounds()
 
     if not backgrounds:
         print("Nenhum background encontrado. Usando fundo automático.")
