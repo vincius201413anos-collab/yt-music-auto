@@ -1,17 +1,18 @@
 import os
+import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
 
-SCOPES = ["https://www.googleapis.com/auth/drive.readonly"]
+SCOPES = ["https://www.googleapis.com/auth/drive"]
 
 
 def get_drive_service():
-    credentials_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+    credentials_json = os.getenv("GOOGLE_CREDENTIALS")
     if not credentials_json:
-        raise ValueError("Secret GOOGLE_SERVICE_ACCOUNT_JSON não encontrado.")
+        raise ValueError("Secret GOOGLE_CREDENTIALS não encontrado.")
 
     creds = Credentials.from_service_account_info(
-        eval(credentials_json),
+        json.loads(credentials_json),
         scopes=SCOPES
     )
 
