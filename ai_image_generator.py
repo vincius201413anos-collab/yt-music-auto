@@ -1,10 +1,13 @@
-import os
 import base64
+import io
+import os
 from pathlib import Path
 
-from openai import OpenAI
+import requests
+from PIL import Image
 
 OUTPUT_DIR = "assets/generated"
+SD_URL = "http://127.0.0.1:7860"
 
 STYLE_PROMPTS = {
     "phonk": "dark japanese street, drift car, neon lights, night, cyberpunk, cinematic, aggressive atmosphere, high contrast, vertical composition, no text, no watermark",
@@ -22,11 +25,6 @@ STYLE_PROMPTS = {
 
 
 def generate_ai_image(style, filename):
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        print("OPENAI_API_KEY não encontrado. Pulando geração de imagem por IA.")
-        return None
-
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     safe_stem = Path(filename).stem.replace("/", "_").replace("\\", "_")
@@ -38,24 +36,40 @@ def generate_ai_image(style, filename):
 
     prompt = STYLE_PROMPTS.get(style, STYLE_PROMPTS["random"])
 
+    payload = {
+        "prompt": prompt,
+        "negative_prompt": "text, watermark, logo, blurry, low quality, deformed, ugly",
+        "steps": 25,
+        "cfg_scale": 7,
+        "width": 512,
+        "height": 912,
+        "sampler_name": "DPM++ 2M",
+        "batch_size": 1,
+        "n_iter": 1
+    }
+
     try:
-        client = OpenAI(api_key=api_key)
-
-        result = client.images.generate(
-            model="gpt-image-1",
-            prompt=prompt,
-            size="1024x1536"
+        response = requests.post(
+            f"{SD_URL}/sdapi/v1/txt2img",
+            json=payload,
+            timeout=300
         )
+        response.raise_for_status()
 
-        image_base64 = result.data[0].b64_json
-        image_bytes = base64.b64decode(image_base64)
+        result = response.json()
 
-        with open(image_path, "wb") as f:
-            f.write(image_bytes)
+        if not result.get("images"):
+            print("Nenhuma imagem retornada pela IA local.")
+            return None
+
+        image_b64 = result["images"][0]
+        image_data = base64.b64decode(image_b64)
+        image = Image.open(io.BytesIO(image_data))
+        image.save(image_path)
 
         print(f"Imagem IA gerada com sucesso: {image_path}")
         return image_path
 
     except Exception as e:
-        print(f"Erro ao gerar imagem com IA: {e}")
+        print(f"Erro ao gerar imagem com IA local: {e}")
         return None
