@@ -1,41 +1,46 @@
-name: YouTube Shorts Automation
-
-permissions:
-  contents: write
+name: youtube-bot
 
 on:
-  schedule:
-    - cron: "0 */4 * * *"
-  workflow_dispatch:
+workflow_dispatch:
+schedule:
+- cron: "0 */4 * * *"
 
 jobs:
-  run-bot:
-    runs-on: ubuntu-latest
+run-bot:
+runs-on: ubuntu-latest
 
-    steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+```
+steps:
+  - name: Checkout
+    uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
+  - name: Setup Python
+    uses: actions/setup-python@v5
+    with:
+      python-version: "3.11"
 
-      - name: Install dependencies
-        run: |
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+  - name: Install FFmpeg
+    run: |
+      sudo apt update
+      sudo apt install ffmpeg -y
 
-      - name: Run Bot
-        env:
-          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
-          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
-        run: python main.py
+  - name: Install dependencies
+    run: |
+      pip install -r requirements.txt
 
-      - name: Commit changes
-        run: |
-          git config --global user.name "github-actions"
-          git config --global user.email "github-actions@github.com"
-          git add state.json
-          git commit -m "Update state" || echo "No changes to commit"
-          git push
+  - name: Run Bot
+    env:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+      YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+    run: |
+      python main.py
+
+  - name: Commit changes
+    run: |
+      git config --global user.name "bot"
+      git config --global user.email "bot@github.com"
+      git add .
+      git commit -m "update state" || echo "No changes"
+      git push
+```
