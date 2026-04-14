@@ -2,6 +2,8 @@ import os
 import random
 import re
 
+from ai_image_generator import generate_ai_image
+
 BASE_PATH = "assets/backgrounds"
 
 SUPPORTED_EXTENSIONS = (
@@ -31,14 +33,12 @@ KNOWN_STYLES = [
 def extract_style_from_filename(filename):
     filename_lower = filename.lower()
 
-    # Primeiro tenta [phonk]
     match = re.search(r"\[(.*?)\]", filename_lower)
     if match:
         style = match.group(1).strip()
         if style in KNOWN_STYLES:
             return style
 
-    # Depois tenta palavra no nome
     for style in KNOWN_STYLES:
         if style in filename_lower:
             return style
@@ -48,7 +48,6 @@ def extract_style_from_filename(filename):
 
 def get_backgrounds_for_style(style):
     style_path = os.path.join(BASE_PATH, style)
-
     backgrounds = []
 
     if not os.path.exists(style_path):
@@ -83,7 +82,27 @@ def detect_style(filename):
     return style
 
 
-def get_random_background(style):
+def get_ai_background(style, filename):
+    try:
+        image_path = generate_ai_image(style, filename)
+
+        if image_path and os.path.exists(image_path):
+            print(f"Background IA gerado: {image_path}")
+            return image_path
+
+        print("Imagem IA ainda não existe. Seguindo para backgrounds locais.")
+        return None
+    except Exception as e:
+        print(f"Erro ao gerar background com IA: {e}")
+        return None
+
+
+def get_random_background(style, filename=None):
+    if filename:
+        ai_background = get_ai_background(style, filename)
+        if ai_background:
+            return ai_background
+
     backgrounds = get_backgrounds_for_style(style)
 
     if not backgrounds:
