@@ -27,6 +27,8 @@ KNOWN_STYLES = [
     "dark",
     "pop",
     "indie",
+    "metal",
+    "instrumental",
     "ai_generated"
 ]
 
