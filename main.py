@@ -135,7 +135,7 @@ def main():
     style = detect_style(name)
     print(f"Estilo detectado: {style}")
 
-    background = get_random_background(style)
+    background = get_random_background(style, name)
 
     os.makedirs("temp", exist_ok=True)
     audio_path = os.path.join("temp", name)
