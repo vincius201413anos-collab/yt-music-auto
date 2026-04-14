@@ -26,6 +26,7 @@ KNOWN_STYLES = [
     "lofi",
     "dark",
     "pop",
+    "indie",
     "ai_generated"
 ]
 
