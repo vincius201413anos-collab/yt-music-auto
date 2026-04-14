@@ -2,6 +2,7 @@ import os
 import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
+from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -18,7 +19,10 @@ SUPPORTED_AUDIO = (
 def get_drive_service():
     credentials_json = os.getenv("GOOGLE_CREDENTIALS")
     if not credentials_json:
-        raise ValueError("Secret GOOGLE_CREDENTIALS não encontrado.")
+        credentials_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+
+    if not credentials_json:
+        raise ValueError("Secret GOOGLE_CREDENTIALS ou GOOGLE_SERVICE_ACCOUNT_JSON não encontrado.")
 
     creds = Credentials.from_service_account_info(
         json.loads(credentials_json),
@@ -70,3 +74,16 @@ def list_audio_files_in_folder(service, folder_id):
             audio_files.append(file)
 
     return audio_files
+
+
+def download_drive_file(service, file_id, output_path):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    request = service.files().get_media(fileId=file_id)
+    with open(output_path, "wb") as f:
+        downloader = MediaIoBaseDownload(f, request)
+        done = False
+        while not done:
+            _, done = downloader.next_chunk()
+
+    return output_path
