@@ -1,8 +1,17 @@
 import os
 import json
+import re
 from pathlib import Path
-from drive_service import get_drive_service, find_folder_id, list_audio_files_in_folder
+
+from drive_service import (
+    get_drive_service,
+    find_folder_id,
+    list_audio_files_in_folder,
+    download_drive_file,
+)
 from background_selector import detect_style, get_random_background
+from video_generator import create_short
+from youtube_service import upload_video
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
@@ -22,11 +31,11 @@ def save_state(state):
         json.dump(state, f, ensure_ascii=False, indent=2)
 
 
-def get_next_track(state):
-    for track in state["tracks"]:
-        if not track.get("done", False):
-            return track
-    return None
+def clean_title(filename):
+    name = Path(filename).stem
+    name = re.sub(r"[_\-]+", " ", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name.title()
 
 
 def scan_drive_folder():
@@ -40,23 +49,42 @@ def scan_drive_folder():
 
     audio_files = list_audio_files_in_folder(service, inbox_folder_id)
 
-    names = [file["name"] for file in audio_files]
-    print(f"Áudios encontrados no inbox: {names}")
-
-    return names
+    print(f"Áudios encontrados no inbox: {[file['name'] for file in audio_files]}")
+    return audio_files
 
 
 def sync_tracks(state, drive_files):
     existing_names = [track["name"] for track in state["tracks"]]
 
-    for file_name in drive_files:
+    for file in drive_files:
+        file_name = file["name"]
         if file_name not in existing_names:
             print(f"Novo áudio detectado: {file_name}")
             state["tracks"].append({
+                "id": file["id"],
                 "name": file_name,
                 "shorts_done": 0,
                 "done": False
             })
+
+
+def get_next_track(state):
+    for track in state["tracks"]:
+        if not track.get("done", False):
+            return track
+    return None
+
+
+def build_video_metadata(filename, short_number, style):
+    base_title = clean_title(filename)
+    title = f"{base_title} | Short {short_number}"
+    description = (
+        f"{base_title}\n\n"
+        f"Style: {style}\n"
+        f"#music #shorts #youtube #trap #phonk #lofi #electronic"
+    )
+    tags = ["music", "shorts", "youtube", style, base_title.lower().replace(" ", "")]
+    return title, description, tags
 
 
 def main():
@@ -79,6 +107,7 @@ def main():
         return
 
     name = track["name"]
+    file_id = track["id"]
     shorts_done = track.get("shorts_done", 0)
 
     if shorts_done >= SHORTS_PER_TRACK:
@@ -98,7 +127,31 @@ def main():
     background = get_random_background(style)
     print(f"Background escolhido: {background}")
 
+    os.makedirs("temp", exist_ok=True)
+    audio_path = os.path.join("temp", name)
+
+    print("Baixando áudio do Drive...")
+    service = get_drive_service()
+    download_drive_file(service, file_id, audio_path)
+
+    output_name = f"{Path(name).stem}_short_{short_number}.mp4"
+
     print("Gerando vídeo...")
+    video_path = create_short(audio_path, background, output_name)
+    print(f"Vídeo gerado: {video_path}")
+
+    title, description, tags = build_video_metadata(name, short_number, style)
+
+    print("Enviando para o YouTube...")
+    response = upload_video(
+        video_path=video_path,
+        title=title,
+        description=description,
+        tags=tags,
+        privacy_status="public"
+    )
+
+    print(f"Upload concluído. Video ID: {response.get('id')}")
 
     track["shorts_done"] = short_number
 
