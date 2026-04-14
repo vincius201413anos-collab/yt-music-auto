@@ -1,7 +1,7 @@
-import time
+print("Bot rodando...")
 
-print("Bot iniciado...")
-
-while True:
-    print("Bot ativo...")
-    time.sleep(60)
+# Aqui depois vamos colocar:
+# - pegar música
+# - gerar short
+# - postar
+# - sair
