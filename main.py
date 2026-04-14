@@ -3,6 +3,8 @@ import json
 import re
 from pathlib import Path
 
+import requests
+
 from drive_service import (
     get_drive_service,
     find_folder_id,
@@ -12,6 +14,7 @@ from drive_service import (
 from background_selector import detect_style, get_random_background
 from video_generator import create_short
 from youtube_service import upload_video
+from ai_image_generator import generate_image
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
@@ -91,6 +94,61 @@ def build_video_metadata(filename, short_number, style):
     return title, description, tags
 
 
+def build_ai_prompt(style, filename):
+    base_title = clean_title(filename)
+
+    prompts = {
+        "phonk": f"{base_title}, dark neon city at night, cyberpunk, street lights, rain, cinematic, phonk vibe, vertical 9:16, ultra detailed, high contrast",
+        "trap": f"{base_title}, luxury dark aesthetic, neon lights, urban night, aggressive trap mood, cinematic, vertical 9:16, ultra detailed",
+        "lofi": f"{base_title}, cozy anime room, rainy window, warm lights, chill lo-fi mood, cinematic, vertical 9:16, detailed background",
+        "dark": f"{base_title}, dark cinematic atmosphere, moody lighting, fog, dramatic shadows, vertical 9:16, ultra detailed",
+        "electronic": f"{base_title}, futuristic abstract lights, electronic music vibe, glowing patterns, cyber aesthetic, vertical 9:16, ultra detailed",
+        "rock": f"{base_title}, dark stage lights, smoke, dramatic rock atmosphere, cinematic, vertical 9:16, ultra detailed",
+        "pop": f"{base_title}, colorful dreamy lights, modern pop aesthetic, cinematic, glossy style, vertical 9:16, ultra detailed",
+        "random": f"{base_title}, cinematic music visual, neon atmosphere, moody lights, vertical 9:16, ultra detailed"
+    }
+
+    return prompts.get(style, prompts["random"])
+
+
+def download_image_from_url(image_url, output_path):
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    response = requests.get(image_url, timeout=120)
+    response.raise_for_status()
+
+    with open(output_path, "wb") as f:
+        f.write(response.content)
+
+    return output_path
+
+
+def resolve_background(style, filename):
+    try:
+        background = get_random_background(style, filename)
+        if background and not str(background).startswith("__AUTO"):
+            print(f"Background encontrado: {background}")
+            return background
+    except Exception as e:
+        print(f"Falha ao buscar background local: {e}")
+
+    print("Nenhum background local válido encontrado. Gerando imagem com IA...")
+
+    prompt = build_ai_prompt(style, filename)
+    print(f"Prompt IA: {prompt}")
+
+    image_url = generate_image(prompt)
+    print(f"Imagem gerada: {image_url}")
+
+    safe_name = Path(filename).stem.replace(" ", "_")
+    image_path = os.path.join("temp", f"{safe_name}_ai_background.jpg")
+
+    download_image_from_url(image_url, image_path)
+    print(f"Imagem baixada em: {image_path}")
+
+    return image_path
+
+
 def main():
     print("Bot iniciado")
 
@@ -135,14 +193,14 @@ def main():
     style = detect_style(name)
     print(f"Estilo detectado: {style}")
 
-    background = get_random_background(style, name)
-
     os.makedirs("temp", exist_ok=True)
     audio_path = os.path.join("temp", name)
 
     print("Baixando áudio do Drive...")
     service = get_drive_service()
     download_drive_file(service, file_id, audio_path)
+
+    background = resolve_background(style, name)
 
     output_name = f"{Path(name).stem}_short_{short_number}.mp4"
 
