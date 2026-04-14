@@ -1,7 +1,7 @@
 import os
 import json
 from pathlib import Path
-from drive_service import get_drive_service, find_folder_id, list_mp3_files_in_folder
+from drive_service import get_drive_service, find_folder_id, list_audio_files_in_folder
 from background_selector import detect_style, get_random_background
 
 STATE_FILE = Path("state.json")
@@ -38,10 +38,10 @@ def scan_drive_folder():
     if not inbox_folder_id:
         raise ValueError("Pasta 'inbox' não encontrada dentro da pasta principal do Drive.")
 
-    mp3_files = list_mp3_files_in_folder(service, inbox_folder_id)
+    audio_files = list_audio_files_in_folder(service, inbox_folder_id)
 
-    names = [file["name"] for file in mp3_files]
-    print(f"Músicas encontradas no inbox: {names}")
+    names = [file["name"] for file in audio_files]
+    print(f"Áudios encontrados no inbox: {names}")
 
     return names
 
@@ -51,7 +51,7 @@ def sync_tracks(state, drive_files):
 
     for file_name in drive_files:
         if file_name not in existing_names:
-            print(f"Nova música detectada: {file_name}")
+            print(f"Novo áudio detectado: {file_name}")
             state["tracks"].append({
                 "name": file_name,
                 "shorts_done": 0,
@@ -74,7 +74,7 @@ def main():
     track = get_next_track(state)
 
     if not track:
-        print("Nenhuma música pendente")
+        print("Nenhum áudio pendente")
         save_state(state)
         return
 
@@ -84,7 +84,7 @@ def main():
     if shorts_done >= SHORTS_PER_TRACK:
         track["done"] = True
         save_state(state)
-        print(f"Música {name} já estava concluída")
+        print(f"Áudio {name} já estava concluído")
         return
 
     short_number = shorts_done + 1
@@ -92,22 +92,19 @@ def main():
     print(f"Processando: {name}")
     print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
 
-    # Detectar estilo automaticamente
     style = detect_style(name)
     print(f"Estilo detectado: {style}")
 
-    # Selecionar background
     background = get_random_background(style)
     print(f"Background escolhido: {background}")
 
-    # Aqui vamos gerar o short depois
     print("Gerando vídeo...")
 
     track["shorts_done"] = short_number
 
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
-        print("Música finalizada")
+        print("Áudio finalizado")
 
     save_state(state)
     print("Execução finalizada")
