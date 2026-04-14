@@ -87,3 +87,7 @@ def download_drive_file(service, file_id, output_path):
             _, done = downloader.next_chunk()
 
     return output_path
+
+
+def delete_drive_file(service, file_id):
+    service.files().delete(fileId=file_id).execute()
