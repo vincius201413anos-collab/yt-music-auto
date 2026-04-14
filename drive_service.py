@@ -1,89 +1,55 @@
 import os
 import json
-from google.oauth2.service_account import Credentials
+from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaFileUpload
 
-SCOPES = ["https://www.googleapis.com/auth/drive"]
-
-SUPPORTED_AUDIO = (
-    ".mp3",
-    ".wav",
-    ".m4a",
-    ".aac",
-    ".flac",
-    ".ogg"
-)
+YOUTUBE_SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
 
 
-def get_drive_service():
-    credentials_json = os.getenv("GOOGLE_CREDENTIALS")
+def get_youtube_service():
+    credentials_json = os.getenv("YOUTUBE_CREDENTIALS")
     if not credentials_json:
-        credentials_json = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
+        raise ValueError("Secret YOUTUBE_CREDENTIALS não encontrado.")
 
-    if not credentials_json:
-        raise ValueError("Secret GOOGLE_CREDENTIALS ou GOOGLE_SERVICE_ACCOUNT_JSON não encontrado.")
-
-    creds = Credentials.from_service_account_info(
+    creds = Credentials.from_authorized_user_info(
         json.loads(credentials_json),
-        scopes=SCOPES
+        scopes=YOUTUBE_SCOPES
     )
 
-    service = build("drive", "v3", credentials=creds)
+    service = build("youtube", "v3", credentials=creds)
     return service
 
 
-def find_folder_id(service, parent_folder_id, folder_name):
-    query = (
-        f"'{parent_folder_id}' in parents and "
-        f"name = '{folder_name}' and "
-        f"mimeType = 'application/vnd.google-apps.folder' and trashed = false"
+def upload_video(video_path, title, description="", tags=None, privacy_status="public"):
+    if tags is None:
+        tags = []
+
+    youtube = get_youtube_service()
+
+    body = {
+        "snippet": {
+            "title": title,
+            "description": description,
+            "tags": tags,
+            "categoryId": "10"
+        },
+        "status": {
+            "privacyStatus": privacy_status,
+            "selfDeclaredMadeForKids": False
+        }
+    }
+
+    media = MediaFileUpload(video_path, chunksize=-1, resumable=True)
+
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body=body,
+        media_body=media
     )
 
-    results = service.files().list(
-        q=query,
-        fields="files(id, name)",
-        pageSize=10
-    ).execute()
+    response = None
+    while response is None:
+        status, response = request.next_chunk()
 
-    files = results.get("files", [])
-    if not files:
-        return None
-
-    return files[0]["id"]
-
-
-def list_audio_files_in_folder(service, folder_id):
-    query = (
-        f"'{folder_id}' in parents and "
-        f"trashed = false and "
-        f"mimeType != 'application/vnd.google-apps.folder'"
-    )
-
-    results = service.files().list(
-        q=query,
-        fields="files(id, name, mimeType)",
-        pageSize=100
-    ).execute()
-
-    files = results.get("files", [])
-
-    audio_files = []
-    for file in files:
-        if file["name"].lower().endswith(SUPPORTED_AUDIO):
-            audio_files.append(file)
-
-    return audio_files
-
-
-def download_drive_file(service, file_id, output_path):
-    os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    request = service.files().get_media(fileId=file_id)
-    with open(output_path, "wb") as f:
-        downloader = MediaIoBaseDownload(f, request)
-        done = False
-        while not done:
-            _, done = downloader.next_chunk()
-
-    return output_path
+    return response
