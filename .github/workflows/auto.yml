@@ -1,8 +1,6 @@
-name: Auto YouTube Upload
+name: Generate YouTube Token
 
 on:
-  schedule:
-    - cron: "0 */4 * * *"
   workflow_dispatch:
 
 jobs:
@@ -17,7 +15,8 @@ jobs:
           python-version: '3.11'
 
       - run: |
-          python --version
-          pip install moviepy pillow requests
+          pip install google-auth-oauthlib
 
-      - run: python main.py
+      - env:
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+        run: python generate_token.py
