@@ -13,6 +13,7 @@ STYLE_PROMPTS = {
     "trap": "urban night street, luxury mood, dark cinematic atmosphere, aggressive modern aesthetic, vertical composition, no text, no watermark",
     "lofi": "cozy lofi anime-style city, soft rain, calm aesthetic, dreamy atmosphere, cinematic, vertical composition, no text, no watermark",
     "pop": "bright colorful lights, stylish modern pop aesthetic, glossy cinematic atmosphere, vertical composition, no text, no watermark",
+    "indie": "indie aesthetic, cinematic, soft film grain, vintage colors, emotional atmosphere, artistic composition, vertical composition, no text, no watermark",
     "dark": "dark cinematic background, smoke, dramatic lighting, moody atmosphere, vertical composition, no text, no watermark",
     "random": "cinematic abstract background, dramatic lighting, aesthetic, vertical composition, no text, no watermark"
 }
