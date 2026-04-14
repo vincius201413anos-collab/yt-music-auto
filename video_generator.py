@@ -1,188 +1,183 @@
 import os
-import random
-import subprocess
+import json
+import re
+from pathlib import Path
 
-OUTPUT_FOLDER = "output"
-MIN_SHORT_DURATION = 25
-MAX_SHORT_DURATION = 35
-FALLBACK_BACKGROUND = "__AUTO_BLACK__"
+from drive_service import (
+    get_drive_service,
+    find_folder_id,
+    list_audio_files_in_folder,
+    download_drive_file,
+)
+from background_selector import detect_style, get_random_background
+from video_generator import create_short
+from youtube_service import upload_video
 
-
-def get_media_duration(file_path):
-    command = [
-        "ffprobe",
-        "-v", "error",
-        "-show_entries", "format=duration",
-        "-of", "default=noprint_wrappers=1:nokey=1",
-        file_path
-    ]
-    result = subprocess.run(command, capture_output=True, text=True, check=True)
-    return float(result.stdout.strip())
+STATE_FILE = Path("state.json")
+SHORTS_PER_TRACK = 3
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
 
-def build_ffmpeg_command(audio_path, background_path, output_path, start_time, short_duration):
-    if background_path == FALLBACK_BACKGROUND:
-        return [
-            "ffmpeg",
-            "-y",
-            "-f", "lavfi",
-            "-i", f"color=c=black:s=1080x1920:d={short_duration}",
-            "-ss", str(start_time),
-            "-i", audio_path,
-            "-t", str(short_duration),
-            "-shortest",
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "23",
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            output_path
-        ]
+def load_state():
+    if not STATE_FILE.exists():
+        return {"tracks": []}
 
-    if background_path.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
-        return [
-            "ffmpeg",
-            "-y",
-            "-loop", "1",
-            "-i", background_path,
-            "-ss", str(start_time),
-            "-i", audio_path,
-            "-t", str(short_duration),
-            "-vf", "scale=1080:1920,zoompan=z='min(zoom+0.0008,1.08)':d=1:s=1080x1920",
-            "-shortest",
-            "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "23",
-            "-pix_fmt", "yuv420p",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            output_path
-        ]
-
-    return [
-        "ffmpeg",
-        "-y",
-        "-stream_loop", "-1",
-        "-i", background_path,
-        "-ss", str(start_time),
-        "-i", audio_path,
-        "-t", str(short_duration),
-        "-vf", "scale=1080:1920,format=yuv420p",
-        "-shortest",
-        "-c:v", "libx264",
-        "-preset", "fast",
-        "-crf", "23",
-        "-c:a", "aac",
-        "-b:a", "192k",
-        output_path
-    ]
+    with STATE_FILE.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
 
-def pick_non_repeating_segments(audio_duration, count=3):
-    segments = []
+def save_state(state):
+    with STATE_FILE.open("w", encoding="utf-8") as f:
+        json.dump(state, f, ensure_ascii=False, indent=2)
 
-    usable_max_duration = min(MAX_SHORT_DURATION, int(audio_duration))
-    usable_min_duration = min(MIN_SHORT_DURATION, usable_max_duration)
 
-    if usable_max_duration <= 1:
-        return [(0, max(1, int(audio_duration)))]
+def clean_title(filename):
+    name = Path(filename).stem
+    name = re.sub(r"[_\-]+", " ", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name.title()
 
-    attempts = 0
-    max_attempts = 200
 
-    while len(segments) < count and attempts < max_attempts:
-        attempts += 1
+def scan_drive_folder():
+    print("Escaneando Google Drive...")
 
-        short_duration = random.randint(usable_min_duration, usable_max_duration)
-        max_start = max(0, int(audio_duration - short_duration))
-        start_time = random.randint(0, max_start) if max_start > 0 else 0
-        end_time = start_time + short_duration
+    service = get_drive_service()
 
-        overlaps = False
-        for existing_start, existing_duration in segments:
-            existing_end = existing_start + existing_duration
+    inbox_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
+    if not inbox_folder_id:
+        raise ValueError("Pasta 'inbox' não encontrada dentro da pasta principal do Drive.")
 
-            # margem de segurança de 3 segundos
-            if not (end_time <= existing_start + 3 or start_time >= existing_end - 3):
-                overlaps = True
-                break
+    audio_files = list_audio_files_in_folder(service, inbox_folder_id)
 
-        if not overlaps:
-            segments.append((start_time, short_duration))
+    print(f"Áudios encontrados no inbox: {[file['name'] for file in audio_files]}")
+    return audio_files
 
-    # fallback se não conseguir 3 segmentos totalmente separados
-    if len(segments) < count:
-        segment_size = max(usable_min_duration, min(usable_max_duration, int(audio_duration / max(count, 1))))
-        max_start = max(0, int(audio_duration - segment_size))
 
-        if count == 1:
-            starts = [0]
+def sync_tracks(state, drive_files):
+    existing_by_name = {track["name"]: track for track in state["tracks"]}
+
+    for file in drive_files:
+        file_name = file["name"]
+
+        if file_name not in existing_by_name:
+            print(f"Novo áudio detectado: {file_name}")
+            state["tracks"].append({
+                "id": file["id"],
+                "name": file_name,
+                "shorts_done": 0,
+                "done": False
+            })
         else:
-            starts = []
-            for i in range(count):
-                if max_start == 0:
-                    starts.append(0)
-                else:
-                    starts.append(int((max_start * i) / max(count - 1, 1)))
-
-        segments = []
-        for start in starts[:count]:
-            duration = min(segment_size, int(audio_duration - start))
-            if duration > 0:
-                segments.append((start, duration))
-
-    return segments[:count]
+            if "id" not in existing_by_name[file_name]:
+                existing_by_name[file_name]["id"] = file["id"]
 
 
-def create_short(audio_path, background_path, output_name, start_time=None, short_duration=None):
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
+def get_next_track(state):
+    for track in state["tracks"]:
+        if not track.get("done", False):
+            return track
+    return None
 
-    output_path = os.path.join(OUTPUT_FOLDER, output_name)
-    audio_duration = get_media_duration(audio_path)
 
-    if start_time is None or short_duration is None:
-        if audio_duration <= MIN_SHORT_DURATION:
-            short_duration = max(1, int(audio_duration))
-            start_time = 0
-        else:
-            short_duration = random.randint(MIN_SHORT_DURATION, min(MAX_SHORT_DURATION, int(audio_duration)))
-            max_start = max(0, int(audio_duration - short_duration))
-            start_time = random.randint(0, max_start) if max_start > 0 else 0
+def build_video_metadata(filename, short_number, style):
+    base_title = clean_title(filename)
+    title = f"{base_title} | Short {short_number}"
+    description = (
+        f"{base_title}\n\n"
+        f"Style: {style}\n"
+        f"#music #shorts #youtube #trap #phonk #lofi #electronic"
+    )
+    tags = [
+        "music",
+        "shorts",
+        "youtube",
+        style,
+        base_title.lower().replace(" ", "")
+    ]
+    return title, description, tags
 
-    command = build_ffmpeg_command(
-        audio_path=audio_path,
-        background_path=background_path,
-        output_path=output_path,
-        start_time=start_time,
-        short_duration=short_duration
+
+def main():
+    print("Bot iniciado")
+
+    if not DRIVE_FOLDER_ID:
+        raise ValueError("Drive folder ID não encontrado")
+
+    print("Drive folder ID carregado")
+
+    state = load_state()
+    drive_files = scan_drive_folder()
+    sync_tracks(state, drive_files)
+
+    track = get_next_track(state)
+
+    if not track:
+        print("Nenhum áudio pendente")
+        save_state(state)
+        return
+
+    name = track["name"]
+
+    if "id" not in track:
+        matched = next((f for f in drive_files if f["name"] == name), None)
+        if not matched:
+            raise ValueError(f"Não foi possível encontrar o ID do arquivo no Drive para: {name}")
+        track["id"] = matched["id"]
+
+    file_id = track["id"]
+    shorts_done = track.get("shorts_done", 0)
+
+    if shorts_done >= SHORTS_PER_TRACK:
+        track["done"] = True
+        save_state(state)
+        print(f"Áudio {name} já estava concluído")
+        return
+
+    short_number = shorts_done + 1
+
+    print(f"Processando: {name}")
+    print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
+
+    style = detect_style(name)
+    print(f"Estilo detectado: {style}")
+
+    background = get_random_background(style)
+
+    os.makedirs("temp", exist_ok=True)
+    audio_path = os.path.join("temp", name)
+
+    print("Baixando áudio do Drive...")
+    service = get_drive_service()
+    download_drive_file(service, file_id, audio_path)
+
+    output_name = f"{Path(name).stem}_short_{short_number}.mp4"
+
+    print("Gerando vídeo...")
+    video_path = create_short(audio_path, background, output_name)
+    print(f"Vídeo gerado: {video_path}")
+
+    title, description, tags = build_video_metadata(name, short_number, style)
+
+    print("Enviando para o YouTube...")
+    response = upload_video(
+        video_path=video_path,
+        title=title,
+        description=description,
+        tags=tags,
+        privacy_status="public"
     )
 
-    subprocess.run(command, check=True)
-    return output_path
+    print(f"Upload concluído. Video ID: {response.get('id')}")
+
+    track["shorts_done"] = short_number
+
+    if track["shorts_done"] >= SHORTS_PER_TRACK:
+        track["done"] = True
+        print(f"Áudio finalizado: {name}")
+
+    save_state(state)
+    print("Execução finalizada")
 
 
-def create_three_shorts(audio_path, background_path, base_output_name):
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
-    audio_duration = get_media_duration(audio_path)
-    segments = pick_non_repeating_segments(audio_duration, count=3)
-
-    created_files = []
-
-    base_name, ext = os.path.splitext(base_output_name)
-    if not ext:
-        ext = ".mp4"
-
-    for i, (start_time, short_duration) in enumerate(segments, start=1):
-        output_name = f"{base_name}_{i}{ext}"
-        output_path = create_short(
-            audio_path=audio_path,
-            background_path=background_path,
-            output_name=output_name,
-            start_time=start_time,
-            short_duration=short_duration
-        )
-        created_files.append(output_path)
-
-    return created_files
+if __name__ == "__main__":
+    main()
