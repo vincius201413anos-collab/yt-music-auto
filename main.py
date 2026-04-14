@@ -1,13 +1,11 @@
 import os
 import json
 from pathlib import Path
+from drive_service import get_drive_service, find_folder_id, list_mp3_files_in_folder
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
-
-# Cria a pasta local usada no teste
-os.makedirs("drive/inbox", exist_ok=True)
 
 
 def load_state():
@@ -33,16 +31,18 @@ def get_next_track(state):
 def scan_drive_folder():
     print("Escaneando Google Drive...")
 
-    inbox_path = "drive/inbox"
-    os.makedirs(inbox_path, exist_ok=True)
+    service = get_drive_service()
 
-    files = []
+    inbox_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
+    if not inbox_folder_id:
+        raise ValueError("Pasta 'inbox' não encontrada dentro da pasta principal do Drive.")
 
-    for file in os.listdir(inbox_path):
-        if file.lower().endswith(".mp3"):
-            files.append(file)
+    mp3_files = list_mp3_files_in_folder(service, inbox_folder_id)
 
-    return files
+    names = [file["name"] for file in mp3_files]
+    print(f"Músicas encontradas no inbox: {names}")
+
+    return names
 
 
 def sync_tracks(state, drive_files):
@@ -90,12 +90,6 @@ def main():
 
     print(f"Processando: {name}")
     print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
-
-    # Aqui depois entra a lógica real:
-    # - pegar música
-    # - gerar clipe
-    # - renderizar short
-    # - postar
 
     track["shorts_done"] = short_number
 
