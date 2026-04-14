@@ -9,11 +9,13 @@ OUTPUT_DIR = "assets/generated"
 STYLE_PROMPTS = {
     "phonk": "dark japanese street, drift car, neon lights, night, cyberpunk, cinematic, aggressive atmosphere, high contrast, vertical composition, no text, no watermark",
     "rock": "intense rock concert atmosphere, smoke, red lights, dramatic stage energy, cinematic, high contrast, vertical composition, no text, no watermark",
+    "metal": "heavy metal concert, dark stage, aggressive lighting, smoke, dramatic atmosphere, red lights, cinematic, vertical composition, no text, no watermark",
     "electronic": "futuristic abstract neon lights, digital energy, cyberpunk atmosphere, cinematic, vibrant glow, vertical composition, no text, no watermark",
     "trap": "urban night street, luxury mood, dark cinematic atmosphere, aggressive modern aesthetic, vertical composition, no text, no watermark",
     "lofi": "cozy lofi anime-style city, soft rain, calm aesthetic, dreamy atmosphere, cinematic, vertical composition, no text, no watermark",
     "pop": "bright colorful lights, stylish modern pop aesthetic, glossy cinematic atmosphere, vertical composition, no text, no watermark",
     "indie": "indie aesthetic, cinematic, soft film grain, vintage colors, emotional atmosphere, artistic composition, vertical composition, no text, no watermark",
+    "instrumental": "cinematic ambient background, emotional lighting, atmospheric scene, dramatic cinematic composition, vertical composition, no text, no watermark",
     "dark": "dark cinematic background, smoke, dramatic lighting, moody atmosphere, vertical composition, no text, no watermark",
     "random": "cinematic abstract background, dramatic lighting, aesthetic, vertical composition, no text, no watermark"
 }
