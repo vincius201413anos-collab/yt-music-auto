@@ -54,11 +54,12 @@ def scan_drive_folder():
 
 
 def sync_tracks(state, drive_files):
-    existing_names = [track["name"] for track in state["tracks"]]
+    existing_by_name = {track["name"]: track for track in state["tracks"]}
 
     for file in drive_files:
         file_name = file["name"]
-        if file_name not in existing_names:
+
+        if file_name not in existing_by_name:
             print(f"Novo áudio detectado: {file_name}")
             state["tracks"].append({
                 "id": file["id"],
@@ -66,6 +67,10 @@ def sync_tracks(state, drive_files):
                 "shorts_done": 0,
                 "done": False
             })
+        else:
+            # Corrige tracks antigas que não tinham id
+            if "id" not in existing_by_name[file_name]:
+                existing_by_name[file_name]["id"] = file["id"]
 
 
 def get_next_track(state):
@@ -107,6 +112,14 @@ def main():
         return
 
     name = track["name"]
+
+    if "id" not in track:
+        # Segurança extra caso ainda falte id
+        matched = next((f for f in drive_files if f["name"] == name), None)
+        if not matched:
+            raise ValueError(f"Não foi possível encontrar o ID do arquivo no Drive para: {name}")
+        track["id"] = matched["id"]
+
     file_id = track["id"]
     shorts_done = track.get("shorts_done", 0)
 
@@ -125,7 +138,6 @@ def main():
     print(f"Estilo detectado: {style}")
 
     background = get_random_background(style)
-    print(f"Background escolhido: {background}")
 
     os.makedirs("temp", exist_ok=True)
     audio_path = os.path.join("temp", name)
