@@ -9,6 +9,11 @@
       "name": "musica2.mp3",
       "shorts_done": 3,
       "done": true
+    },
+    {
+      "name": "goshto.mp3",
+      "shorts_done": 1,
+      "done": false
     }
   ]
 }
