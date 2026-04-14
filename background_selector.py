@@ -13,12 +13,15 @@ SUPPORTED_EXTENSIONS = (
     ".webm"
 )
 
+FALLBACK_BACKGROUND = "__AUTO_BLACK__"
+
 
 def get_all_backgrounds():
     backgrounds = []
 
     if not os.path.exists(BASE_PATH):
-        raise ValueError(f"Pasta não encontrada: {BASE_PATH}")
+        print(f"Pasta não encontrada: {BASE_PATH}. Usando fundo automático.")
+        return backgrounds
 
     for root, dirs, files in os.walk(BASE_PATH):
         for file in files:
@@ -29,19 +32,16 @@ def get_all_backgrounds():
 
 
 def detect_style(filename):
-    # Agora não dependemos mais do nome
     return "random"
 
 
 def get_random_background(style):
-
     backgrounds = get_all_backgrounds()
 
     if not backgrounds:
-        raise ValueError("Nenhum background encontrado em assets/backgrounds")
+        print("Nenhum background encontrado. Usando fundo automático.")
+        return FALLBACK_BACKGROUND
 
     chosen = random.choice(backgrounds)
-
     print(f"Background escolhido: {chosen}")
-
     return chosen
