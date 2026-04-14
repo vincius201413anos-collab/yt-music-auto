@@ -1,0 +1,14 @@
+{
+  "tracks": [
+    {
+      "name": "musica1.mp3",
+      "shorts_done": 0,
+      "done": false
+    },
+    {
+      "name": "musica2.mp3",
+      "shorts_done": 0,
+      "done": false
+    }
+  ]
+}
