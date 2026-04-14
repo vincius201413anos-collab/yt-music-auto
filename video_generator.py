@@ -5,6 +5,15 @@ OUTPUT_FOLDER = "output"
 SHORT_DURATION = 20
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
 
+SUPPORTED_AUDIO = (
+    ".mp3",
+    ".wav",
+    ".m4a",
+    ".aac",
+    ".flac",
+    ".ogg"
+)
+
 
 def create_short(audio_path, background_path, output_name):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
