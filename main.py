@@ -8,7 +8,6 @@ from drive_service import (
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
-    delete_drive_file,
 )
 from background_selector import detect_style, get_random_background
 from video_generator import create_short
@@ -92,10 +91,6 @@ def build_video_metadata(filename, short_number, style):
     return title, description, tags
 
 
-def remove_track_from_state(state, track_name):
-    state["tracks"] = [track for track in state["tracks"] if track["name"] != track_name]
-
-
 def main():
     print("Bot iniciado")
 
@@ -173,16 +168,6 @@ def main():
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
         print(f"Áudio finalizado: {name}")
-
-        try:
-            print("Apagando música do Google Drive...")
-            delete_drive_file(service, file_id)
-            print("Música apagada do Drive com sucesso")
-        except Exception as e:
-            print(f"Erro ao apagar música do Drive: {e}")
-
-        remove_track_from_state(state, name)
-        print("Música removida do state.json")
 
     save_state(state)
     print("Execução finalizada")
