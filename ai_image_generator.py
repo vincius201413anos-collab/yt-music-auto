@@ -36,27 +36,29 @@ def generate_ai_image(style, filename):
 
     prompt = STYLE_PROMPTS.get(style, STYLE_PROMPTS["random"])
 
-  payload = {
-    "prompt": prompt,
-    "negative_prompt": "text, watermark, logo, blurry, low quality, deformed, ugly",
-    "steps": 20,
-    "cfg_scale": 7,
-    "width": 512,
-    "height": 768,
-    "sampler_name": "DPM++ 2M",
-    "batch_size": 1,
-    "n_iter": 1,
-    "enable_hr": True,
-    "hr_scale": 1.5,
-    "hr_upscaler": "Latent",
-    "denoising_strength": 0.4
-}
+    payload = {
+        "prompt": prompt,
+        "negative_prompt": "text, watermark, logo, blurry, low quality, deformed, ugly",
+        "steps": 20,
+        "cfg_scale": 7,
+        "width": 512,
+        "height": 768,
+        "sampler_name": "DPM++ 2M",
+        "batch_size": 1,
+        "n_iter": 1,
+        "enable_hr": True,
+        "hr_scale": 1.5,
+        "hr_upscaler": "Latent",
+        "denoising_strength": 0.4
+    }
+
     try:
         response = requests.post(
             f"{SD_URL}/sdapi/v1/txt2img",
             json=payload,
             timeout=300
         )
+
         response.raise_for_status()
 
         result = response.json()
