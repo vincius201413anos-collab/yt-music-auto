@@ -16,14 +16,12 @@ def get_media_duration(file_path):
         "-of", "default=noprint_wrappers=1:nokey=1",
         file_path
     ]
-
     result = subprocess.run(command, capture_output=True, text=True, check=True)
     return float(result.stdout.strip())
 
 
 def create_short(audio_path, background_path, output_name):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-
     output_path = os.path.join(OUTPUT_FOLDER, output_name)
 
     audio_duration = get_media_duration(audio_path)
@@ -97,5 +95,4 @@ def create_short(audio_path, background_path, output_name):
             ]
 
     subprocess.run(command, check=True)
-
     return output_path
