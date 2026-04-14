@@ -1,3 +1,4 @@
+import os
 import json
 from pathlib import Path
 
@@ -27,6 +28,12 @@ def get_next_track(state):
 def main():
     print("Bot iniciado...")
 
+    drive_folder_id = os.getenv("DRIVE_FOLDER_ID")
+    if not drive_folder_id:
+        raise ValueError("Secret DRIVE_FOLDER_ID não encontrado.")
+
+    print(f"Drive folder ID carregado: {drive_folder_id}")
+
     state = load_state()
     track = get_next_track(state)
 
@@ -47,18 +54,13 @@ def main():
 
     print(f"Processando música: {music_name}")
     print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
-
-    # Aqui depois entra a lógica real:
-    # 1. baixar/ler a música
-    # 2. gerar clipe
-    # 3. renderizar o short
-    # 4. postar no YouTube
+    print("Próximo passo: conectar leitura real do Google Drive.")
 
     track["shorts_done"] = short_number
 
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
-        print(f"Finalizado 3/3 para {music_name}. Próxima execução vai para outra música.")
+        print(f"Finalizado 3/3 para {music_name}.")
     else:
         print(f"Short {short_number} concluído para {music_name}.")
 
