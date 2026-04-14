@@ -2,8 +2,8 @@
   "tracks": [
     {
       "name": "musica1.mp3",
-      "shorts_done": 2,
-      "done": false
+      "shorts_done": 3,
+      "done": true
     },
     {
       "name": "musica2.mp3",
