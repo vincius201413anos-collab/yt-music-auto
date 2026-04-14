@@ -1,14 +1,18 @@
 import os
 import json
+import requests
 from pathlib import Path
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
 
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+
 
 def load_state():
     if not STATE_FILE.exists():
-        raise FileNotFoundError("Arquivo state.json não encontrado.")
+        return {"tracks": []}
+
     with STATE_FILE.open("r", encoding="utf-8") as f:
         return json.load(f)
 
@@ -19,53 +23,84 @@ def save_state(state):
 
 
 def get_next_track(state):
-    for track in state.get("tracks", []):
-        if not track.get("done", False):
+    for track in state["tracks"]:
+        if not track["done"]:
             return track
     return None
+
+
+def scan_drive_folder():
+    print("Escaneando Google Drive...")
+
+    # Aqui ainda simulamos leitura
+    # depois vamos usar API real
+
+    fake_files = [
+        "musica1.mp3",
+        "musica2.mp3"
+    ]
+
+    return fake_files
+
+
+def sync_tracks(state, drive_files):
+    existing = [t["name"] for t in state["tracks"]]
+
+    for file in drive_files:
+        if file not in existing:
+            print(f"Nova música detectada: {file}")
+
+            state["tracks"].append({
+                "name": file,
+                "shorts_done": 0,
+                "done": False
+            })
 
 
 def main():
     print("Bot iniciado...")
 
-    drive_folder_id = os.getenv("DRIVE_FOLDER_ID")
-    if not drive_folder_id:
-        raise ValueError("Secret DRIVE_FOLDER_ID não encontrado.")
+    if not DRIVE_FOLDER_ID:
+        raise ValueError("Drive folder ID não encontrado")
 
-    print(f"Drive folder ID carregado: {drive_folder_id}")
+    print("Drive folder ID carregado")
 
     state = load_state()
+
+    drive_files = scan_drive_folder()
+
+    sync_tracks(state, drive_files)
+
     track = get_next_track(state)
 
-    if track is None:
-        print("Nenhuma música pendente.")
+    if not track:
+        print("Nenhuma música pendente")
         return
 
-    music_name = track["name"]
-    shorts_done = track.get("shorts_done", 0)
+    name = track["name"]
+    shorts_done = track["shorts_done"]
 
     if shorts_done >= SHORTS_PER_TRACK:
         track["done"] = True
         save_state(state)
-        print(f"Música {music_name} já concluída. Passando para a próxima.")
         return
 
     short_number = shorts_done + 1
 
-    print(f"Processando música: {music_name}")
-    print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
-    print("Próximo passo: conectar leitura real do Google Drive.")
+    print(f"Processando: {name}")
+    print(f"Criando short {short_number}/3")
+
+    # Aqui depois entra geração de vídeo
 
     track["shorts_done"] = short_number
 
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
-        print(f"Finalizado 3/3 para {music_name}.")
-    else:
-        print(f"Short {short_number} concluído para {music_name}.")
+        print("Música finalizada")
 
     save_state(state)
-    print("Execução finalizada.")
+
+    print("Execução finalizada")
 
 
 if __name__ == "__main__":
