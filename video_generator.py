@@ -41,17 +41,18 @@ def pick_short_window(audio_duration):
 def get_profile(style):
     default_profile = {
         "zoom_speed": 0.0015,
-        "max_zoom": 1.12,
+        "max_zoom": 1.10,
         "brightness": 0.00,
         "contrast": 1.08,
-        "saturation": 1.08,
-        "blur": 0,
+        "saturation": 1.05,
+        "blur": 0.0,
         "fps": 30,
+        "sharpen": 1.0,
     }
 
     raw = EDIT_PROFILES.get(style, EDIT_PROFILES.get("default", {}))
 
-    profile = {
+    return {
         "zoom_speed": raw.get("zoom_speed", raw.get("zoom", default_profile["zoom_speed"])),
         "max_zoom": raw.get("max_zoom", default_profile["max_zoom"]),
         "brightness": raw.get("brightness", default_profile["brightness"]),
@@ -59,12 +60,11 @@ def get_profile(style):
         "saturation": raw.get("saturation", default_profile["saturation"]),
         "blur": raw.get("blur", default_profile["blur"]),
         "fps": raw.get("fps", default_profile["fps"]),
+        "sharpen": raw.get("sharpen", default_profile["sharpen"]),
     }
 
-    return profile
 
-
-def build_image_filter(profile):
+def build_base_image_filter(profile):
     zoom_speed = profile["zoom_speed"]
     max_zoom = profile["max_zoom"]
     brightness = profile["brightness"]
@@ -72,9 +72,10 @@ def build_image_filter(profile):
     saturation = profile["saturation"]
     blur = profile["blur"]
     fps = profile["fps"]
+    sharpen = profile["sharpen"]
 
     filters = [
-        "scale=1200:2133:force_original_aspect_ratio=increase",
+        "scale=1400:2488:force_original_aspect_ratio=increase",
         "crop=1080:1920",
         (
             "zoompan="
@@ -85,6 +86,7 @@ def build_image_filter(profile):
             "s=1080x1920"
         ),
         f"eq=contrast={contrast}:brightness={brightness}:saturation={saturation}",
+        f"unsharp=5:5:{sharpen}:5:5:0.0",
     ]
 
     if blur and blur > 0:
@@ -98,17 +100,19 @@ def build_image_filter(profile):
     return ",".join(filters)
 
 
-def build_video_filter(profile):
+def build_base_video_filter(profile):
     brightness = profile["brightness"]
     contrast = profile["contrast"]
     saturation = profile["saturation"]
     blur = profile["blur"]
     fps = profile["fps"]
+    sharpen = profile["sharpen"]
 
     filters = [
         "scale=1080:1920:force_original_aspect_ratio=increase",
         "crop=1080:1920",
         f"eq=contrast={contrast}:brightness={brightness}:saturation={saturation}",
+        f"unsharp=5:5:{sharpen}:5:5:0.0",
     ]
 
     if blur and blur > 0:
@@ -130,6 +134,9 @@ def create_short(audio_path, background_path, output_name, style):
     audio_duration = get_media_duration(audio_path)
     start_time, short_duration = pick_short_window(audio_duration)
 
+    fire_overlay = "assets/overlays/fire.mp4"
+    use_fire = style in ("rock", "metal") and os.path.exists(fire_overlay)
+
     if background_path == FALLBACK_BACKGROUND:
         command = [
             "ffmpeg",
@@ -142,19 +149,22 @@ def create_short(audio_path, background_path, output_name, style):
             "-shortest",
             "-r", str(profile["fps"]),
             "-c:v", "libx264",
-            "-preset", "fast",
-            "-crf", "20",
+            "-preset", "medium",
+            "-crf", "16",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
             "-b:a", "192k",
             output_path
         ]
-    else:
-        ext = Path(background_path).suffix.lower()
+        subprocess.run(command, check=True)
+        return output_path
 
-        if ext in (".jpg", ".jpeg", ".png", ".webp"):
-            vf = build_image_filter(profile)
+    ext = Path(background_path).suffix.lower()
+    is_image = ext in (".jpg", ".jpeg", ".png", ".webp")
 
+    if not use_fire:
+        if is_image:
+            vf = build_base_image_filter(profile)
             command = [
                 "ffmpeg",
                 "-y",
@@ -166,16 +176,15 @@ def create_short(audio_path, background_path, output_name, style):
                 "-vf", vf,
                 "-shortest",
                 "-c:v", "libx264",
-                "-preset", "fast",
-                "-crf", "20",
+                "-preset", "medium",
+                "-crf", "16",
                 "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", "192k",
                 output_path
             ]
         else:
-            vf = build_video_filter(profile)
-
+            vf = build_base_video_filter(profile)
             command = [
                 "ffmpeg",
                 "-y",
@@ -187,13 +196,78 @@ def create_short(audio_path, background_path, output_name, style):
                 "-vf", vf,
                 "-shortest",
                 "-c:v", "libx264",
-                "-preset", "fast",
-                "-crf", "20",
+                "-preset", "medium",
+                "-crf", "16",
                 "-pix_fmt", "yuv420p",
                 "-c:a", "aac",
                 "-b:a", "192k",
                 output_path
             ]
+
+        subprocess.run(command, check=True)
+        return output_path
+
+    # ROCK / METAL com overlay de fogo
+    if is_image:
+        base_filter = build_base_image_filter(profile)
+        filter_complex = (
+            f"[0:v]{base_filter}[bg];"
+            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.28[fire];"
+            "[bg][fire]overlay=0:0:format=auto[v]"
+        )
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-loop", "1",
+            "-i", background_path,
+            "-stream_loop", "-1",
+            "-i", fire_overlay,
+            "-ss", str(start_time),
+            "-i", audio_path,
+            "-t", str(short_duration),
+            "-filter_complex", filter_complex,
+            "-map", "[v]",
+            "-map", "2:a",
+            "-shortest",
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-crf", "16",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            output_path
+        ]
+    else:
+        base_filter = build_base_video_filter(profile)
+        filter_complex = (
+            f"[0:v]{base_filter}[bg];"
+            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.28[fire];"
+            "[bg][fire]overlay=0:0:format=auto[v]"
+        )
+
+        command = [
+            "ffmpeg",
+            "-y",
+            "-stream_loop", "-1",
+            "-i", background_path,
+            "-stream_loop", "-1",
+            "-i", fire_overlay,
+            "-ss", str(start_time),
+            "-i", audio_path,
+            "-t", str(short_duration),
+            "-filter_complex", filter_complex,
+            "-map", "[v]",
+            "-map", "2:a",
+            "-shortest",
+            "-c:v", "libx264",
+            "-preset", "medium",
+            "-crf", "16",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
+            output_path
+        ]
 
     subprocess.run(command, check=True)
     return output_path
