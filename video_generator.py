@@ -16,7 +16,6 @@ MIN_SHORT_DURATION = 40
 MAX_SHORT_DURATION = 70
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
 
-# Fade padrão
 VIDEO_FADE_IN = 0.6
 VIDEO_FADE_OUT = 0.8
 AUDIO_FADE_IN = 0.6
@@ -56,10 +55,8 @@ def get_profile(style):
 
 def crop_analysis(beat_times, drop_time, start, duration):
     end = start + duration
-
     beats = [t - start for t in beat_times if start <= t <= end]
     drop = (drop_time - start) if (drop_time and start <= drop_time <= end) else None
-
     return beats[:80], drop
 
 
@@ -111,6 +108,7 @@ def create_short(audio_path, background_path, output_name, style):
             "y='ih/2-(ih/zoom/2)':"
             "d=1:"
             "s=1080x1920,"
+            "eq=contrast=1.4:brightness=0.1:saturation=1.2,"
             f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
             f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
             f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
@@ -146,6 +144,7 @@ def create_short(audio_path, background_path, output_name, style):
             f"crop=1080:1920:"
             f"x='20+sin(t*7)*{profile['shake_x']}*({shake_expr})':"
             f"y='20+cos(t*6)*{profile['shake_y']}*({shake_expr})',"
+            "eq=contrast=1.4:brightness=0.1:saturation=1.2,"
             f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
             f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
             f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
