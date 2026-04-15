@@ -178,6 +178,7 @@ def build_ai_prompt(style, filename, variant_index=1):
 
     return prompts.get(style, prompts["default"])
 
+
 def download_image_from_url(image_url, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
@@ -204,17 +205,15 @@ def resolve_background(style, filename, short_number):
     print("Nenhum background local válido encontrado. Gerando imagem com IA...")
 
     safe_name = Path(filename).stem.replace(" ", "_")
-
-    # cache separado por short
     cached_path = os.path.join(
         "temp",
         f"{safe_name}_{style}_short_{short_number}_ai_background.png"
     )
 
-    # se esse short específico já tiver imagem, reutiliza só a dele
+    # Força nova geração para não repetir imagem antiga do mesmo short
     if os.path.exists(cached_path):
-        print(f"Usando imagem em cache do short {short_number}: {cached_path}")
-        return cached_path
+        os.remove(cached_path)
+        print(f"Cache antigo removido: {cached_path}")
 
     prompt = build_ai_prompt(style, filename, variant_index=short_number)
     print(f"Prompt IA: {prompt}")
@@ -239,28 +238,6 @@ def resolve_background(style, filename, short_number):
     except Exception as e:
         print(f"⚠️ Erro ao gerar imagem com IA: {e}")
 
-        fallback_list = [
-            "assets/backgrounds/default.jpg",
-            "assets/backgrounds/default.jpeg",
-            "assets/backgrounds/default.png",
-            "assets/backgrounds/default.webp",
-            "assets/default.jpg",
-            "assets/default.png",
-        ]
-
-        for fallback in fallback_list:
-            if os.path.exists(fallback):
-                print(f"Usando fallback final: {fallback}")
-                return fallback
-
-        raise RuntimeError(
-            "Nenhum background local encontrado, a IA falhou e nenhum fallback padrão existe."
-        )
-
-    except Exception as e:
-        print(f"⚠️ Erro ao gerar imagem com IA: {e}")
-
-        # 4. fallback final
         fallback_list = [
             "assets/backgrounds/default.jpg",
             "assets/backgrounds/default.jpeg",
@@ -331,7 +308,7 @@ def main():
     service = get_drive_service()
     download_drive_file(service, file_id, audio_path)
 
-    background = resolve_background(style, name)
+    background = resolve_background(style, name, short_number)
 
     output_name = f"{Path(name).stem}_short_{short_number}.mp4"
 
