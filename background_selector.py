@@ -15,7 +15,7 @@ STYLE_KEYWORDS = {
     "pop": ["pop", "commercial", "mainstream"],
     "funk": ["funk", "mandela", "bruxaria"],
     "electronic": ["edm", "electronic", "house", "techno"],
-    "dark": ["dark"]
+    "dark": ["dark"],
 }
 
 STYLE_PRIORITY = [
@@ -46,7 +46,6 @@ def detect_styles(filename: str) -> list[str]:
     if not found:
         return ["default"]
 
-    # remove duplicados preservando ordem
     unique = []
     for style in found:
         if style not in unique:
@@ -61,7 +60,6 @@ def detect_style(filename: str) -> str:
     if styles == ["default"]:
         return "default"
 
-    # escolhe o mais forte pela prioridade
     for priority_style in STYLE_PRIORITY:
         if priority_style in styles:
             return priority_style
@@ -71,8 +69,13 @@ def detect_style(filename: str) -> str:
 
 def normalize_media_name(name: str) -> str:
     stem = Path(name).stem.lower()
+
+    # remove [rock], [trap], etc
     stem = re.sub(r"\[[^\]]+\]", "", stem)
+
+    # remove múltiplos espaços
     stem = re.sub(r"\s+", " ", stem).strip()
+
     return stem
 
 
@@ -94,16 +97,23 @@ def _find_matching_media_by_name(filename: str, folder: str, exts: tuple[str, ..
 
         file_stem = normalize_media_name(file)
 
+        # match exato: "choir"
         if file_stem == stem:
             exact_matches.append(full_path)
+
+        # variações: "choir__1", "choir__2"
         elif file_stem.startswith(stem + "__"):
             variant_matches.append(full_path)
 
     if exact_matches:
-        return random.choice(exact_matches)
+        chosen = random.choice(exact_matches)
+        print(f"Mídia específica exata encontrada: {chosen}")
+        return chosen
 
     if variant_matches:
-        return random.choice(variant_matches)
+        chosen = random.choice(variant_matches)
+        print(f"Mídia específica variante encontrada: {chosen}")
+        return chosen
 
     return None
 
@@ -129,7 +139,7 @@ def get_random_background(style: str, filename: str | None = None) -> str:
             print(f"Imagem específica encontrada para a música: {specific_image}")
             return specific_image
 
-    # 3) imagens por estilo
+    # 3) imagem por estilo
     if os.path.exists(background_folder):
         style_files = []
 
@@ -151,6 +161,6 @@ def get_random_background(style: str, filename: str | None = None) -> str:
             print(f"Background local por estilo encontrado: {chosen}")
             return chosen
 
-    # 4) se não achou nada → IA
+    # 4) fallback pra IA
     print("Nenhum background local encontrado. Usando IA.")
     return "__AUTO__"
