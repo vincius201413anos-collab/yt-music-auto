@@ -2,7 +2,7 @@ import os
 import json
 from google.oauth2.service_account import Credentials
 from googleapiclient.discovery import build
-from googleapiclient.http import MediaIoBaseDownload
+from googleapiclient.http import MediaIoBaseDownload, MediaFileUpload
 
 SCOPES = ["https://www.googleapis.com/auth/drive"]
 
@@ -87,6 +87,27 @@ def download_drive_file(service, file_id, output_path):
             _, done = downloader.next_chunk()
 
     return output_path
+
+
+def upload_file_to_drive(service, folder_id, file_path):
+    """
+    Faz upload de um arquivo qualquer para uma pasta do Google Drive.
+    Usado no backup dos vídeos depois do upload no YouTube.
+    """
+    file_metadata = {
+        "name": os.path.basename(file_path),
+        "parents": [folder_id],
+    }
+
+    media = MediaFileUpload(file_path, resumable=True)
+
+    uploaded = service.files().create(
+        body=file_metadata,
+        media_body=media,
+        fields="id,name"
+    ).execute()
+
+    return uploaded
 
 
 def delete_drive_file(service, file_id):
