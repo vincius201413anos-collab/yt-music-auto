@@ -11,7 +11,6 @@ from audio_analysis import (
     build_shake_multiplier_expression,
 )
 
-OUTPUT_FOLDER = "output"
 MIN_SHORT_DURATION = 40
 MAX_SHORT_DURATION = 70
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
@@ -186,8 +185,13 @@ def build_video_filter(profile, flash_expr, shake_expr, duration, drop_time=None
 
 
 def create_short(audio_path, background_path, output_name, style):
-    os.makedirs(OUTPUT_FOLDER, exist_ok=True)
-    output_path = os.path.join(OUTPUT_FOLDER, output_name)
+    # output_name agora já vem como caminho completo do main.py
+    output_path = output_name
+
+    # garante a pasta do arquivo final
+    output_dir = os.path.dirname(output_path)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
 
     profile = get_profile(style)
     audio_duration = get_media_duration(audio_path)
