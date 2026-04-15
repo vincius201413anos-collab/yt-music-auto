@@ -68,6 +68,54 @@ def build_audio_filter(duration):
     )
 
 
+def build_image_filter(profile, flash_expr, duration):
+    fade_out_start_video = max(0, duration - VIDEO_FADE_OUT)
+
+    # zoom mais natural: oscila, não entra infinito
+    base_zoom = 1.03
+    amp_zoom = min(0.035, max(0.015, profile["max_zoom"] - 1.02))
+
+    return (
+        "scale=1400:2488:force_original_aspect_ratio=increase,"
+        "crop=1080:1920:(iw-1080)/2:(ih-1920)/2,"
+        "scale=1200:2133,"
+        "crop=1080:1920:(iw-1080)/2:(ih-1920)/2,"
+        "zoompan="
+        f"z='min(max({base_zoom}+{amp_zoom}*sin(on/18),1.0),1.09)':"
+        "x='iw/2-(iw/zoom/2)':"
+        "y='ih/2-(ih/zoom/2)':"
+        "d=1:"
+        "s=1080x1920,"
+        "eq=contrast=1.22:brightness=0.04:saturation=1.10,"
+        f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
+        f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
+        f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+        f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
+        f"fps={profile['fps']}"
+    )
+
+
+def build_video_filter(profile, flash_expr, shake_expr, duration):
+    fade_out_start_video = max(0, duration - VIDEO_FADE_OUT)
+
+    # crop mais seguro pra não cortar demais o assunto
+    crop_margin_x = 10
+    crop_margin_y = 14
+
+    return (
+        "scale=1160:2062:force_original_aspect_ratio=increase,"
+        f"crop=1080:1920:"
+        f"x='max(0,min(iw-1080,{crop_margin_x}+sin(t*5)*{profile['shake_x']}*({shake_expr})))':"
+        f"y='max(0,min(ih-1920,{crop_margin_y}+cos(t*4)*{profile['shake_y']}*({shake_expr})))',"
+        "eq=contrast=1.22:brightness=0.04:saturation=1.10,"
+        f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
+        f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
+        f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+        f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
+        f"fps={profile['fps']}"
+    )
+
+
 def create_short(audio_path, background_path, output_name, style):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     output_path = os.path.join(OUTPUT_FOLDER, output_name)
@@ -92,8 +140,6 @@ def create_short(audio_path, background_path, output_name, style):
     )
 
     shake_expr = build_shake_multiplier_expression(drop)
-
-    fade_out_start_video = max(0, duration - VIDEO_FADE_OUT)
     audio_filter = build_audio_filter(duration)
 
     ext = Path(background_path).suffix.lower()
@@ -101,20 +147,7 @@ def create_short(audio_path, background_path, output_name, style):
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
     if is_image:
-        vf = (
-            "scale=1400:2488:force_original_aspect_ratio=increase,"
-            f"zoompan=z='1+{profile['zoom_speed']}*on+{profile['pulse_strength']}*sin(on/6)':"
-            "x='iw/2-(iw/zoom/2)':"
-            "y='ih/2-(ih/zoom/2)':"
-            "d=1:"
-            "s=1080x1920,"
-            "eq=contrast=1.4:brightness=0.1:saturation=1.2,"
-            f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
-            f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
-            f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
-            f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
-            f"fps={profile['fps']}"
-        )
+        vf = build_image_filter(profile, flash_expr, duration)
 
         cmd = [
             "ffmpeg", "-y",
@@ -139,18 +172,7 @@ def create_short(audio_path, background_path, output_name, style):
         video_duration = get_media_duration(background_path)
         bg_start = 0 if video_duration <= duration else random.uniform(0, video_duration - duration)
 
-        vf = (
-            "scale=1120:1992:force_original_aspect_ratio=increase,"
-            f"crop=1080:1920:"
-            f"x='20+sin(t*7)*{profile['shake_x']}*({shake_expr})':"
-            f"y='20+cos(t*6)*{profile['shake_y']}*({shake_expr})',"
-            "eq=contrast=1.4:brightness=0.1:saturation=1.2,"
-            f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
-            f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
-            f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
-            f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
-            f"fps={profile['fps']}"
-        )
+        vf = build_video_filter(profile, flash_expr, shake_expr, duration)
 
         cmd = [
             "ffmpeg", "-y",
@@ -172,6 +194,8 @@ def create_short(audio_path, background_path, output_name, style):
         ]
 
     else:
+        fade_out_start_video = max(0, duration - VIDEO_FADE_OUT)
+
         cmd = [
             "ffmpeg", "-y",
             "-f", "lavfi",
@@ -179,6 +203,7 @@ def create_short(audio_path, background_path, output_name, style):
             "-ss", str(start), "-i", audio_path,
             "-t", str(duration),
             "-vf", (
+                "eq=contrast=1.18:brightness=0.02:saturation=1.05,"
                 f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
                 f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT}"
             ),
