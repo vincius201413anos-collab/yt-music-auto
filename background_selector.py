@@ -38,7 +38,6 @@ def get_random_background(style: str, filename: str | None = None) -> str:
     valid_exts = (".jpg", ".jpeg", ".png", ".webp")
 
     style_files = []
-    generic_files = []
 
     for file in os.listdir(background_folder):
         if not file.lower().endswith(valid_exts):
@@ -47,32 +46,20 @@ def get_random_background(style: str, filename: str | None = None) -> str:
         full_path = os.path.join(background_folder, file)
         lower_file = file.lower()
 
+        # 🚫 IGNORA default (pra não bloquear IA)
+        if lower_file.startswith("default"):
+            continue
+
+        # 🎯 pega só imagens do estilo
         if style in lower_file:
             style_files.append(full_path)
-        else:
-            generic_files.append(full_path)
 
+    # ✅ usa imagem específica do estilo
     if style_files:
         chosen = random.choice(style_files)
         print(f"Background local por estilo encontrado: {chosen}")
         return chosen
 
-    default_candidates = [
-        os.path.join(background_folder, "default.jpg"),
-        os.path.join(background_folder, "default.jpeg"),
-        os.path.join(background_folder, "default.png"),
-        os.path.join(background_folder, "default.webp"),
-    ]
-
-    for candidate in default_candidates:
-        if os.path.exists(candidate):
-            print(f"Usando background default local: {candidate}")
-            return candidate
-
-    if generic_files:
-        chosen = random.choice(generic_files)
-        print(f"Usando background genérico local: {chosen}")
-        return chosen
-
-    print("Nenhum background local válido encontrado.")
+    # 🤖 não encontrou → IA entra em ação
+    print("Nenhum background por estilo encontrado. Usando IA.")
     return "__AUTO__"
