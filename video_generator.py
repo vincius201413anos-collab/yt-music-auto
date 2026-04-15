@@ -160,7 +160,7 @@ def build_overlay_chain(style, use_fire, particles_exists, glitch_exists):
     if use_fire:
         chains.append(
             "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.24[fire];"
-            "[base][fire]overlay=0:0:format=auto[v1]"
+            "[base][fire]overlay=0:0:format=auto[v1];"
         )
         current = "v1"
     else:
@@ -170,7 +170,7 @@ def build_overlay_chain(style, use_fire, particles_exists, glitch_exists):
         index = 2 if use_fire else 1
         chains.append(
             f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.16[particles];"
-            f"[{current}][particles]overlay=0:0:format=auto[v2]"
+            f"[{current}][particles]overlay=0:0:format=auto[v2];"
         )
         current = "v2"
 
@@ -178,12 +178,12 @@ def build_overlay_chain(style, use_fire, particles_exists, glitch_exists):
         index = 3 if use_fire and particles_exists else 2 if (use_fire or particles_exists) else 1
         chains.append(
             f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.10[glitch];"
-            f"[{current}][glitch]overlay=0:0:format=auto[v]"
+            f"[{current}][glitch]overlay=0:0:format=auto[v];"
         )
         current = "v"
     else:
         if current != "v":
-            chains.append(f"[{current}]copy[v]")
+            chains.append(f"[{current}]null[v]")
 
     return "".join(chains)
 
@@ -218,7 +218,7 @@ def create_short(audio_path, background_path, output_name, style):
             "-shortest",
             "-r", str(profile["fps"]),
             "-c:v", "libx264",
-            "-preset", "medium",
+            "-preset", "slow",
             "-crf", "16",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
@@ -263,7 +263,7 @@ def create_short(audio_path, background_path, output_name, style):
             "-map", f"{audio_input_index}:a",
             "-shortest",
             "-c:v", "libx264",
-            "-preset", "medium",
+            "-preset", "slow",
             "-crf", "16",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
@@ -306,7 +306,7 @@ def create_short(audio_path, background_path, output_name, style):
             "-map", f"{audio_input_index}:a",
             "-shortest",
             "-c:v", "libx264",
-            "-preset", "medium",
+            "-preset", "slow",
             "-crf", "16",
             "-pix_fmt", "yuv420p",
             "-c:a", "aac",
