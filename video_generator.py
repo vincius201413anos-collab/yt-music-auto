@@ -164,7 +164,7 @@ def create_short(audio_path, background_path, output_name, style):
 
     ext = Path(background_path).suffix.lower()
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp")
-    is_video = ext in (".mp4", ".mov", ".mkv", ".webm")
+    is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
     if background_path == FALLBACK_BACKGROUND:
         command = [
@@ -238,15 +238,10 @@ def create_short(audio_path, background_path, output_name, style):
             "-preset", "slow",
             "-crf", "16",
             "-pix_fmt", "yuv420p",
-            "-an",
             "-c:a", "aac",
             "-b:a", "192k",
             output_path
         ]
-
-        # remove o "-an" porque com map de áudio da música ele bloquearia o áudio final
-        command.remove("-an")
-
         subprocess.run(command, check=True)
         return output_path
 
