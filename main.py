@@ -2,6 +2,7 @@ import os
 import json
 import re
 import shutil
+import random
 from pathlib import Path
 
 from drive_service import (
@@ -51,6 +52,80 @@ def clean_title(filename):
     name = re.sub(r"[_\-]+", " ", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name.title()
+
+
+def generate_viral_title(base_title, style):
+    hooks = [
+        "Wait For This 😳",
+        "This Drop Hits HARD 🔥",
+        "You Didn’t Expect THIS 😈",
+        "Don’t Skip This 😳",
+        "This Part Goes CRAZY 🤯",
+        "This Feels Illegal 😈",
+        "You Feel This One 🎧",
+        "This Sound Is Different 😮‍🔥",
+        "This Is Addictive 🔁",
+        "Loop This 🔥",
+        "This Keeps Replaying 🔁",
+        "You’ll Replay This 😳",
+        "This Gets Better Every Loop 🔁",
+        "This Part Is Too Clean 😮‍🔥",
+        "This Is Dangerous 😈",
+        "This Hits Too Hard 🔥",
+        "This One Is Unreal 🤯",
+        "This Part Is Wild 🔥",
+        "This Is On Repeat 🔁",
+        "This Hook Is Different 😳",
+    ]
+
+    intensifiers = [
+        "INSANE",
+        "CRAZY",
+        "UNREAL",
+        "ILLEGAL",
+        "ADDICTIVE",
+        "TOO HARD",
+        "NEXT LEVEL",
+        "DIFFERENT",
+        "TOO CLEAN",
+        "WILD",
+    ]
+
+    style_words = {
+        "rock": ["Rock", "Heavy Rock", "Dark Rock"],
+        "metal": ["Metal", "Brutal Metal", "Heavy Metal"],
+        "phonk": ["Phonk", "Drift", "Dark Phonk"],
+        "trap": ["Trap", "Dark Trap", "Hard Trap"],
+        "indie": ["Indie", "Sad Indie", "Emotional"],
+        "lofi": ["Lofi", "Chill", "Sad"],
+        "electronic": ["EDM", "Electronic", "Cyber"],
+        "cinematic": ["Cinematic", "Epic", "Soundtrack"],
+        "pop": ["Pop", "Dreamy Pop", "Modern Pop"],
+        "dark": ["Dark", "Shadowy", "Sinister"],
+        "funk": ["Funk", "Brazilian Funk", "Party"],
+        "default": ["Music"],
+    }
+
+    hook = random.choice(hooks)
+    style_word = random.choice(style_words.get(style, style_words["default"]))
+    power = random.choice(intensifiers)
+
+    formats = [
+        f"{hook} | {base_title}",
+        f"{base_title} — {hook}",
+        f"{hook} ({style_word})",
+        f"{base_title} | {style_word} 🔥",
+        f"{hook} — {base_title}",
+        f"{base_title} | This Is {power}",
+        f"{hook} 🔥 {base_title}",
+        f"{base_title} | {power} Sound",
+        f"{hook} 😳 {base_title}",
+        f"{base_title} — This Is {power}",
+        f"{base_title} | {style_word} That Hits Hard",
+        f"{base_title} | You’ll Replay This 🔁",
+    ]
+
+    return random.choice(formats)
 
 
 def sync_tracks(state, drive_files):
@@ -125,74 +200,7 @@ def get_next_track(state):
 def build_video_metadata(filename, short_number, style, styles):
     base_title = clean_title(filename)
 
-    secondary = styles[1] if len(styles) > 1 else None
-    hybrid = f"{style} x {secondary}" if secondary else style
-
-    title_variants = {
-        "metal": [
-            f"{base_title} | Infernal {hybrid.title()} Energy 🔥",
-            f"{base_title} | Heavy {hybrid.title()} Demon Vibes",
-            f"{base_title} | Brutal {hybrid.title()} Music Edit",
-        ],
-        "rock": [
-            f"{base_title} | {hybrid.title()} Music That Hits Hard 🔥",
-            f"{base_title} | Dark {hybrid.title()} Short Edit",
-            f"{base_title} | This {hybrid.title()} Vibe Is Different",
-        ],
-        "phonk": [
-            f"{base_title} | {hybrid.title()} Night Drive Edit 🚗",
-            f"{base_title} | Dark {hybrid.title()} Vibes",
-            f"{base_title} | Aggressive {hybrid.title()} Short",
-        ],
-        "trap": [
-            f"{base_title} | {hybrid.title()} Luxury Dark Edit",
-            f"{base_title} | Hard {hybrid.title()} Vibes",
-            f"{base_title} | {hybrid.title()} Energy Short Edit",
-        ],
-        "indie": [
-            f"{base_title} | Emotional {hybrid.title()} Atmosphere",
-            f"{base_title} | Dreamy {hybrid.title()} Short Edit",
-            f"{base_title} | {hybrid.title()} Mood Music",
-        ],
-        "lofi": [
-            f"{base_title} | Calm {hybrid.title()} Vibes",
-            f"{base_title} | Late Night {hybrid.title()} Mood",
-            f"{base_title} | Soft {hybrid.title()} Music Edit",
-        ],
-        "electronic": [
-            f"{base_title} | Futuristic {hybrid.title()} Energy",
-            f"{base_title} | Neon {hybrid.title()} Music",
-            f"{base_title} | Cyber {hybrid.title()} Short Edit",
-        ],
-        "cinematic": [
-            f"{base_title} | Epic {hybrid.title()} Atmosphere",
-            f"{base_title} | Cinematic {hybrid.title()} Music",
-            f"{base_title} | Dark {hybrid.title()} Soundtrack",
-        ],
-        "pop": [
-            f"{base_title} | Stylish {hybrid.title()} Music",
-            f"{base_title} | Dreamy {hybrid.title()} Short",
-            f"{base_title} | Modern {hybrid.title()} Vibes",
-        ],
-        "dark": [
-            f"{base_title} | Dark {hybrid.title()} Atmosphere",
-            f"{base_title} | Sinister {hybrid.title()} Mood",
-            f"{base_title} | Shadowy {hybrid.title()} Edit",
-        ],
-        "funk": [
-            f"{base_title} | Energetic {hybrid.title()} Vibes",
-            f"{base_title} | Party {hybrid.title()} Music",
-            f"{base_title} | Loud {hybrid.title()} Short",
-        ],
-        "default": [
-            f"{base_title} | {hybrid.title()} Music Short Edit",
-            f"{base_title} | {hybrid.title()} Vibes",
-            f"{base_title} | Cinematic {hybrid.title()} Edit",
-        ],
-    }
-
-    variants = title_variants.get(style, title_variants["default"])
-    title = variants[(short_number - 1) % len(variants)]
+    title = generate_viral_title(base_title, style)
 
     description = (
         f"{base_title}\n\n"
@@ -211,6 +219,8 @@ def build_video_metadata(filename, short_number, style, styles):
         "shorts",
         "youtube shorts",
         "viral music",
+        "loop music",
+        "replay",
         style,
         f"{style} music",
     ]
@@ -326,7 +336,6 @@ def main():
     response = upload_video(video_path, title, desc, tags, "public")
     print(f"Upload concluído. Video ID: {response.get('id')}")
 
-    # BACKUP SEGURO E NÃO CRÍTICO
     try:
         print("Tentando salvar backup no Drive...")
         backup_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
