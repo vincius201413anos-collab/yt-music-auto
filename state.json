@@ -36,32 +36,11 @@
       "is_new": false
     },
     {
-      "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
-      "name": "lanazinha [indie].wav",
-      "shorts_done": 0,
-      "done": false,
-      "is_new": true
-    },
-    {
-      "id": "1E3EncLj2OvQQnMWYV8af9BIVtsEW3xtg",
-      "name": "lanazinha 3 [indie].wav",
-      "shorts_done": 0,
-      "done": false,
-      "is_new": true
-    },
-    {
       "id": "1d_78GnR_8ol3rUwsH0dbZSYMGrT4f5o4",
       "name": "Jinxed Happiness [rock].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
-    },
-    {
-      "id": "1dEA1Py7H_O7LCvCFl6HS7eCdvI1J6lt2",
-      "name": "heavy bass drop in the first 5 seconds (1) [trap].wav",
-      "shorts_done": 0,
-      "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
@@ -183,8 +162,29 @@
       "is_new": true
     },
     {
+      "id": "1dEA1Py7H_O7LCvCFl6HS7eCdvI1J6lt2",
+      "name": "Lose control [trap].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
       "id": "1KWJgtejl-WiA8Fj9PAX-h9_3x27Wfk7O",
-      "name": "something shallow fuck kl.wav",
+      "name": "something shallow fuck [music].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1E3EncLj2OvQQnMWYV8af9BIVtsEW3xtg",
+      "name": "sorry motel [pop] [indie].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
+      "name": "sorry motel [pop] [indie].wav",
       "shorts_done": 0,
       "done": false,
       "is_new": true
