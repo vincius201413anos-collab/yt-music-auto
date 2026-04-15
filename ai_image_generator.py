@@ -1,35 +1,149 @@
 import os
+import re
 import tempfile
 import requests
 import time
 import random
+from pathlib import Path
 
 
-def _enrich_prompt(prompt: str) -> str:
-    variations = [
-        "unique composition",
-        "different camera angle",
-        "alternate framing",
-        "dynamic perspective",
-        "cinematic depth",
-        "dramatic lighting",
-        "center-focused composition",
-        "fresh visual arrangement",
-        "distinct scene layout",
-        "new artistic framing",
+def _clean_title(filename: str) -> str:
+    name = Path(filename).stem
+    name = re.sub(r"\[[^\]]+\]", "", name)
+    name = re.sub(r"[_\-]+", " ", name)
+    name = re.sub(r"\s+", " ", name).strip()
+    return name
+
+
+def build_ai_prompt(style: str, filename: str, styles: list[str] | None = None) -> str:
+    base_title = _clean_title(filename)
+    styles = styles or [style]
+
+    camera_angles = [
+        "low angle cinematic shot",
+        "close-up dramatic framing",
+        "wide cinematic composition",
+        "off-center artistic framing",
+        "top view perspective",
     ]
 
-    booster = random.choice(variations)
+    lighting_styles = [
+        "harsh red lighting",
+        "neon glow lighting",
+        "soft cinematic shadows",
+        "high contrast dramatic light",
+        "dark ambient lighting",
+    ]
+
+    cinematic_boosters = [
+        "album cover quality",
+        "ultra detailed",
+        "emotionally intense",
+        "professional photography",
+        "dramatic atmosphere",
+        "visually striking composition",
+        "rich depth and contrast",
+        "not generic",
+    ]
+
+    angle = random.choice(camera_angles)
+    lighting = random.choice(lighting_styles)
+    booster = random.choice(cinematic_boosters)
+
+    hybrid_extra = ""
+    if len(styles) > 1:
+        hybrid_extra = f"hybrid atmosphere mixing {' and '.join(styles)}, "
+
+    prompt_map = {
+        "metal": (
+            f"{base_title}, dark demonic ritual scene, massive horned demon emerging from shadows, "
+            f"gothic cathedral destroyed, burning altar, fire, ash, smoke, cursed atmosphere, "
+            f"terrifying red and black palette, infernal energy, {hybrid_extra}"
+            f"{angle}, {lighting}, {booster}"
+        ),
+        "rock": (
+            f"{base_title}, dark underground rock concert, silhouette guitarist in red light, "
+            f"heavy smoke, fire sparks, rebellious atmosphere, dramatic stage energy, "
+            f"grunge cinematic mood, {hybrid_extra}"
+            f"{angle}, {lighting}, {booster}"
+        ),
+        "phonk": (
+            f"{base_title}, japanese street racing at night, neon lights reflecting on wet asphalt, "
+            f"drift car sliding with smoke, cyberpunk atmosphere, purple and blue tones, "
+            f"aggressive underground energy, {hybrid_extra}"
+            f"{angle}, neon glow lighting, {booster}"
+        ),
+        "trap": (
+            f"{base_title}, dark luxury trap aesthetic, expensive cars, chains, urban night scene, "
+            f"mysterious silhouette, rich villain vibe, deep contrast, stylish shadows, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+        "lofi": (
+            f"{base_title}, cozy melancholic room at night, rain on window, warm lamp light, "
+            f"nostalgic calm atmosphere, soft shadows, peaceful but sad mood, "
+            f"{hybrid_extra}{angle}, soft cinematic lighting, {booster}"
+        ),
+        "indie": (
+            f"{base_title}, dreamy nostalgic indie scene, empty street at dusk, emotional atmosphere, "
+            f"soft film look, bittersweet memory-like mood, artistic storytelling composition, "
+            f"{hybrid_extra}{angle}, soft shadows, {booster}"
+        ),
+        "electronic": (
+            f"{base_title}, futuristic cyber world, glowing neon structures, digital energy, "
+            f"sci-fi atmosphere, immersive electronic mood, vivid cinematic lighting, "
+            f"{hybrid_extra}{angle}, neon glow lighting, {booster}"
+        ),
+        "cinematic": (
+            f"{base_title}, epic cinematic landscape, dramatic sky, emotional large-scale atmosphere, "
+            f"movie poster feeling, powerful scene, volumetric lighting, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+        "funk": (
+            f"{base_title}, brazilian funk nightlife, urban favela-inspired scene, vibrant party lights, "
+            f"bold energy, loud visual style, dynamic movement, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+        "dark": (
+            f"{base_title}, shadowy mysterious figure, sinister red and black tones, fog, dark cinematic mood, "
+            f"ominous atmosphere, horror-inspired aesthetic, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+        "pop": (
+            f"{base_title}, glossy modern pop visual, vibrant lights, stylish fashion-forward scene, "
+            f"dreamy elegant atmosphere, colorful but cinematic, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+        "default": (
+            f"{base_title}, cinematic aesthetic scene, strong atmosphere, dramatic lighting, "
+            f"emotional composition, visually striking image, "
+            f"{hybrid_extra}{angle}, {lighting}, {booster}"
+        ),
+    }
+
+    core_prompt = prompt_map.get(style, prompt_map["default"])
 
     return (
-        f"{prompt}, {booster}, "
-        "high quality, ultra detailed, no text, no watermark, no logo"
+        f"{core_prompt}, "
+        "vertical 9:16, no text, no watermark, no logo, "
+        "unique composition, different angle, not repetitive, masterpiece"
     )
 
 
-# ══════════════════════════════════════════════
-# OPÇÃO 1 — Replicate
-# ══════════════════════════════════════════════
+def _enrich_prompt(prompt: str) -> str:
+    micro_variations = [
+        "high quality details",
+        "cinematic depth",
+        "dynamic perspective",
+        "rich texture",
+        "clean subject focus",
+        "dramatic mood",
+        "enhanced contrast",
+        "refined visual composition",
+    ]
+
+    return f"{prompt}, {random.choice(micro_variations)}"
+
+
 def _generate_via_replicate(prompt: str, output_path: str) -> bool:
     token = os.environ.get("REPLICATE_API_TOKEN")
     if not token:
@@ -123,9 +237,6 @@ def _generate_via_replicate(prompt: str, output_path: str) -> bool:
     return False
 
 
-# ══════════════════════════════════════════════
-# OPÇÃO 2 — Hugging Face
-# ══════════════════════════════════════════════
 def _generate_via_huggingface(prompt: str, output_path: str) -> bool:
     token = os.environ.get("HF_TOKEN")
     if not token:
@@ -165,9 +276,6 @@ def _generate_via_huggingface(prompt: str, output_path: str) -> bool:
     return False
 
 
-# ══════════════════════════════════════════════
-# FUNÇÃO PRINCIPAL
-# ══════════════════════════════════════════════
 def generate_image(prompt: str, output_path: str = None) -> str | None:
     """
     Gera imagem com IA.
@@ -179,7 +287,7 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
         os.close(fd)
         output_path = temp_path
 
-    print(f"[IA] Gerando imagem para: {prompt[:80]}...")
+    print(f"[IA] Gerando imagem para: {prompt[:120]}...")
 
     if _generate_via_replicate(prompt, output_path):
         return output_path
