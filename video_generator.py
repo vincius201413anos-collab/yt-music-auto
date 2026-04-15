@@ -154,40 +154,6 @@ def build_base_video_filter(profile):
     return ",".join(filters)
 
 
-def build_overlay_chain(style, use_fire, particles_exists, glitch_exists):
-    chains = []
-
-    if use_fire:
-        chains.append(
-            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.24[fire];"
-            "[base][fire]overlay=0:0:format=auto[v1];"
-        )
-        current = "v1"
-    else:
-        current = "base"
-
-    if particles_exists:
-        index = 2 if use_fire else 1
-        chains.append(
-            f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.16[particles];"
-            f"[{current}][particles]overlay=0:0:format=auto[v2];"
-        )
-        current = "v2"
-
-    if glitch_exists:
-        index = 3 if use_fire and particles_exists else 2 if (use_fire or particles_exists) else 1
-        chains.append(
-            f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.10[glitch];"
-            f"[{current}][glitch]overlay=0:0:format=auto[v];"
-        )
-        current = "v"
-    else:
-        if current != "v":
-            chains.append(f"[{current}]null[v]")
-
-    return "".join(chains)
-
-
 def create_short(audio_path, background_path, output_name, style):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     output_path = os.path.join(OUTPUT_FOLDER, output_name)
@@ -196,16 +162,9 @@ def create_short(audio_path, background_path, output_name, style):
     audio_duration = get_media_duration(audio_path)
     start_time, short_duration = pick_short_window(audio_duration)
 
-    fire_overlay = "assets/overlays/fire.mp4"
-    particles_overlay = "assets/overlays/particles.mp4"
-    glitch_overlay = "assets/overlays/glitch.mp4"
-
-    use_fire = style in ("rock", "metal") and os.path.exists(fire_overlay)
-    use_particles = os.path.exists(particles_overlay)
-    use_glitch = style in ("phonk", "electronic", "trap") and os.path.exists(glitch_overlay)
-
     ext = Path(background_path).suffix.lower()
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp")
+    is_video = ext in (".mp4", ".mov", ".mkv", ".webm")
 
     if background_path == FALLBACK_BACKGROUND:
         command = [
@@ -231,36 +190,14 @@ def create_short(audio_path, background_path, output_name, style):
     if is_image:
         base_filter = build_base_image_filter(profile)
 
-        inputs = [
+        command = [
             "ffmpeg", "-y",
             "-loop", "1",
-            "-i", background_path
-        ]
-
-        if use_fire:
-            inputs += ["-stream_loop", "-1", "-i", fire_overlay]
-        if use_particles:
-            inputs += ["-stream_loop", "-1", "-i", particles_overlay]
-        if use_glitch:
-            inputs += ["-stream_loop", "-1", "-i", glitch_overlay]
-
-        audio_input_index = 1 + int(use_fire) + int(use_particles) + int(use_glitch)
-
-        inputs += [
+            "-i", background_path,
             "-ss", str(start_time),
             "-i", audio_path,
-            "-t", str(short_duration)
-        ]
-
-        filter_complex = (
-            f"[0:v]{base_filter}[base];" +
-            build_overlay_chain(style, use_fire, use_particles, use_glitch)
-        )
-
-        command = inputs + [
-            "-filter_complex", filter_complex,
-            "-map", "[v]",
-            "-map", f"{audio_input_index}:a",
+            "-t", str(short_duration),
+            "-vf", base_filter,
             "-shortest",
             "-c:v", "libx264",
             "-preset", "slow",
@@ -270,40 +207,27 @@ def create_short(audio_path, background_path, output_name, style):
             "-b:a", "192k",
             output_path
         ]
+        subprocess.run(command, check=True)
+        return output_path
 
-    else:
+    if is_video:
+        video_duration = get_media_duration(background_path)
+
+        if video_duration <= short_duration:
+            bg_start_time = 0
+        else:
+            bg_start_time = random.uniform(0, max(0, video_duration - short_duration))
+
         base_filter = build_base_video_filter(profile)
 
-        inputs = [
+        command = [
             "ffmpeg", "-y",
-            "-stream_loop", "-1",
-            "-i", background_path
-        ]
-
-        if use_fire:
-            inputs += ["-stream_loop", "-1", "-i", fire_overlay]
-        if use_particles:
-            inputs += ["-stream_loop", "-1", "-i", particles_overlay]
-        if use_glitch:
-            inputs += ["-stream_loop", "-1", "-i", glitch_overlay]
-
-        audio_input_index = 1 + int(use_fire) + int(use_particles) + int(use_glitch)
-
-        inputs += [
+            "-ss", str(bg_start_time),
+            "-i", background_path,
             "-ss", str(start_time),
             "-i", audio_path,
-            "-t", str(short_duration)
-        ]
-
-        filter_complex = (
-            f"[0:v]{base_filter}[base];" +
-            build_overlay_chain(style, use_fire, use_particles, use_glitch)
-        )
-
-        command = inputs + [
-            "-filter_complex", filter_complex,
-            "-map", "[v]",
-            "-map", f"{audio_input_index}:a",
+            "-t", str(short_duration),
+            "-vf", base_filter,
             "-shortest",
             "-c:v", "libx264",
             "-preset", "slow",
@@ -313,6 +237,25 @@ def create_short(audio_path, background_path, output_name, style):
             "-b:a", "192k",
             output_path
         ]
+        subprocess.run(command, check=True)
+        return output_path
 
+    command = [
+        "ffmpeg", "-y",
+        "-f", "lavfi",
+        "-i", f"color=c=black:s=1080x1920:d={short_duration}",
+        "-ss", str(start_time),
+        "-i", audio_path,
+        "-t", str(short_duration),
+        "-shortest",
+        "-r", str(profile["fps"]),
+        "-c:v", "libx264",
+        "-preset", "slow",
+        "-crf", "16",
+        "-pix_fmt", "yuv420p",
+        "-c:a", "aac",
+        "-b:a", "192k",
+        output_path
+    ]
     subprocess.run(command, check=True)
     return output_path
