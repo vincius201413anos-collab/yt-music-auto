@@ -24,10 +24,21 @@ DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
 def load_state():
     if not STATE_FILE.exists():
-        return {"tracks": []}
+        return {
+            "tracks": [],
+            "queue_index": 0
+        }
 
     with STATE_FILE.open("r", encoding="utf-8") as f:
-        return json.load(f)
+        state = json.load(f)
+
+    if "tracks" not in state:
+        state["tracks"] = []
+
+    if "queue_index" not in state:
+        state["queue_index"] = 0
+
+    return state
 
 
 def save_state(state):
@@ -75,12 +86,40 @@ def sync_tracks(state, drive_files):
             if "id" not in existing_by_name[file_name]:
                 existing_by_name[file_name]["id"] = file["id"]
 
+    # remove músicas que não existem mais no drive
+    drive_names = {file["name"] for file in drive_files}
+    state["tracks"] = [track for track in state["tracks"] if track["name"] in drive_names]
+
+    if state["tracks"]:
+        state["queue_index"] = state["queue_index"] % len(state["tracks"])
+    else:
+        state["queue_index"] = 0
+
 
 def get_next_track(state):
-    for track in state["tracks"]:
+    tracks = state.get("tracks", [])
+    if not tracks:
+        return None, None
+
+    start_index = state.get("queue_index", 0) % len(tracks)
+    current_index = start_index
+
+    for _ in range(len(tracks)):
+        track = tracks[current_index]
+
+        # loop infinito: se terminou 3 shorts, zera e reentra na fila
+        if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
+            track["shorts_done"] = 0
+            track["done"] = False
+
         if not track.get("done", False):
-            return track
-    return None
+            next_queue_index = (current_index + 1) % len(tracks)
+            state["queue_index"] = next_queue_index
+            return track, current_index
+
+        current_index = (current_index + 1) % len(tracks)
+
+    return None, None
 
 
 def build_video_metadata(filename, short_number, style):
@@ -107,72 +146,73 @@ def build_ai_prompt(style, filename, variant_index=1):
     base_title = clean_title(filename)
 
     variant_map = {
-        1: "cinematic wide composition, dramatic center focus, unique scene variation one",
-        2: "different angle, alternate composition, unique scene variation two",
-        3: "new framing, alternate visual concept, unique scene variation three",
+        1: "main version, powerful central composition, iconic scene, highly cinematic",
+        2: "alternate angle, fresh framing, second visual variation, same theme",
+        3: "different composition, unique perspective, third visual variation, same theme",
     }
 
     variant_text = variant_map.get(variant_index, f"unique visual variation {variant_index}")
 
     prompts = {
-        "phonk": (
-            f"{base_title}, dark street racing, neon japanese city, drift cars, smoke, night, "
-            f"cyberpunk, aggressive atmosphere, purple lighting, cinematic, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
-        ),
-        "trap": (
-            f"{base_title}, luxury dark aesthetic, money, sports cars, urban night, neon lights, "
-            f"cinematic shadows, aggressive trap mood, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
-        ),
-        "lofi": (
-            f"{base_title}, cozy anime room, rainy window, warm lights, calm mood, soft colors, "
-            f"lofi aesthetic, cinematic, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
-        ),
-        "dark": (
-            f"{base_title}, dark cinematic atmosphere, fog, moody lighting, dramatic shadows, "
-            f"intense mood, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
-        ),
-        "electronic": (
-            f"{base_title}, futuristic neon lights, cyber world, glowing patterns, electronic vibe, "
-            f"digital energy, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
-        ),
         "metal": (
-            f"{base_title}, heavy metal atmosphere, red lights, smoke, chaos, fire mood, "
-            f"aggressive energy, cinematic, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, dark infernal ritual, demonic creatures, horns, fire, ash, smoke, "
+            f"apocalyptic gothic cathedral, cursed symbols, hellish atmosphere, red and black palette, "
+            f"terrifying but cinematic, ultra detailed, masterpiece, dramatic lighting, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo, not generic, emotionally intense"
         ),
         "rock": (
-            f"{base_title}, rock concert stage, dramatic lights, smoke, guitar energy, "
-            f"cinematic performance vibe, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, dark rock concert from hell, demonic stage energy, burning amplifiers, fire sparks, "
+            f"smoke, red lights, black leather, rebellious infernal vibe, epic dramatic composition, "
+            f"cinematic, ultra detailed, vertical 9:16, {variant_text}, no text, no watermark, no logo, "
+            f"powerful emotional impact"
+        ),
+        "phonk": (
+            f"{base_title}, dark street racing, japanese neon city at night, drift cars, tire smoke, "
+            f"aggressive underground vibe, purple and crimson lights, cyberpunk aesthetic, intense composition, "
+            f"ultra detailed, vertical 9:16, {variant_text}, no text, no watermark, no logo"
+        ),
+        "trap": (
+            f"{base_title}, luxury dark trap aesthetic, money, chains, sports cars, urban night, "
+            f"moody shadows, aggressive rich villain vibe, cinematic composition, bold contrast, "
+            f"ultra detailed, vertical 9:16, {variant_text}, no text, no watermark, no logo"
+        ),
+        "lofi": (
+            f"{base_title}, cozy melancholic anime room, warm lamp light, rainy window, soft atmosphere, "
+            f"nostalgic emotional vibe, peaceful but sad, dreamy composition, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
+        ),
+        "dark": (
+            f"{base_title}, sinister dark cinematic atmosphere, shadowy figure, smoke, fog, moody red and black lighting, "
+            f"ominous tone, gothic visual, ultra detailed, vertical 9:16, {variant_text}, no text, no watermark, no logo"
+        ),
+        "electronic": (
+            f"{base_title}, futuristic cyber world, glowing lights, digital energy, neon geometry, "
+            f"electronic rave atmosphere, immersive sci-fi composition, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
         ),
         "indie": (
-            f"{base_title}, dreamy nostalgic aesthetic, soft lights, emotional atmosphere, "
-            f"film look, artistic composition, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, dreamy nostalgic indie aesthetic, emotional youth atmosphere, dusk lighting, "
+            f"soft film look, artistic composition, bittersweet mood, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
         ),
         "pop": (
-            f"{base_title}, colorful lights, glossy modern pop aesthetic, vibrant and stylish mood, "
-            f"clean cinematic visual, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, glossy modern pop visual, vibrant lights, fashion-forward composition, stylish and dramatic, "
+            f"clean and cinematic, colorful but elegant, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
         ),
         "cinematic": (
-            f"{base_title}, epic cinematic scene, dramatic lighting, movie look, emotional atmosphere, "
-            f"grand composition, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, epic cinematic masterpiece, dramatic scene, emotional grand scale atmosphere, "
+            f"movie poster quality, intense lighting, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
         ),
         "funk": (
-            f"{base_title}, brazilian funk visual, nightlife, party lights, urban energy, bold contrast, "
-            f"cinematic mood, ultra detailed, vertical 9:16, "
-            f"{variant_text}, do not repeat previous composition"
+            f"{base_title}, brazilian funk nightlife, urban energy, bold lights, favela-inspired atmosphere, "
+            f"party mood, loud visual style, strong contrast, cinematic, ultra detailed, vertical 9:16, "
+            f"{variant_text}, no text, no watermark, no logo"
         ),
         "default": (
-            f"{base_title}, dark cinematic visual, neon atmosphere, moody lights, stylish music background, "
-            f"ultra detailed, vertical 9:16, {variant_text}, do not repeat previous composition"
+            f"{base_title}, dark cinematic visual, emotionally intense atmosphere, stylish dramatic lighting, "
+            f"striking composition, ultra detailed, vertical 9:16, {variant_text}, no text, no watermark, no logo"
         )
     }
 
@@ -210,7 +250,6 @@ def resolve_background(style, filename, short_number):
         f"{safe_name}_{style}_short_{short_number}_ai_background.png"
     )
 
-    # Força nova geração para não repetir imagem antiga do mesmo short
     if os.path.exists(cached_path):
         os.remove(cached_path)
         print(f"Cache antigo removido: {cached_path}")
@@ -269,7 +308,7 @@ def main():
     drive_files = scan_drive_folder()
     sync_tracks(state, drive_files)
 
-    track = get_next_track(state)
+    track, track_index = get_next_track(state)
 
     if not track:
         print("Nenhum áudio pendente")
@@ -286,13 +325,6 @@ def main():
 
     file_id = track["id"]
     shorts_done = track.get("shorts_done", 0)
-
-    if shorts_done >= SHORTS_PER_TRACK:
-        track["done"] = True
-        save_state(state)
-        print(f"Áudio {name} já estava concluído")
-        return
-
     short_number = shorts_done + 1
 
     print(f"Processando: {name}")
@@ -333,7 +365,7 @@ def main():
 
     if track["shorts_done"] >= SHORTS_PER_TRACK:
         track["done"] = True
-        print(f"Áudio finalizado: {name}")
+        print(f"Áudio completou 3 shorts nesta volta: {name}")
 
     save_state(state)
     print("Execução finalizada")
