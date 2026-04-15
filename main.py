@@ -88,9 +88,17 @@ def build_video_metadata(filename, short_number, style):
     description = (
         f"{base_title}\n\n"
         f"Style: {style}\n"
-        f"#music #shorts #youtube #trap #phonk #lofi #electronic"
+        f"#music #shorts #youtube #{style} #viral #edit"
     )
-    tags = ["music", "shorts", "youtube", style, base_title.lower().replace(" ", "")]
+    tags = [
+        "music",
+        "shorts",
+        "youtube",
+        style,
+        base_title.lower().replace(" ", ""),
+        "viral",
+        "edit"
+    ]
     return title, description, tags
 
 
@@ -98,17 +106,54 @@ def build_ai_prompt(style, filename):
     base_title = clean_title(filename)
 
     prompts = {
-        "phonk": f"{base_title}, dark neon city at night, cyberpunk, street lights, rain, cinematic, phonk vibe, vertical 9:16, ultra detailed, high contrast",
-        "trap": f"{base_title}, luxury dark aesthetic, neon lights, urban night, aggressive trap mood, cinematic, vertical 9:16, ultra detailed",
-        "lofi": f"{base_title}, cozy anime room, rainy window, warm lights, chill lo-fi mood, cinematic, vertical 9:16, detailed background",
-        "dark": f"{base_title}, dark cinematic atmosphere, moody lighting, fog, dramatic shadows, vertical 9:16, ultra detailed",
-        "electronic": f"{base_title}, futuristic abstract lights, electronic music vibe, glowing patterns, cyber aesthetic, vertical 9:16, ultra detailed",
-        "metal": f"{base_title}, intense dark metal atmosphere, red lights, smoke, chaotic energy, cinematic, vertical 9:16, ultra detailed",
-        "rock": f"{base_title}, dark stage lights, smoke, dramatic rock atmosphere, cinematic, vertical 9:16, ultra detailed",
-        "indie": f"{base_title}, dreamy indie aesthetic, nostalgic lights, soft cinematic mood, vertical 9:16, ultra detailed",
-        "pop": f"{base_title}, colorful dreamy lights, modern pop aesthetic, cinematic, glossy style, vertical 9:16, ultra detailed",
-        "cinematic": f"{base_title}, epic cinematic atmosphere, orchestral mood, dramatic lighting, grand composition, vertical 9:16, ultra detailed",
-        "default": f"{base_title}, cinematic music visual, neon atmosphere, moody lights, vertical 9:16, ultra detailed"
+        "phonk": (
+            f"{base_title}, dark street racing, neon japanese city, drift cars, smoke, night, "
+            f"cyberpunk, aggressive atmosphere, purple lighting, cinematic, ultra detailed, vertical 9:16"
+        ),
+        "trap": (
+            f"{base_title}, luxury dark aesthetic, money, sports cars, urban night, neon lights, "
+            f"cinematic shadows, aggressive trap mood, ultra detailed, vertical 9:16"
+        ),
+        "lofi": (
+            f"{base_title}, cozy anime room, rainy window, warm lights, calm mood, soft colors, "
+            f"lofi aesthetic, cinematic, ultra detailed, vertical 9:16"
+        ),
+        "dark": (
+            f"{base_title}, dark cinematic atmosphere, fog, moody lighting, dramatic shadows, "
+            f"intense mood, ultra detailed, vertical 9:16"
+        ),
+        "electronic": (
+            f"{base_title}, futuristic neon lights, cyber world, glowing patterns, electronic vibe, "
+            f"digital energy, ultra detailed, vertical 9:16"
+        ),
+        "metal": (
+            f"{base_title}, heavy metal atmosphere, red lights, smoke, chaos, fire mood, "
+            f"aggressive energy, cinematic, ultra detailed, vertical 9:16"
+        ),
+        "rock": (
+            f"{base_title}, rock concert stage, dramatic lights, smoke, guitar energy, "
+            f"cinematic performance vibe, ultra detailed, vertical 9:16"
+        ),
+        "indie": (
+            f"{base_title}, dreamy nostalgic aesthetic, soft lights, emotional atmosphere, "
+            f"film look, artistic composition, ultra detailed, vertical 9:16"
+        ),
+        "pop": (
+            f"{base_title}, colorful lights, glossy modern pop aesthetic, vibrant and stylish mood, "
+            f"clean cinematic visual, ultra detailed, vertical 9:16"
+        ),
+        "cinematic": (
+            f"{base_title}, epic cinematic scene, dramatic lighting, movie look, emotional atmosphere, "
+            f"grand composition, ultra detailed, vertical 9:16"
+        ),
+        "funk": (
+            f"{base_title}, brazilian funk visual, nightlife, party lights, urban energy, bold contrast, "
+            f"cinematic mood, ultra detailed, vertical 9:16"
+        ),
+        "default": (
+            f"{base_title}, dark cinematic visual, neon atmosphere, moody lights, stylish music background, "
+            f"ultra detailed, vertical 9:16"
+        )
     }
 
     return prompts.get(style, prompts["default"])
@@ -127,29 +172,61 @@ def download_image_from_url(image_url, output_path):
 
 
 def resolve_background(style, filename):
+    # 1. tenta background local
     try:
         background = get_random_background(style, filename)
+
         if background and not str(background).startswith("__AUTO"):
             print(f"Background encontrado: {background}")
             return background
+
     except Exception as e:
         print(f"Falha ao buscar background local: {e}")
 
     print("Nenhum background local válido encontrado. Gerando imagem com IA...")
 
+    # 2. cache local pra não gerar a mesma imagem toda vez
+    safe_name = Path(filename).stem.replace(" ", "_")
+    cached_path = os.path.join("temp", f"{safe_name}_{style}_ai_background.jpg")
+
+    if os.path.exists(cached_path):
+        print(f"Usando imagem em cache: {cached_path}")
+        return cached_path
+
+    # 3. gera prompt por estilo
     prompt = build_ai_prompt(style, filename)
     print(f"Prompt IA: {prompt}")
 
-    image_url = generate_image(prompt)
-    print(f"Imagem gerada: {image_url}")
+    try:
+        image_url = generate_image(prompt)
+        print(f"Imagem gerada: {image_url}")
 
-    safe_name = Path(filename).stem.replace(" ", "_")
-    image_path = os.path.join("temp", f"{safe_name}_ai_background.jpg")
+        download_image_from_url(image_url, cached_path)
+        print(f"Imagem baixada em: {cached_path}")
 
-    download_image_from_url(image_url, image_path)
-    print(f"Imagem baixada em: {image_path}")
+        return cached_path
 
-    return image_path
+    except Exception as e:
+        print(f"⚠️ Erro ao gerar imagem com IA: {e}")
+
+        # 4. fallback final
+        fallback_list = [
+            "assets/backgrounds/default.jpg",
+            "assets/backgrounds/default.jpeg",
+            "assets/backgrounds/default.png",
+            "assets/backgrounds/default.webp",
+            "assets/default.jpg",
+            "assets/default.png",
+        ]
+
+        for fallback in fallback_list:
+            if os.path.exists(fallback):
+                print(f"Usando fallback final: {fallback}")
+                return fallback
+
+        raise RuntimeError(
+            "Nenhum background local encontrado, a IA falhou e nenhum fallback padrão existe."
+        )
 
 
 def main():
@@ -235,4 +312,10 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except Exception as e:
+        print(f"ERRO GERAL: {e}")
+        import traceback
+        traceback.print_exc()
+        raise
