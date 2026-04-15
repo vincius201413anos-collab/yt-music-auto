@@ -40,14 +40,20 @@ def pick_short_window(audio_duration):
 
 def get_profile(style):
     default_profile = {
-        "zoom_speed": 0.0015,
-        "max_zoom": 1.10,
+        "zoom_speed": 0.0020,
+        "max_zoom": 1.18,
         "brightness": 0.00,
-        "contrast": 1.10,
+        "contrast": 1.12,
         "saturation": 1.08,
         "blur": 0.0,
         "fps": 30,
         "sharpen": 1.2,
+        "shake_x": 4,
+        "shake_y": 4,
+        "flash_strength": 0.18,
+        "flash_interval": 0.75,
+        "flash_duration": 0.07,
+        "pulse_strength": 0.0025,
     }
 
     raw = EDIT_PROFILES.get(style, EDIT_PROFILES.get("default", {}))
@@ -61,6 +67,12 @@ def get_profile(style):
         "blur": raw.get("blur", default_profile["blur"]),
         "fps": raw.get("fps", default_profile["fps"]),
         "sharpen": raw.get("sharpen", default_profile["sharpen"]),
+        "shake_x": raw.get("shake_x", default_profile["shake_x"]),
+        "shake_y": raw.get("shake_y", default_profile["shake_y"]),
+        "flash_strength": raw.get("flash_strength", default_profile["flash_strength"]),
+        "flash_interval": raw.get("flash_interval", default_profile["flash_interval"]),
+        "flash_duration": raw.get("flash_duration", default_profile["flash_duration"]),
+        "pulse_strength": raw.get("pulse_strength", default_profile["pulse_strength"]),
     }
 
 
@@ -73,18 +85,26 @@ def build_base_image_filter(profile):
     blur = profile["blur"]
     fps = profile["fps"]
     sharpen = profile["sharpen"]
+    flash_strength = profile["flash_strength"]
+    flash_interval = profile["flash_interval"]
+    flash_duration = profile["flash_duration"]
+    pulse_strength = profile["pulse_strength"]
 
     filters = [
         "scale=1400:2488:force_original_aspect_ratio=increase",
         (
             "zoompan="
-            f"z='if(lte(on,1),1.0,min(1.0+{zoom_speed}*on,{max_zoom}))':"
+            f"z='if(lte(on,1),1.0,min(1.0+{zoom_speed}*on+{pulse_strength}*sin(on/6),{max_zoom}))':"
             "x='iw/2-(iw/zoom/2)':"
             "y='ih/2-(ih/zoom/2)':"
             "d=1:"
             "s=1080x1920"
         ),
-        f"eq=contrast={contrast}:brightness={brightness}:saturation={saturation}",
+        (
+            f"eq=contrast={contrast}:"
+            f"brightness='if(lt(mod(t,{flash_interval}),{flash_duration}),{flash_strength},{brightness})':"
+            f"saturation={saturation}"
+        ),
         f"unsharp=5:5:{sharpen}:5:5:0.0",
     ]
 
@@ -106,11 +126,20 @@ def build_base_video_filter(profile):
     blur = profile["blur"]
     fps = profile["fps"]
     sharpen = profile["sharpen"]
+    shake_x = profile["shake_x"]
+    shake_y = profile["shake_y"]
+    flash_strength = profile["flash_strength"]
+    flash_interval = profile["flash_interval"]
+    flash_duration = profile["flash_duration"]
 
     filters = [
-        "scale=1080:1920:force_original_aspect_ratio=increase",
-        "crop=1080:1920",
-        f"eq=contrast={contrast}:brightness={brightness}:saturation={saturation}",
+        "scale=1120:1992:force_original_aspect_ratio=increase",
+        f"crop=1080:1920:x='20+sin(t*7)*{shake_x}':y='20+cos(t*6)*{shake_y}'",
+        (
+            f"eq=contrast={contrast}:"
+            f"brightness='if(lt(mod(t,{flash_interval}),{flash_duration}),{flash_strength},{brightness})':"
+            f"saturation={saturation}"
+        ),
         f"unsharp=5:5:{sharpen}:5:5:0.0",
     ]
 
@@ -125,6 +154,40 @@ def build_base_video_filter(profile):
     return ",".join(filters)
 
 
+def build_overlay_chain(style, use_fire, particles_exists, glitch_exists):
+    chains = []
+
+    if use_fire:
+        chains.append(
+            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.24[fire];"
+            "[base][fire]overlay=0:0:format=auto[v1]"
+        )
+        current = "v1"
+    else:
+        current = "base"
+
+    if particles_exists:
+        index = 2 if use_fire else 1
+        chains.append(
+            f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.16[particles];"
+            f"[{current}][particles]overlay=0:0:format=auto[v2]"
+        )
+        current = "v2"
+
+    if glitch_exists:
+        index = 3 if use_fire and particles_exists else 2 if (use_fire or particles_exists) else 1
+        chains.append(
+            f"[{index}:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.10[glitch];"
+            f"[{current}][glitch]overlay=0:0:format=auto[v]"
+        )
+        current = "v"
+    else:
+        if current != "v":
+            chains.append(f"[{current}]copy[v]")
+
+    return "".join(chains)
+
+
 def create_short(audio_path, background_path, output_name, style):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     output_path = os.path.join(OUTPUT_FOLDER, output_name)
@@ -134,7 +197,12 @@ def create_short(audio_path, background_path, output_name, style):
     start_time, short_duration = pick_short_window(audio_duration)
 
     fire_overlay = "assets/overlays/fire.mp4"
+    particles_overlay = "assets/overlays/particles.mp4"
+    glitch_overlay = "assets/overlays/glitch.mp4"
+
     use_fire = style in ("rock", "metal") and os.path.exists(fire_overlay)
+    use_particles = os.path.exists(particles_overlay)
+    use_glitch = style in ("phonk", "electronic", "trap") and os.path.exists(glitch_overlay)
 
     ext = Path(background_path).suffix.lower()
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp")
@@ -160,74 +228,39 @@ def create_short(audio_path, background_path, output_name, style):
         subprocess.run(command, check=True)
         return output_path
 
-    # SEM FIRE
-    if not use_fire:
-        if is_image:
-            vf = build_base_image_filter(profile)
-
-            command = [
-                "ffmpeg", "-y",
-                "-loop", "1",
-                "-i", background_path,
-                "-ss", str(start_time),
-                "-i", audio_path,
-                "-t", str(short_duration),
-                "-vf", vf,
-                "-shortest",
-                "-c:v", "libx264",
-                "-preset", "medium",
-                "-crf", "16",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac",
-                "-b:a", "192k",
-                output_path
-            ]
-        else:
-            vf = build_base_video_filter(profile)
-
-            command = [
-                "ffmpeg", "-y",
-                "-stream_loop", "-1",
-                "-i", background_path,
-                "-ss", str(start_time),
-                "-i", audio_path,
-                "-t", str(short_duration),
-                "-vf", vf,
-                "-shortest",
-                "-c:v", "libx264",
-                "-preset", "medium",
-                "-crf", "16",
-                "-pix_fmt", "yuv420p",
-                "-c:a", "aac",
-                "-b:a", "192k",
-                output_path
-            ]
-
-        subprocess.run(command, check=True)
-        return output_path
-
-    # COM FIRE (ROCK/METAL)
     if is_image:
         base_filter = build_base_image_filter(profile)
 
-        filter_complex = (
-            f"[0:v]{base_filter}[bg];"
-            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.28[fire];"
-            "[bg][fire]overlay=0:0:format=auto[v]"
-        )
-
-        command = [
+        inputs = [
             "ffmpeg", "-y",
             "-loop", "1",
-            "-i", background_path,
-            "-stream_loop", "-1",
-            "-i", fire_overlay,
+            "-i", background_path
+        ]
+
+        if use_fire:
+            inputs += ["-stream_loop", "-1", "-i", fire_overlay]
+        if use_particles:
+            inputs += ["-stream_loop", "-1", "-i", particles_overlay]
+        if use_glitch:
+            inputs += ["-stream_loop", "-1", "-i", glitch_overlay]
+
+        audio_input_index = 1 + int(use_fire) + int(use_particles) + int(use_glitch)
+
+        inputs += [
             "-ss", str(start_time),
             "-i", audio_path,
-            "-t", str(short_duration),
+            "-t", str(short_duration)
+        ]
+
+        filter_complex = (
+            f"[0:v]{base_filter}[base];" +
+            build_overlay_chain(style, use_fire, use_particles, use_glitch)
+        )
+
+        command = inputs + [
             "-filter_complex", filter_complex,
             "-map", "[v]",
-            "-map", "2:a",
+            "-map", f"{audio_input_index}:a",
             "-shortest",
             "-c:v", "libx264",
             "-preset", "medium",
@@ -237,27 +270,40 @@ def create_short(audio_path, background_path, output_name, style):
             "-b:a", "192k",
             output_path
         ]
+
     else:
         base_filter = build_base_video_filter(profile)
 
-        filter_complex = (
-            f"[0:v]{base_filter}[bg];"
-            "[1:v]scale=1080:1920,fps=30,format=rgba,colorchannelmixer=aa=0.28[fire];"
-            "[bg][fire]overlay=0:0:format=auto[v]"
-        )
-
-        command = [
+        inputs = [
             "ffmpeg", "-y",
             "-stream_loop", "-1",
-            "-i", background_path,
-            "-stream_loop", "-1",
-            "-i", fire_overlay,
+            "-i", background_path
+        ]
+
+        if use_fire:
+            inputs += ["-stream_loop", "-1", "-i", fire_overlay]
+        if use_particles:
+            inputs += ["-stream_loop", "-1", "-i", particles_overlay]
+        if use_glitch:
+            inputs += ["-stream_loop", "-1", "-i", glitch_overlay]
+
+        audio_input_index = 1 + int(use_fire) + int(use_particles) + int(use_glitch)
+
+        inputs += [
             "-ss", str(start_time),
             "-i", audio_path,
-            "-t", str(short_duration),
+            "-t", str(short_duration)
+        ]
+
+        filter_complex = (
+            f"[0:v]{base_filter}[base];" +
+            build_overlay_chain(style, use_fire, use_particles, use_glitch)
+        )
+
+        command = inputs + [
             "-filter_complex", filter_complex,
             "-map", "[v]",
-            "-map", "2:a",
+            "-map", f"{audio_input_index}:a",
             "-shortest",
             "-c:v", "libx264",
             "-preset", "medium",
