@@ -10,11 +10,9 @@ def generate_image(prompt: str) -> str:
 
     try:
         output = replicate.run(
-            "stability-ai/sdxl",
+            "stability-ai/stable-diffusion",
             input={
-                "prompt": prompt,
-                "width": 1024,
-                "height": 1792
+                "prompt": prompt
             }
         )
 
