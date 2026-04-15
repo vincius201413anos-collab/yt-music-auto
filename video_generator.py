@@ -3,6 +3,8 @@ import random
 import subprocess
 from pathlib import Path
 
+from edit_profiles import EDIT_PROFILES
+
 OUTPUT_FOLDER = "output"
 MIN_SHORT_DURATION = 25
 MAX_SHORT_DURATION = 35
@@ -21,9 +23,14 @@ def get_media_duration(file_path):
     return float(result.stdout.strip())
 
 
-def create_short(audio_path, background_path, output_name):
+def create_short(audio_path, background_path, output_name, style):
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
     output_path = os.path.join(OUTPUT_FOLDER, output_name)
+
+    profile = EDIT_PROFILES.get(style, EDIT_PROFILES["default"])
+
+    zoom_speed = profile["zoom"]
+    max_zoom = profile["max_zoom"]
 
     audio_duration = get_media_duration(audio_path)
 
@@ -73,7 +80,7 @@ def create_short(audio_path, background_path, output_name):
                 (
                     "scale=1080:1920,"
                     "zoompan="
-                    "z='min(zoom+0.0006,1.12)':"
+                    f"z='min(zoom+{zoom_speed},{max_zoom})':"
                     "x='iw/2-(iw/zoom/2)':"
                     "y='ih/2-(ih/zoom/2)':"
                     "d=1:"
