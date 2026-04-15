@@ -1,5 +1,6 @@
 import os
 import random
+import re
 from pathlib import Path
 
 
@@ -17,23 +18,69 @@ STYLE_KEYWORDS = {
     "dark": ["dark"]
 }
 
+STYLE_PRIORITY = [
+    "metal",
+    "rock",
+    "phonk",
+    "trap",
+    "electronic",
+    "cinematic",
+    "dark",
+    "indie",
+    "lofi",
+    "pop",
+    "funk",
+]
 
-def detect_style(filename: str) -> str:
+
+def detect_styles(filename: str) -> list[str]:
     name = filename.lower()
+    found = []
 
     for style, keywords in STYLE_KEYWORDS.items():
         for keyword in keywords:
             if keyword in name:
-                return style
+                found.append(style)
+                break
 
-    return "default"
+    if not found:
+        return ["default"]
+
+    # remove duplicados preservando ordem
+    unique = []
+    for style in found:
+        if style not in unique:
+            unique.append(style)
+
+    return unique
+
+
+def detect_style(filename: str) -> str:
+    styles = detect_styles(filename)
+
+    if styles == ["default"]:
+        return "default"
+
+    # escolhe o mais forte pela prioridade
+    for priority_style in STYLE_PRIORITY:
+        if priority_style in styles:
+            return priority_style
+
+    return styles[0]
+
+
+def normalize_media_name(name: str) -> str:
+    stem = Path(name).stem.lower()
+    stem = re.sub(r"\[[^\]]+\]", "", stem)
+    stem = re.sub(r"\s+", " ", stem).strip()
+    return stem
 
 
 def _find_matching_media_by_name(filename: str, folder: str, exts: tuple[str, ...]):
     if not os.path.exists(folder):
         return None
 
-    stem = Path(filename).stem.lower()
+    stem = normalize_media_name(filename)
 
     exact_matches = []
     variant_matches = []
@@ -45,7 +92,7 @@ def _find_matching_media_by_name(filename: str, folder: str, exts: tuple[str, ..
         if not lower_file.endswith(exts):
             continue
 
-        file_stem = Path(file).stem.lower()
+        file_stem = normalize_media_name(file)
 
         if file_stem == stem:
             exact_matches.append(full_path)
@@ -65,7 +112,7 @@ def get_random_background(style: str, filename: str | None = None) -> str:
     specific_video_folder = "assets/source_videos"
     background_folder = "assets/backgrounds"
 
-    video_exts = (".mp4", ".mov", ".mkv", ".webm")
+    video_exts = (".mp4", ".mov", ".mkv", ".webm", ".gif")
     image_exts = (".jpg", ".jpeg", ".png", ".webp")
 
     # 1) prioridade total: vídeo específico da música
