@@ -470,7 +470,7 @@ def main():
         title=title,
         description=description,
         tags=tags,
-        privacy_status="private"
+        privacy_status="public"
     )
 
     print(f"Upload concluído. Video ID: {response.get('id')}")
