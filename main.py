@@ -90,7 +90,6 @@ def sync_tracks(state, drive_files):
             if "is_new" not in track:
                 track["is_new"] = False
 
-    # remove músicas que saíram do Drive
     drive_names = {file["name"] for file in drive_files}
     state["tracks"] = [track for track in state["tracks"] if track["name"] in drive_names]
 
@@ -105,7 +104,7 @@ def get_next_track(state):
     if not tracks:
         return None
 
-    # 1) prioridade para músicas novas
+    # prioridade para músicas novas
     for track in tracks:
         if track.get("is_new", False):
             if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
@@ -116,14 +115,13 @@ def get_next_track(state):
             print(f"Prioridade para música nova: {track['name']}")
             return track
 
-    # 2) fila normal com loop
+    # fila normal com loop
     start_index = state.get("queue_index", 0) % len(tracks)
     current_index = start_index
 
     for _ in range(len(tracks)):
         track = tracks[current_index]
 
-        # reseta quando completar 3 e coloca de volta no loop
         if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
             track["shorts_done"] = 0
             track["done"] = False
@@ -139,21 +137,92 @@ def get_next_track(state):
 
 def build_video_metadata(filename, short_number, style):
     base_title = clean_title(filename)
-    title = f"{base_title} | Short {short_number}"
+
+    title_variants = {
+        "rock": [
+            f"{base_title} Rock Music | Dark Short Edit",
+            f"{base_title} Heavy Rock Vibes | Cinematic Short",
+            f"{base_title} Rock Energy | Epic Music Short",
+        ],
+        "metal": [
+            f"{base_title} Metal Music | Dark Demon Vibes",
+            f"{base_title} Heavy Metal Energy | Cinematic Short",
+            f"{base_title} Metal Soundtrack | Infernal Edit",
+        ],
+        "phonk": [
+            f"{base_title} Phonk Music | Drift Night Edit",
+            f"{base_title} Dark Phonk Vibes | Street Racing Short",
+            f"{base_title} Aggressive Phonk | Neon Car Edit",
+        ],
+        "trap": [
+            f"{base_title} Trap Music | Dark Luxury Edit",
+            f"{base_title} Hard Trap Vibes | Cinematic Short",
+            f"{base_title} Trap Energy | Night Mood Edit",
+        ],
+        "lofi": [
+            f"{base_title} Lofi Music | Chill Aesthetic Short",
+            f"{base_title} Calm Lofi Vibes | Rainy Mood Edit",
+            f"{base_title} Lofi Atmosphere | Soft Music Short",
+        ],
+        "indie": [
+            f"{base_title} Indie Music | Emotional Short Edit",
+            f"{base_title} Dreamy Indie Vibes | Cinematic Mood",
+            f"{base_title} Indie Atmosphere | Soft Aesthetic Short",
+        ],
+        "pop": [
+            f"{base_title} Pop Music | Stylish Short Edit",
+            f"{base_title} Pop Vibes | Cinematic Music Short",
+            f"{base_title} Modern Pop Energy | Aesthetic Edit",
+        ],
+        "electronic": [
+            f"{base_title} Electronic Music | Futuristic Short",
+            f"{base_title} Cyber Electronic Vibes | Music Edit",
+            f"{base_title} Electronic Energy | Neon Short Edit",
+        ],
+        "cinematic": [
+            f"{base_title} Cinematic Music | Epic Short Edit",
+            f"{base_title} Epic Soundtrack Vibes | Dark Short",
+            f"{base_title} Cinematic Atmosphere | Music Edit",
+        ],
+        "funk": [
+            f"{base_title} Funk Music | Party Short Edit",
+            f"{base_title} Brazilian Funk Vibes | Music Short",
+            f"{base_title} Funk Energy | Night Edit",
+        ],
+        "dark": [
+            f"{base_title} Dark Music | Cinematic Short Edit",
+            f"{base_title} Dark Atmosphere | Music Short",
+            f"{base_title} Moody Soundtrack | Aesthetic Edit",
+        ],
+        "default": [
+            f"{base_title} Music | Cinematic Short Edit",
+            f"{base_title} Vibes | Music Short",
+            f"{base_title} Soundtrack | Aesthetic Edit",
+        ],
+    }
+
+    variants = title_variants.get(style, title_variants["default"])
+    title = variants[(short_number - 1) % len(variants)]
+
     description = (
         f"{base_title}\n\n"
         f"Style: {style}\n"
+        f"Short version {short_number}\n"
         f"#music #shorts #youtube #{style} #viral #edit"
     )
+
     tags = [
+        base_title.lower(),
         "music",
         "shorts",
         "youtube",
         style,
-        base_title.lower().replace(" ", ""),
+        f"{style} music",
+        f"{base_title.lower()} music",
         "viral",
-        "edit"
+        "edit",
     ]
+
     return title, description, tags
 
 
@@ -265,7 +334,6 @@ def resolve_background(style, filename, short_number):
         f"{safe_name}_{style}_short_{short_number}_ai_background.png"
     )
 
-    # força nova geração pra não repetir
     if os.path.exists(cached_path):
         os.remove(cached_path)
         print(f"Cache antigo removido: {cached_path}")
