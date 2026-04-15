@@ -103,12 +103,15 @@ def build_ai_prompt(style, filename):
         "lofi": f"{base_title}, cozy anime room, rainy window, warm lights, chill lo-fi mood, cinematic, vertical 9:16, detailed background",
         "dark": f"{base_title}, dark cinematic atmosphere, moody lighting, fog, dramatic shadows, vertical 9:16, ultra detailed",
         "electronic": f"{base_title}, futuristic abstract lights, electronic music vibe, glowing patterns, cyber aesthetic, vertical 9:16, ultra detailed",
+        "metal": f"{base_title}, intense dark metal atmosphere, red lights, smoke, chaotic energy, cinematic, vertical 9:16, ultra detailed",
         "rock": f"{base_title}, dark stage lights, smoke, dramatic rock atmosphere, cinematic, vertical 9:16, ultra detailed",
+        "indie": f"{base_title}, dreamy indie aesthetic, nostalgic lights, soft cinematic mood, vertical 9:16, ultra detailed",
         "pop": f"{base_title}, colorful dreamy lights, modern pop aesthetic, cinematic, glossy style, vertical 9:16, ultra detailed",
-        "random": f"{base_title}, cinematic music visual, neon atmosphere, moody lights, vertical 9:16, ultra detailed"
+        "cinematic": f"{base_title}, epic cinematic atmosphere, orchestral mood, dramatic lighting, grand composition, vertical 9:16, ultra detailed",
+        "default": f"{base_title}, cinematic music visual, neon atmosphere, moody lights, vertical 9:16, ultra detailed"
     }
 
-    return prompts.get(style, prompts["random"])
+    return prompts.get(style, prompts["default"])
 
 
 def download_image_from_url(image_url, output_path):
@@ -205,7 +208,7 @@ def main():
     output_name = f"{Path(name).stem}_short_{short_number}.mp4"
 
     print("Gerando vídeo...")
-    video_path = create_short(audio_path, background, output_name)
+    video_path = create_short(audio_path, background, output_name, style)
     print(f"Vídeo gerado: {video_path}")
 
     title, description, tags = build_video_metadata(name, short_number, style)
