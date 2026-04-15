@@ -80,13 +80,17 @@ def sync_tracks(state, drive_files):
                 "id": file["id"],
                 "name": file_name,
                 "shorts_done": 0,
-                "done": False
+                "done": False,
+                "is_new": True
             })
         else:
-            if "id" not in existing_by_name[file_name]:
-                existing_by_name[file_name]["id"] = file["id"]
+            track = existing_by_name[file_name]
+            if "id" not in track:
+                track["id"] = file["id"]
+            if "is_new" not in track:
+                track["is_new"] = False
 
-    # remove músicas que não existem mais no drive
+    # remove músicas que saíram do Drive
     drive_names = {file["name"] for file in drive_files}
     state["tracks"] = [track for track in state["tracks"] if track["name"] in drive_names]
 
@@ -99,27 +103,38 @@ def sync_tracks(state, drive_files):
 def get_next_track(state):
     tracks = state.get("tracks", [])
     if not tracks:
-        return None, None
+        return None
 
+    # 1) prioridade para músicas novas
+    for track in tracks:
+        if track.get("is_new", False):
+            if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
+                track["shorts_done"] = 0
+                track["done"] = False
+
+            track["is_new"] = False
+            print(f"Prioridade para música nova: {track['name']}")
+            return track
+
+    # 2) fila normal com loop
     start_index = state.get("queue_index", 0) % len(tracks)
     current_index = start_index
 
     for _ in range(len(tracks)):
         track = tracks[current_index]
 
-        # loop infinito: se terminou 3 shorts, zera e reentra na fila
+        # reseta quando completar 3 e coloca de volta no loop
         if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
             track["shorts_done"] = 0
             track["done"] = False
 
         if not track.get("done", False):
-            next_queue_index = (current_index + 1) % len(tracks)
-            state["queue_index"] = next_queue_index
-            return track, current_index
+            state["queue_index"] = (current_index + 1) % len(tracks)
+            return track
 
         current_index = (current_index + 1) % len(tracks)
 
-    return None, None
+    return None
 
 
 def build_video_metadata(filename, short_number, style):
@@ -250,6 +265,7 @@ def resolve_background(style, filename, short_number):
         f"{safe_name}_{style}_short_{short_number}_ai_background.png"
     )
 
+    # força nova geração pra não repetir
     if os.path.exists(cached_path):
         os.remove(cached_path)
         print(f"Cache antigo removido: {cached_path}")
@@ -308,7 +324,7 @@ def main():
     drive_files = scan_drive_folder()
     sync_tracks(state, drive_files)
 
-    track, track_index = get_next_track(state)
+    track = get_next_track(state)
 
     if not track:
         print("Nenhum áudio pendente")
