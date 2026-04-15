@@ -21,6 +21,9 @@ STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
+SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
+TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
+
 
 def load_state():
     if not STATE_FILE.exists():
@@ -48,6 +51,7 @@ def save_state(state):
 
 def clean_title(filename):
     name = Path(filename).stem
+    name = re.sub(r"\[[^\]]+\]", "", name)  # remove [rock], [indie], etc
     name = re.sub(r"[_\-]+", " ", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name.title()
@@ -140,24 +144,24 @@ def build_video_metadata(filename, short_number, style):
 
     title_variants = {
         "rock": [
-            f"{base_title} Rock Music | Dark Short Edit",
-            f"{base_title} Heavy Rock Vibes | Cinematic Short",
-            f"{base_title} Rock Energy | Epic Music Short",
+            f"{base_title} Rock Music | This Drop Hits Different 🔥",
+            f"{base_title} Heavy Rock Vibes | Dark Short Edit",
+            f"{base_title} Rock Energy | Cinematic Music Short",
         ],
         "metal": [
-            f"{base_title} Metal Music | Dark Demon Vibes",
-            f"{base_title} Heavy Metal Energy | Cinematic Short",
-            f"{base_title} Metal Soundtrack | Infernal Edit",
+            f"{base_title} Metal Music | Dark Demon Vibes 🔥",
+            f"{base_title} Heavy Metal Energy | Infernal Short Edit",
+            f"{base_title} Metal Soundtrack | Brutal Cinematic Edit",
         ],
         "phonk": [
-            f"{base_title} Phonk Music | Drift Night Edit",
+            f"{base_title} Phonk Music | Drift Night Edit 🚗",
             f"{base_title} Dark Phonk Vibes | Street Racing Short",
             f"{base_title} Aggressive Phonk | Neon Car Edit",
         ],
         "trap": [
             f"{base_title} Trap Music | Dark Luxury Edit",
-            f"{base_title} Hard Trap Vibes | Cinematic Short",
-            f"{base_title} Trap Energy | Night Mood Edit",
+            f"{base_title} Hard Trap Vibes | Night Mood Short",
+            f"{base_title} Trap Energy | Cinematic Short Edit",
         ],
         "lofi": [
             f"{base_title} Lofi Music | Chill Aesthetic Short",
@@ -207,23 +211,49 @@ def build_video_metadata(filename, short_number, style):
     description = (
         f"{base_title}\n\n"
         f"Style: {style}\n"
-        f"Short version {short_number}\n"
+        f"Short version {short_number}\n\n"
+        f"🎧 Spotify oficial:\n{SPOTIFY_LINK}\n\n"
+        f"📲 TikTok oficial:\n{TIKTOK_LINK}\n\n"
         f"#music #shorts #youtube #{style} #viral #edit"
     )
 
     tags = [
         base_title.lower(),
-        "music",
-        "shorts",
-        "youtube",
+        f"{base_title.lower()} music",
         style,
         f"{style} music",
-        f"{base_title.lower()} music",
-        "viral",
-        "edit",
+        "music",
+        "shorts",
+        "youtube shorts",
+        "viral music",
+        "aesthetic edit",
+        "cinematic edit",
+        "dark vibes",
     ]
 
-    return title, description, tags
+    if style == "rock":
+        tags += ["rock music", "heavy rock", "dark rock"]
+    elif style == "metal":
+        tags += ["metal music", "heavy metal", "dark metal"]
+    elif style == "phonk":
+        tags += ["phonk", "drift phonk", "night drive"]
+    elif style == "trap":
+        tags += ["trap music", "dark trap", "luxury trap"]
+    elif style == "lofi":
+        tags += ["lofi", "chill music", "sad lofi"]
+    elif style == "electronic":
+        tags += ["electronic music", "edm", "cinematic electronic"]
+
+    # remove duplicadas preservando ordem
+    seen = set()
+    final_tags = []
+    for tag in tags:
+        tag_clean = tag.strip().lower()
+        if tag_clean and tag_clean not in seen:
+            seen.add(tag_clean)
+            final_tags.append(tag_clean)
+
+    return title, description, final_tags
 
 
 def build_ai_prompt(style, filename, variant_index=1):
