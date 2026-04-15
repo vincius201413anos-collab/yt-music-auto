@@ -17,6 +17,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
+    env:
+      PYTHONUNBUFFERED: "1"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +35,7 @@ jobs:
       - name: Install FFmpeg
         run: |
           sudo apt-get update -y
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg zip
 
       - name: Verify FFmpeg
         run: |
@@ -42,6 +45,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Prepare artifact metadata
+        id: artifact_meta
+        run: |
+          echo "date_tag=$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "datetime_tag=$(date -u +'%Y-%m-%d__%H-%M-%S')" >> $GITHUB_OUTPUT
+          echo "artifact_name=videos-${{ github.run_number }}-$(date -u +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          mkdir -p output temp
 
       - name: Run Bot
         env:
@@ -55,15 +66,85 @@ jobs:
         run: |
           python main.py
 
-      - name: Save videos
+      - name: Create output manifest
+        if: always()
+        run: |
+          python - << 'PY'
+          import json
+          import os
+          from pathlib import Path
+          from datetime import datetime, timezone
+
+          output_dir = Path("output")
+          temp_dir = Path("temp")
+          output_dir.mkdir(exist_ok=True)
+          temp_dir.mkdir(exist_ok=True)
+
+          video_files = []
+          if output_dir.exists():
+              for path in sorted(output_dir.rglob("*")):
+                  if path.is_file():
+                      video_files.append({
+                          "file": str(path).replace("\\", "/"),
+                          "size_bytes": path.stat().st_size
+                      })
+
+          manifest = {
+              "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+              "github_run_number": os.environ.get("GITHUB_RUN_NUMBER"),
+              "github_run_id": os.environ.get("GITHUB_RUN_ID"),
+              "github_sha": os.environ.get("GITHUB_SHA"),
+              "video_count": len(video_files),
+              "files": video_files
+          }
+
+          with open(temp_dir / "artifact_manifest.json", "w", encoding="utf-8") as f:
+              json.dump(manifest, f, ensure_ascii=False, indent=2)
+          PY
+
+      - name: Create zip package
+        if: always()
+        run: |
+          mkdir -p artifact_bundle
+          if [ -d output ]; then
+            cp -r output artifact_bundle/output
+          fi
+          if [ -d temp ]; then
+            mkdir -p artifact_bundle/temp
+            if [ -f temp/audio_analysis_debug.json ]; then
+              cp temp/audio_analysis_debug.json artifact_bundle/temp/
+            fi
+            if [ -f temp/artifact_manifest.json ]; then
+              cp temp/artifact_manifest.json artifact_bundle/temp/
+            fi
+          fi
+
+          if [ -d artifact_bundle ]; then
+            zip -r "videos-${{ steps.artifact_meta.outputs.datetime_tag }}-run-${{ github.run_number }}.zip" artifact_bundle >/dev/null 2>&1 || true
+          fi
+
+      - name: Save videos folder artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: videos-${{ github.run_number }}
-          path: output/
+          name: ${{ steps.artifact_meta.outputs.artifact_name }}
+          path: |
+            output/
+            temp/artifact_manifest.json
+            temp/audio_analysis_debug.json
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit changes
+      - name: Save zip artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-${{ steps.artifact_meta.outputs.artifact_name }}
+          path: videos-${{ steps.artifact_meta.outputs.datetime_tag }}-run-${{ github.run_number }}.zip
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit state changes
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -75,6 +156,7 @@ jobs:
             exit 0
           fi
 
-          git commit -m "update state"
-          git pull --rebase origin main
-          git push origin main
+          git fetch origin main
+          git pull --rebase origin main || true
+          git commit -m "update state [skip ci]" || exit 0
+          git push origin HEAD:main
