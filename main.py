@@ -1,6 +1,7 @@
 import os
 import json
 import re
+import shutil
 from pathlib import Path
 
 import requests
@@ -187,7 +188,7 @@ def resolve_background(style, filename):
 
     # 2. cache local pra não gerar a mesma imagem toda vez
     safe_name = Path(filename).stem.replace(" ", "_")
-    cached_path = os.path.join("temp", f"{safe_name}_{style}_ai_background.jpg")
+    cached_path = os.path.join("temp", f"{safe_name}_{style}_ai_background.png")
 
     if os.path.exists(cached_path):
         print(f"Usando imagem em cache: {cached_path}")
@@ -198,13 +199,23 @@ def resolve_background(style, filename):
     print(f"Prompt IA: {prompt}")
 
     try:
-        image_url = generate_image(prompt)
-        print(f"Imagem gerada: {image_url}")
+        image_result = generate_image(prompt)
+        print(f"Resultado da IA: {image_result}")
 
-        download_image_from_url(image_url, cached_path)
-        print(f"Imagem baixada em: {cached_path}")
+        # CASO 1: IA retornou arquivo local
+        if isinstance(image_result, str) and os.path.exists(image_result):
+            os.makedirs(os.path.dirname(cached_path), exist_ok=True)
+            shutil.copy2(image_result, cached_path)
+            print(f"Imagem local copiada para: {cached_path}")
+            return cached_path
 
-        return cached_path
+        # CASO 2: IA retornou URL
+        if isinstance(image_result, str) and image_result.startswith(("http://", "https://")):
+            download_image_from_url(image_result, cached_path)
+            print(f"Imagem baixada em: {cached_path}")
+            return cached_path
+
+        raise RuntimeError(f"Retorno inesperado da IA: {image_result}")
 
     except Exception as e:
         print(f"⚠️ Erro ao gerar imagem com IA: {e}")
