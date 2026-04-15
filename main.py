@@ -9,6 +9,7 @@ from drive_service import (
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
+    upload_file_to_drive,
 )
 from background_selector import detect_style, detect_styles, get_random_background
 from video_generator import create_short
@@ -71,6 +72,13 @@ def sync_tracks(state, drive_files):
             track = existing_by_name[file_name]
             track["id"] = file["id"]
 
+            if "shorts_done" not in track:
+                track["shorts_done"] = 0
+            if "done" not in track:
+                track["done"] = False
+            if "is_new" not in track:
+                track["is_new"] = False
+
     drive_names = {file["name"] for file in drive_files}
     state["tracks"] = [track for track in state["tracks"] if track["name"] in drive_names]
 
@@ -85,7 +93,6 @@ def get_next_track(state):
     if not tracks:
         return None
 
-    # prioridade para músicas novas
     for track in tracks:
         if track.get("is_new", False):
             if track.get("shorts_done", 0) >= SHORTS_PER_TRACK:
@@ -96,7 +103,6 @@ def get_next_track(state):
             print(f"Prioridade para música nova: {track['name']}")
             return track
 
-    # fila normal
     start_index = state.get("queue_index", 0) % len(tracks)
     current_index = start_index
 
@@ -162,6 +168,21 @@ def build_video_metadata(filename, short_number, style, styles):
             f"{base_title} | Epic {hybrid.title()} Atmosphere",
             f"{base_title} | Cinematic {hybrid.title()} Music",
             f"{base_title} | Dark {hybrid.title()} Soundtrack",
+        ],
+        "pop": [
+            f"{base_title} | Stylish {hybrid.title()} Music",
+            f"{base_title} | Dreamy {hybrid.title()} Short",
+            f"{base_title} | Modern {hybrid.title()} Vibes",
+        ],
+        "dark": [
+            f"{base_title} | Dark {hybrid.title()} Atmosphere",
+            f"{base_title} | Sinister {hybrid.title()} Mood",
+            f"{base_title} | Shadowy {hybrid.title()} Edit",
+        ],
+        "funk": [
+            f"{base_title} | Energetic {hybrid.title()} Vibes",
+            f"{base_title} | Party {hybrid.title()} Music",
+            f"{base_title} | Loud {hybrid.title()} Short",
         ],
         "default": [
             f"{base_title} | {hybrid.title()} Music Short Edit",
@@ -304,6 +325,19 @@ def main():
     print("Enviando para o YouTube...")
     response = upload_video(video_path, title, desc, tags, "public")
     print(f"Upload concluído. Video ID: {response.get('id')}")
+
+    # BACKUP SEGURO E NÃO CRÍTICO
+    try:
+        print("Tentando salvar backup no Drive...")
+        backup_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
+
+        if backup_folder_id:
+            upload_file_to_drive(service, backup_folder_id, video_path)
+            print("Backup salvo com sucesso.")
+        else:
+            print("Pasta 'backups' não encontrada. Pulando backup.")
+    except Exception as e:
+        print(f"Backup falhou, mas o bot continua normal: {e}")
 
     track["shorts_done"] = short_number
     if track["shorts_done"] >= SHORTS_PER_TRACK:
