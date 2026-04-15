@@ -174,8 +174,9 @@ def create_short(audio_path, background_path, output_name, style):
             "-ss", str(start_time),
             "-i", audio_path,
             "-t", str(short_duration),
+            "-map", "0:v:0",
+            "-map", "1:a:0",
             "-shortest",
-            "-r", str(profile["fps"]),
             "-c:v", "libx264",
             "-preset", "slow",
             "-crf", "16",
@@ -198,6 +199,8 @@ def create_short(audio_path, background_path, output_name, style):
             "-i", audio_path,
             "-t", str(short_duration),
             "-vf", base_filter,
+            "-map", "0:v:0",
+            "-map", "1:a:0",
             "-shortest",
             "-c:v", "libx264",
             "-preset", "slow",
@@ -228,15 +231,22 @@ def create_short(audio_path, background_path, output_name, style):
             "-i", audio_path,
             "-t", str(short_duration),
             "-vf", base_filter,
+            "-map", "0:v:0",
+            "-map", "1:a:0",
             "-shortest",
             "-c:v", "libx264",
             "-preset", "slow",
             "-crf", "16",
             "-pix_fmt", "yuv420p",
+            "-an",
             "-c:a", "aac",
             "-b:a", "192k",
             output_path
         ]
+
+        # remove o "-an" porque com map de áudio da música ele bloquearia o áudio final
+        command.remove("-an")
+
         subprocess.run(command, check=True)
         return output_path
 
@@ -247,8 +257,9 @@ def create_short(audio_path, background_path, output_name, style):
         "-ss", str(start_time),
         "-i", audio_path,
         "-t", str(short_duration),
+        "-map", "0:v:0",
+        "-map", "1:a:0",
         "-shortest",
-        "-r", str(profile["fps"]),
         "-c:v", "libx264",
         "-preset", "slow",
         "-crf", "16",
