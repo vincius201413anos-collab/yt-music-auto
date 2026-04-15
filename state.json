@@ -22,13 +22,6 @@
       "is_new": false
     },
     {
-      "id": "1ZG27yNLZSMKtkLaadylvgxKg4JP34Wse",
-      "name": "marlyn manson da deepweb [rock].wav",
-      "shorts_done": 1,
-      "done": false,
-      "is_new": false
-    },
-    {
       "id": "1TXMKl03GEMJTq80rrtC82OJIL74wa3Go",
       "name": "manson deep [rock].wav",
       "shorts_done": 1,
@@ -43,13 +36,6 @@
       "is_new": false
     },
     {
-      "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
-      "name": "goshto [rock].mp3",
-      "shorts_done": 1,
-      "done": false,
-      "is_new": false
-    },
-    {
       "id": "1dOiOSJNBzBJoDohYh0ZdTJGRzp4XO7KE",
       "name": "Echoes We Are the Hollow (Instrumental) [rock].wav",
       "shorts_done": 1,
@@ -59,9 +45,9 @@
     {
       "id": "1MwgXAO6PHTsudI3OridfIo84R6YWpgQ5",
       "name": "Desencana 4 [Indie].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "133BWFy_UQiRN-qsl5DZsoGr3bJy5BUWy",
@@ -185,6 +171,20 @@
     {
       "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
       "name": "sorry motel [pop] [indie].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
+      "name": "Ghost [rock][trap].mp3",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1ZG27yNLZSMKtkLaadylvgxKg4JP34Wse",
+      "name": "Burning Souls [rock].wav",
       "shorts_done": 0,
       "done": false,
       "is_new": true
