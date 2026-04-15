@@ -48,6 +48,13 @@ jobs:
         run: |
           python main.py
 
+      # 🔥 NOVO: SALVAR VIDEOS PRA DOWNLOAD
+      - name: Save videos
+        uses: actions/upload-artifact@v4
+        with:
+          name: videos
+          path: output/
+
       - name: Commit changes
         run: |
           git config --global user.name "github-actions[bot]"
