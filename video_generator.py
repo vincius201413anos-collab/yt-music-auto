@@ -16,6 +16,12 @@ MIN_SHORT_DURATION = 40
 MAX_SHORT_DURATION = 70
 FALLBACK_BACKGROUND = "__AUTO_BLACK__"
 
+# Fade padrão
+VIDEO_FADE_IN = 0.6
+VIDEO_FADE_OUT = 0.8
+AUDIO_FADE_IN = 0.6
+AUDIO_FADE_OUT = 1.0
+
 
 def get_media_duration(file_path):
     command = [
@@ -45,7 +51,6 @@ def pick_short_window(audio_duration):
 def get_profile(style):
     default = EDIT_PROFILES.get("default", {})
     raw = EDIT_PROFILES.get(style, default)
-
     return {**default, **raw}
 
 
@@ -55,7 +60,15 @@ def crop_analysis(beat_times, drop_time, start, duration):
     beats = [t - start for t in beat_times if start <= t <= end]
     drop = (drop_time - start) if (drop_time and start <= drop_time <= end) else None
 
-    return beats[:80], drop  # 🔥 limite evita travar ffmpeg
+    return beats[:80], drop
+
+
+def build_audio_filter(duration):
+    fade_out_start = max(0, duration - AUDIO_FADE_OUT)
+    return (
+        f"afade=t=in:st=0:d={AUDIO_FADE_IN},"
+        f"afade=t=out:st={fade_out_start}:d={AUDIO_FADE_OUT}"
+    )
 
 
 def create_short(audio_path, background_path, output_name, style):
@@ -67,7 +80,6 @@ def create_short(audio_path, background_path, output_name, style):
 
     start, duration = pick_short_window(audio_duration)
 
-    # 🔥 ANALISE DE ÁUDIO
     beats_full = detect_beats(audio_path)
     drop_full = detect_drop(audio_path)
 
@@ -84,18 +96,25 @@ def create_short(audio_path, background_path, output_name, style):
 
     shake_expr = build_shake_multiplier_expression(drop)
 
+    fade_out_start_video = max(0, duration - VIDEO_FADE_OUT)
+    audio_filter = build_audio_filter(duration)
+
     ext = Path(background_path).suffix.lower()
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp")
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
-    # 🔥 BASE FILTERS
     if is_image:
         vf = (
             "scale=1400:2488:force_original_aspect_ratio=increase,"
             f"zoompan=z='1+{profile['zoom_speed']}*on+{profile['pulse_strength']}*sin(on/6)':"
-            "x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=1:s=1080x1920,"
+            "x='iw/2-(iw/zoom/2)':"
+            "y='ih/2-(ih/zoom/2)':"
+            "d=1:"
+            "s=1080x1920,"
             f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
             f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
+            f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+            f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
             f"fps={profile['fps']}"
         )
 
@@ -105,10 +124,16 @@ def create_short(audio_path, background_path, output_name, style):
             "-ss", str(start), "-i", audio_path,
             "-t", str(duration),
             "-vf", vf,
-            "-map", "0:v", "-map", "1:a",
+            "-af", audio_filter,
+            "-map", "0:v",
+            "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-preset", "slow", "-crf", "16",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:v", "libx264",
+            "-preset", "slow",
+            "-crf", "16",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
             output_path
         ]
 
@@ -118,10 +143,13 @@ def create_short(audio_path, background_path, output_name, style):
 
         vf = (
             "scale=1120:1992:force_original_aspect_ratio=increase,"
-            f"crop=1080:1920:x='20+sin(t*7)*{profile['shake_x']}*({shake_expr})':"
+            f"crop=1080:1920:"
+            f"x='20+sin(t*7)*{profile['shake_x']}*({shake_expr})':"
             f"y='20+cos(t*6)*{profile['shake_y']}*({shake_expr})',"
             f"eq=contrast={profile['contrast']}:brightness='{flash_expr}':saturation={profile['saturation']},"
             f"unsharp=5:5:{profile['sharpen']}:5:5:0,"
+            f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+            f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT},"
             f"fps={profile['fps']}"
         )
 
@@ -131,10 +159,16 @@ def create_short(audio_path, background_path, output_name, style):
             "-ss", str(start), "-i", audio_path,
             "-t", str(duration),
             "-vf", vf,
-            "-map", "0:v", "-map", "1:a",
+            "-af", audio_filter,
+            "-map", "0:v",
+            "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-preset", "slow", "-crf", "16",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:v", "libx264",
+            "-preset", "slow",
+            "-crf", "16",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
             output_path
         ]
 
@@ -145,10 +179,19 @@ def create_short(audio_path, background_path, output_name, style):
             "-i", f"color=c=black:s=1080x1920:d={duration}",
             "-ss", str(start), "-i", audio_path,
             "-t", str(duration),
-            "-map", "0:v", "-map", "1:a",
+            "-vf", (
+                f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+                f"fade=t=out:st={fade_out_start_video}:d={VIDEO_FADE_OUT}"
+            ),
+            "-af", audio_filter,
+            "-map", "0:v",
+            "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-crf", "16",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:v", "libx264",
+            "-crf", "16",
+            "-pix_fmt", "yuv420p",
+            "-c:a", "aac",
+            "-b:a", "192k",
             output_path
         ]
 
