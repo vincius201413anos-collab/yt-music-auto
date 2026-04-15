@@ -103,62 +103,80 @@ def build_video_metadata(filename, short_number, style):
     return title, description, tags
 
 
-def build_ai_prompt(style, filename):
+def build_ai_prompt(style, filename, variant_index=1):
     base_title = clean_title(filename)
+
+    variant_map = {
+        1: "cinematic wide composition, dramatic center focus, unique scene variation one",
+        2: "different angle, alternate composition, unique scene variation two",
+        3: "new framing, alternate visual concept, unique scene variation three",
+    }
+
+    variant_text = variant_map.get(variant_index, f"unique visual variation {variant_index}")
 
     prompts = {
         "phonk": (
             f"{base_title}, dark street racing, neon japanese city, drift cars, smoke, night, "
-            f"cyberpunk, aggressive atmosphere, purple lighting, cinematic, ultra detailed, vertical 9:16"
+            f"cyberpunk, aggressive atmosphere, purple lighting, cinematic, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "trap": (
             f"{base_title}, luxury dark aesthetic, money, sports cars, urban night, neon lights, "
-            f"cinematic shadows, aggressive trap mood, ultra detailed, vertical 9:16"
+            f"cinematic shadows, aggressive trap mood, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "lofi": (
             f"{base_title}, cozy anime room, rainy window, warm lights, calm mood, soft colors, "
-            f"lofi aesthetic, cinematic, ultra detailed, vertical 9:16"
+            f"lofi aesthetic, cinematic, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "dark": (
             f"{base_title}, dark cinematic atmosphere, fog, moody lighting, dramatic shadows, "
-            f"intense mood, ultra detailed, vertical 9:16"
+            f"intense mood, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "electronic": (
             f"{base_title}, futuristic neon lights, cyber world, glowing patterns, electronic vibe, "
-            f"digital energy, ultra detailed, vertical 9:16"
+            f"digital energy, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "metal": (
             f"{base_title}, heavy metal atmosphere, red lights, smoke, chaos, fire mood, "
-            f"aggressive energy, cinematic, ultra detailed, vertical 9:16"
+            f"aggressive energy, cinematic, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "rock": (
             f"{base_title}, rock concert stage, dramatic lights, smoke, guitar energy, "
-            f"cinematic performance vibe, ultra detailed, vertical 9:16"
+            f"cinematic performance vibe, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "indie": (
             f"{base_title}, dreamy nostalgic aesthetic, soft lights, emotional atmosphere, "
-            f"film look, artistic composition, ultra detailed, vertical 9:16"
+            f"film look, artistic composition, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "pop": (
             f"{base_title}, colorful lights, glossy modern pop aesthetic, vibrant and stylish mood, "
-            f"clean cinematic visual, ultra detailed, vertical 9:16"
+            f"clean cinematic visual, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "cinematic": (
             f"{base_title}, epic cinematic scene, dramatic lighting, movie look, emotional atmosphere, "
-            f"grand composition, ultra detailed, vertical 9:16"
+            f"grand composition, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "funk": (
             f"{base_title}, brazilian funk visual, nightlife, party lights, urban energy, bold contrast, "
-            f"cinematic mood, ultra detailed, vertical 9:16"
+            f"cinematic mood, ultra detailed, vertical 9:16, "
+            f"{variant_text}, do not repeat previous composition"
         ),
         "default": (
             f"{base_title}, dark cinematic visual, neon atmosphere, moody lights, stylish music background, "
-            f"ultra detailed, vertical 9:16"
+            f"ultra detailed, vertical 9:16, {variant_text}, do not repeat previous composition"
         )
     }
 
     return prompts.get(style, prompts["default"])
-
 
 def download_image_from_url(image_url, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -172,8 +190,7 @@ def download_image_from_url(image_url, output_path):
     return output_path
 
 
-def resolve_background(style, filename):
-    # 1. tenta background local
+def resolve_background(style, filename, short_number):
     try:
         background = get_random_background(style, filename)
 
@@ -186,36 +203,59 @@ def resolve_background(style, filename):
 
     print("Nenhum background local válido encontrado. Gerando imagem com IA...")
 
-    # 2. cache local pra não gerar a mesma imagem toda vez
     safe_name = Path(filename).stem.replace(" ", "_")
-    cached_path = os.path.join("temp", f"{safe_name}_{style}_ai_background.png")
 
+    # cache separado por short
+    cached_path = os.path.join(
+        "temp",
+        f"{safe_name}_{style}_short_{short_number}_ai_background.png"
+    )
+
+    # se esse short específico já tiver imagem, reutiliza só a dele
     if os.path.exists(cached_path):
-        print(f"Usando imagem em cache: {cached_path}")
+        print(f"Usando imagem em cache do short {short_number}: {cached_path}")
         return cached_path
 
-    # 3. gera prompt por estilo
-    prompt = build_ai_prompt(style, filename)
+    prompt = build_ai_prompt(style, filename, variant_index=short_number)
     print(f"Prompt IA: {prompt}")
 
     try:
         image_result = generate_image(prompt)
         print(f"Resultado da IA: {image_result}")
 
-        # CASO 1: IA retornou arquivo local
         if isinstance(image_result, str) and os.path.exists(image_result):
             os.makedirs(os.path.dirname(cached_path), exist_ok=True)
             shutil.copy2(image_result, cached_path)
             print(f"Imagem local copiada para: {cached_path}")
             return cached_path
 
-        # CASO 2: IA retornou URL
         if isinstance(image_result, str) and image_result.startswith(("http://", "https://")):
             download_image_from_url(image_result, cached_path)
             print(f"Imagem baixada em: {cached_path}")
             return cached_path
 
         raise RuntimeError(f"Retorno inesperado da IA: {image_result}")
+
+    except Exception as e:
+        print(f"⚠️ Erro ao gerar imagem com IA: {e}")
+
+        fallback_list = [
+            "assets/backgrounds/default.jpg",
+            "assets/backgrounds/default.jpeg",
+            "assets/backgrounds/default.png",
+            "assets/backgrounds/default.webp",
+            "assets/default.jpg",
+            "assets/default.png",
+        ]
+
+        for fallback in fallback_list:
+            if os.path.exists(fallback):
+                print(f"Usando fallback final: {fallback}")
+                return fallback
+
+        raise RuntimeError(
+            "Nenhum background local encontrado, a IA falhou e nenhum fallback padrão existe."
+        )
 
     except Exception as e:
         print(f"⚠️ Erro ao gerar imagem com IA: {e}")
