@@ -1,69 +1,45 @@
 import os
-import random
+from ai_image_generator import generate_image
 
-BASE_PATH = "assets/backgrounds"
+def resolve_background(style, music_name):
+    print("Resolvendo background...")
 
-SUPPORTED_EXTENSIONS = (
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".webp",
-    ".mp4",
-    ".mov",
-    ".webm"
-)
+    background_folder = "assets/backgrounds"
 
+    # tenta achar background local primeiro
+    local_background = None
 
-def get_all_backgrounds():
-    backgrounds = []
+    if os.path.exists(background_folder):
+        for file in os.listdir(background_folder):
+            if file.lower().endswith((".jpg", ".jpeg", ".png", ".webp")):
+                local_background = os.path.join(background_folder, file)
+                break
 
-    if not os.path.exists(BASE_PATH):
-        print(f"Pasta não encontrada: {BASE_PATH}. Usando fundo automático.")
-        return backgrounds
+    if local_background:
+        print(f"Background local encontrado: {local_background}")
+        return local_background
 
-    for root, dirs, files in os.walk(BASE_PATH):
-        for file in files:
-            if file.lower().endswith(SUPPORTED_EXTENSIONS):
-                backgrounds.append(os.path.join(root, file))
+    print("Nenhum background local válido encontrado. Gerando imagem com IA...")
 
-    return backgrounds
+    # prompt simples (você pode melhorar depois)
+    prompt = f"{music_name}, {style} music visual, neon atmosphere, moody lights, vertical 9:16, ultra detailed"
+    print(f"Prompt IA: {prompt}")
 
+    try:
+        image_url = generate_image(prompt)
+        print(f"Imagem gerada com sucesso: {image_url}")
+        return image_url
 
-def detect_style(filename):
-    name = filename.lower()
+    except Exception as e:
+        print(f"⚠️ Erro ao gerar imagem com IA: {e}")
 
-    if "phonk" in name:
-        return "phonk"
-    if "trap" in name:
-        return "trap"
-    if "lofi" in name or "lo-fi" in name:
-        return "lofi"
-    if "dark" in name:
-        return "dark"
-    if "electronic" in name or "edm" in name:
-        return "electronic"
-    if "metal" in name or "metalcore" in name:
-        return "metal"
-    if "rock" in name:
-        return "rock"
-    if "indie" in name:
-        return "indie"
-    if "cinematic" in name or "hanszimmer" in name or "hans_zimmer" in name or "orchestral" in name:
-        return "cinematic"
-    if "pop" in name:
-        return "pop"
+        # fallback final
+        fallback_path = "assets/backgrounds/default.jpg"
 
-    return "default"
+        if os.path.exists(fallback_path):
+            print(f"Usando fallback padrão: {fallback_path}")
+            return fallback_path
 
-
-def get_random_background(style, filename=None):
-    backgrounds = get_all_backgrounds()
-
-    if not backgrounds:
-        raise ValueError("Nenhum background encontrado em assets/backgrounds")
-
-    chosen = random.choice(backgrounds)
-
-    print(f"Background escolhido: {chosen}")
-
-    return chosen
+        raise RuntimeError(
+            "Nenhum background local encontrado e a geração por IA falhou."
+        )
