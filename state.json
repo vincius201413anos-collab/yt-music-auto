@@ -178,9 +178,9 @@
     {
       "id": "1gWapdMP29WW2nl9v-xXXRL5oBtvOCCl-",
       "name": "something shallow fuck [Rock].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1rcvMAVl3CpcXe5ndrl6xewzJQMoiBXbi",
@@ -233,5 +233,5 @@
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "Burning Souls [rock].wav"
+  "last_posted_track": "something shallow fuck [Rock].wav"
 }
