@@ -164,9 +164,9 @@
     {
       "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
       "name": "Ghost [rock][trap].mp3",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1ZG27yNLZSMKtkLaadylvgxKg4JP34Wse",
@@ -188,8 +188,50 @@
       "shorts_done": 0,
       "done": false,
       "is_new": true
+    },
+    {
+      "id": "19N5Eq0RQ5kM98IzplJ5hvKsTRVquWPyM",
+      "name": "Faddet [eletronic]d (2).wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "15tAYlrLOZqdImeeGwmkdQGgzYXKHh99t",
+      "name": "Ghost Signal [phonk].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1XG8HZEXNvrWc_SY8fFR32UiV1LYz6UXk",
+      "name": "Faddet [eletronic]dsa.wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1_UeSCIz-5T1S6Fwua_Gb0GH6_G9q16_Y",
+      "name": "Faddet [eletronic]de.wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1d8NC1SxBdBSMDYFeNedo_zytMk0PwBQv",
+      "name": "Faddet [eletronic]d.wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1XtaOE0I3ls8Dvx7u2IZ71w-BKTw7akC5",
+      "name": "Faddet [eletronic].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "sorry motel [pop] [indie].wav"
+  "last_posted_track": "Ghost [rock][trap].mp3"
 }
