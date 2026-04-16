@@ -1,9 +1,11 @@
-- name: Prepare folders
-  run: |
-    mkdir -p output temp assets/backgrounds
+      - name: Prepare folders
+        run: |
+          set -e
+          mkdir -p output temp assets/backgrounds
 
-    if [ -e assets/source_videos ] && [ ! -d assets/source_videos ]; then
-      rm -f assets/source_videos
-    fi
+          if [ -e assets/source_videos ] && [ ! -d assets/source_videos ]; then
+            echo "assets/source_videos existe como arquivo. Removendo..."
+            rm -f assets/source_videos
+          fi
 
-    mkdir -p assets/source_videos
+          mkdir -p assets/source_videos
