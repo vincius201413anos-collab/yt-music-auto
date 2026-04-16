@@ -3,6 +3,7 @@ import json
 import re
 import shutil
 import random
+import time
 from pathlib import Path
 from datetime import datetime
 
@@ -21,6 +22,10 @@ from ai_image_generator import generate_image, build_ai_prompt
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+
+# delay humano antes de postar
+MIN_HUMAN_DELAY_SECONDS = 20
+MAX_HUMAN_DELAY_SECONDS = 180
 
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
 TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
@@ -220,6 +225,12 @@ def resolve_background(style, filename, short_number, styles):
     )
 
 
+def apply_human_delay():
+    delay = random.randint(MIN_HUMAN_DELAY_SECONDS, MAX_HUMAN_DELAY_SECONDS)
+    print(f"Aguardando {delay}s para simular comportamento humano...")
+    time.sleep(delay)
+
+
 def main():
     print("BOT INICIADO")
 
@@ -269,6 +280,8 @@ def main():
     print(f"Vídeo gerado: {video_path}")
 
     title, desc, tags = build_video_metadata(name, short_number, style, styles)
+
+    apply_human_delay()
 
     print("Upload YouTube...")
     response = upload_video(video_path, title, desc, tags, "public")
