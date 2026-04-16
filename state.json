@@ -3,8 +3,8 @@
     {
       "id": "1Rj4xWv0rLpc6gmpzjnxYTxCk_U1cuRjB",
       "name": "se desencana [indie].wav",
-      "shorts_done": 3,
-      "done": true,
+      "shorts_done": 4,
+      "done": false,
       "is_new": false
     },
     {
@@ -232,6 +232,6 @@
       "is_new": false
     }
   ],
-  "queue_index": 0,
-  "last_posted_track": "Faddet [eletronic].wav"
+  "queue_index": 1,
+  "last_posted_track": "se desencana [indie].wav"
 }
