@@ -1,7 +1,7 @@
 """
 ai_image_generator.py — Gerador de imagens IA de alta qualidade.
-Usa Claude Opus para criar prompts dinâmicos e vibrantes por música,
-depois envia ao Replicate (Flux) para gerar imagens pro canal de música.
+Sempre prioriza uma personagem feminina estilizada, bonita e fofa,
+adaptada ao gênero da música, para visuais mais fortes em Shorts.
 """
 
 import os
@@ -15,107 +15,208 @@ import replicate
 import anthropic
 
 # ══════════════════════════════════════════════════════════════════════
-# CLAUDE OPUS — GERADOR DE PROMPTS DINÂMICOS
+# CONFIG
 # ══════════════════════════════════════════════════════════════════════
 
-# Guia visual por estilo — diz ao Opus o que queremos visualmente
+SAVE_DIR = Path("temp")
+MAX_TRIES = 3
+
+
+def get_anthropic_model() -> str:
+    return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-7")
+
+
+# ══════════════════════════════════════════════════════════════════════
+# GUIA VISUAL BASE POR ESTILO
+# ══════════════════════════════════════════════════════════════════════
+
 STYLE_VISUAL_GUIDE = {
     "electronic": (
-        "neon-lit futuristic cityscape, electric blue and purple glowing synths, "
-        "abstract digital particles exploding outward, vibrant laser beams, "
-        "holographic waveforms, ultra-vivid colors"
+        "futuristic neon environment, electric blue and purple glow, holographic particles, "
+        "night city lights, dynamic synthwave atmosphere, vivid luminous energy"
     ),
     "phonk": (
-        "dark neon city at night, bright pink and red neon signs, "
-        "dramatic orange light shafts, muscular car silhouette with glowing headlights, "
-        "smoke and sparks, extreme contrast, vivid magenta and gold highlights"
+        "dark neon street at night, red and magenta glow, sports car reflections, smoke, "
+        "street energy, moody city background, intense contrast"
     ),
     "trap": (
-        "luxury urban night scene, gold chains and diamonds sparkling, "
-        "city skyline with bright neon, vivid teal and gold palette, "
-        "dramatic spotlight, high-fashion energy, crystal clear gems"
+        "luxury urban night setting, vivid teal and gold lighting, stylish city skyline, "
+        "premium street fashion mood, dramatic spotlight, modern high-energy atmosphere"
     ),
     "rock": (
-        "electric guitar explosion with sparks and fire, dramatic stage lighting, "
-        "vivid orange and electric blue flames, crowd silhouettes with raised fists, "
-        "raw energy, lightning bolt effects, high-contrast dramatic shadows"
+        "dramatic concert lights, orange and blue glow, rebellious energy, wind in the hair, "
+        "stage-like cinematic atmosphere, raw electric intensity"
     ),
     "metal": (
-        "dramatic dark fantasy landscape with bright electric lightning strikes, "
-        "molten lava with vivid orange glow, epic storm clouds with backlit rays, "
-        "intense contrast, skull motifs in glowing neon, raw powerful energy"
+        "dark epic fantasy sky, red-black lighting, chains, storm energy, dramatic embers, "
+        "powerful aura, intense cinematic darkness with vivid highlights"
     ),
     "pop": (
-        "bright pastel dreamscape with shimmering sparkles, soft neon gradients, "
-        "floating musical notes and stars, candy-colored palette, "
-        "dreamy bokeh lights, ultra-saturated pinks and purples, joyful energy"
+        "bright pastel neon glow, dreamy sparkles, soft pink and purple lights, joyful premium mood, "
+        "cute vibrant atmosphere, polished pop-art shine"
     ),
     "indie": (
-        "golden-hour sunset over rolling hills, warm amber and rose tones, "
-        "film grain aesthetic, soft lens flare, dreamy haze, "
-        "vintage warmth, rich teal shadows contrasting with gold highlights"
+        "golden-hour cinematic window light, soft dreamy haze, warm amber and rose tones, "
+        "emotional cozy atmosphere, filmic softness, intimate urban mood"
     ),
     "lofi": (
-        "cozy rain-soaked window with warm yellow café glow beyond, "
-        "soft amber lamplight, vintage film aesthetic, rich warm tones, "
-        "peaceful urban nightscape, comfortable and nostalgic, gentle bokeh"
+        "cozy bedroom at night, headphones, moonlight through the window, warm desk lamp, "
+        "rainy city ambiance, calm emotional stillness, soft blue and purple tones"
     ),
     "funk": (
-        "vibrant 70s retro-futuristic disco explosion, bright warm oranges and yellows, "
-        "dancing silhouettes with dramatic colorful spotlights, vivid rainbow prisms, "
-        "mirror ball reflections, ultra-saturated warm palette, electric energy"
+        "retro-futuristic disco lighting, vibrant warm colors, glowing lights, rhythmic energy, "
+        "playful stylish atmosphere, saturated disco mood"
     ),
     "cinematic": (
-        "epic widescreen landscape with dramatic god-rays breaking through storm clouds, "
-        "ultra-rich teal and orange color grade, cinematic lens flare, "
-        "breathtaking scale, volumetric fog with vivid backlit glow, "
-        "blockbuster visual quality"
+        "epic cinematic lighting, god rays, dramatic fog, widescreen blockbuster atmosphere, "
+        "high-end teal-orange color grade, emotional visual scale"
     ),
     "dark": (
-        "mysterious dark forest with vibrant bioluminescent plants glowing electric blue, "
-        "vivid purple and teal mist, dramatic moonlight shafts, "
-        "glowing mystical runes, rich contrast between deep shadows and vivid light"
+        "mysterious moonlit atmosphere, vivid purple and teal mist, elegant shadows, "
+        "gothic energy, dramatic dark fantasy mood, glowing accents"
     ),
     "default": (
-        "dramatic abstract music visualization with vivid neon colors exploding outward, "
-        "electric blue, purple and gold light trails, dynamic energy waves, "
-        "ultra high contrast, stunning visual impact"
+        "dramatic music-inspired atmosphere, vivid neon lighting, polished cinematic mood, "
+        "high contrast, premium visual impact"
     ),
 }
 
-# Termos proibidos que causam imagens escuras/genéricas
+# Guia da personagem feminina por estilo
+GIRL_STYLE_GUIDE = {
+    "electronic": (
+        "one beautiful anime-style young woman, cute and elegant face, glowing headphones, "
+        "futuristic outfit, luminous eyes, stylish hair, centered composition"
+    ),
+    "phonk": (
+        "one beautiful anime-style young woman, edgy streetwear, confident expression, "
+        "dark stylish vibe, long flowing hair, centered composition"
+    ),
+    "trap": (
+        "one beautiful anime-style young woman, fashionable urban look, luxury street style, "
+        "clean makeup, confident pose, centered composition"
+    ),
+    "rock": (
+        "one beautiful anime-style young woman, rebellious aesthetic, expressive eyes, "
+        "cool attitude, dynamic hair, centered composition"
+    ),
+    "metal": (
+        "one beautiful gothic anime-style young woman, elegant dark outfit, red eyes glow, "
+        "dramatic presence, centered composition"
+    ),
+    "pop": (
+        "one beautiful anime-style young woman, cute charming face, soft smile, polished idol-like vibe, "
+        "bright stylish outfit, centered composition"
+    ),
+    "indie": (
+        "one beautiful anime-style young woman, soft emotional expression, cozy sweater, "
+        "dreamy natural beauty, centered composition"
+    ),
+    "lofi": (
+        "one beautiful anime-style young woman, cute calm expression, oversized hoodie, "
+        "headphones, peaceful night-listening vibe, centered composition"
+    ),
+    "funk": (
+        "one beautiful anime-style young woman, playful stylish expression, colorful retro fashion, "
+        "fun vibrant energy, centered composition"
+    ),
+    "cinematic": (
+        "one beautiful anime-style young woman, elegant dramatic presence, emotional face, "
+        "premium cinematic styling, centered composition"
+    ),
+    "dark": (
+        "one beautiful gothic anime-style young woman, mysterious elegant expression, dark fashion, "
+        "subtle glow accents, centered composition"
+    ),
+    "default": (
+        "one beautiful anime-style young woman, cute and stylish, expressive eyes, "
+        "premium polished look, centered composition"
+    ),
+}
+
 NEGATIVE_PROMPT = (
-    "dark, muddy, low contrast, blurry, grainy, ugly, deformed, dull, "
-    "desaturated, washed out, overexposed, text, watermark, signature, "
-    "logo, border, frame, split image, collage, multiple images, "
-    "distorted face, extra limbs, amateur, stock photo look, "
-    "generic background, boring, flat lighting, underexposed"
+    "text, watermark, signature, logo, border, frame, split image, collage, multiple people, "
+    "duplicate person, two girls, extra arms, extra fingers, deformed hands, bad anatomy, ugly face, "
+    "blurry, muddy, dull, flat lighting, underexposed, overexposed, low contrast, low quality, "
+    "stock photo, realistic photo, elderly, child, sexualized pose, revealing outfit, bikini, cleavage focus"
 )
 
+MOOD_VARIANTS = {
+    "lofi": ["night window", "moonlight room", "city lights", "rainy night", "soft dreamy desk"],
+    "indie": ["golden hour", "city rooftop", "window reflection", "warm film mood", "sunset room"],
+    "pop": ["sparkle glow", "dreamy neon", "cute idol mood", "bright pastel energy", "soft glam"],
+    "trap": ["luxury night", "city neon", "confident spotlight", "teal-gold mood", "street glam"],
+    "phonk": ["night drive vibe", "dark neon street", "smoke and red glow", "retro car light", "moody city"],
+    "rock": ["stage light energy", "electric atmosphere", "wind and fire glow", "concert intensity", "rebellious mood"],
+    "metal": ["embers and chains", "storm sky", "dark red aura", "epic gothic mood", "shadow power"],
+    "electronic": ["holographic glow", "futuristic lights", "synthwave city", "laser atmosphere", "digital particles"],
+    "cinematic": ["epic god rays", "dramatic fog", "heroic framing", "emotional scale", "grand atmosphere"],
+    "dark": ["moonlit mist", "purple shadow glow", "mysterious night", "gothic elegance", "dark fantasy vibe"],
+    "funk": ["retro disco shine", "playful color burst", "groovy warm lights", "dancefloor glow", "stylish sparkle"],
+    "default": ["premium music mood", "anime aesthetic", "polished light", "dreamy scene", "vivid glow"],
+}
 
-def build_ai_prompt(style: str, filename: str, styles: list) -> str:
-    """
-    Usa Claude Opus para gerar um prompt específico e vibrante
-    baseado no nome da música e estilo detectado.
-    """
-    # Limpa o nome da música para o prompt
+
+# ══════════════════════════════════════════════════════════════════════
+# HELPERS
+# ══════════════════════════════════════════════════════════════════════
+
+def _clean_song_name(filename: str) -> str:
     song_name = Path(filename).stem
     song_name = re.sub(r"\[[^\]]*\]|\{[^\}]*\}|\([^\)]*\)", "", song_name)
     song_name = re.sub(r"[_\-]+", " ", song_name).strip().title()
+    return song_name or "Untitled Track"
 
+
+def _pick_variant(style: str, short_num: int) -> str:
+    pool = MOOD_VARIANTS.get(style, MOOD_VARIANTS["default"])
+    if not pool:
+        return "premium music mood"
+    index = max(0, (short_num - 1) % len(pool))
+    return pool[index]
+
+
+def _compact_prompt(text: str, max_chars: int = 900) -> str:
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:max_chars]
+
+
+# ══════════════════════════════════════════════════════════════════════
+# PROMPT BUILDING
+# ══════════════════════════════════════════════════════════════════════
+
+def build_ai_prompt(style: str, filename: str, styles: list, short_num: int = 1) -> str:
+    """
+    Sempre gera prompt focado em uma personagem feminina estilizada,
+    bonita e fofa, adaptada ao gênero da música.
+    """
+    song_name = _clean_song_name(filename)
     visual_ref = STYLE_VISUAL_GUIDE.get(style, STYLE_VISUAL_GUIDE["default"])
-    all_styles  = ", ".join(s.title() for s in styles) if styles else style.title()
+    girl_ref = GIRL_STYLE_GUIDE.get(style, GIRL_STYLE_GUIDE["default"])
+    all_styles = ", ".join(s.title() for s in styles) if styles else style.title()
+    mood_variant = _pick_variant(style, short_num)
 
-    # Tenta usar Claude Opus para prompt dinâmico
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if api_key:
         try:
-            return _opus_prompt(song_name, style, all_styles, visual_ref, api_key)
+            return _opus_prompt(
+                song_name=song_name,
+                style=style,
+                all_styles=all_styles,
+                visual_ref=visual_ref,
+                girl_ref=girl_ref,
+                mood_variant=mood_variant,
+                api_key=api_key,
+            )
         except Exception as e:
-            print(f"  [Opus] Falha ao gerar prompt: {e} — usando fallback")
+            print(f"  [Claude] Falha ao gerar prompt: {e} — usando fallback")
 
-    # Fallback: prompt estático de alta qualidade
-    return _static_prompt(song_name, style, visual_ref)
+    return _static_prompt(
+        song_name=song_name,
+        style=style,
+        visual_ref=visual_ref,
+        girl_ref=girl_ref,
+        mood_variant=mood_variant,
+    )
 
 
 def _opus_prompt(
@@ -123,87 +224,98 @@ def _opus_prompt(
     style: str,
     all_styles: str,
     visual_ref: str,
+    girl_ref: str,
+    mood_variant: str,
     api_key: str,
 ) -> str:
-    """Gera prompt ultra-específico com Claude Opus."""
     client = anthropic.Anthropic(api_key=api_key)
 
     system = (
-        "You are a professional creative director for a music YouTube channel. "
-        "Your specialty is creating Stable Diffusion / Flux image generation prompts "
-        "that produce STUNNING, VIRAL-WORTHY visuals for music Shorts. "
-        "Your prompts always produce images that are: vivid, eye-catching, "
-        "high-contrast, professional, and feel like premium music artwork. "
-        "NEVER produce dark, muddy or generic images. "
-        "Output ONLY the image prompt — no explanation, no quotes, no commentary."
+        "You are a professional creative director for a YouTube music Shorts channel. "
+        "You create image prompts for Flux that are scroll-stopping, premium, vivid and beautiful. "
+        "The image must always feature exactly one beautiful anime-style young woman as the central subject. "
+        "She must feel tasteful, charming, visually striking, stylish and emotionally expressive. "
+        "Avoid realism. Avoid stock-photo vibes. Avoid generic backgrounds. "
+        "Output ONLY the final image prompt, in English, comma-separated, no explanation."
     )
 
-    user = f"""Create a Flux image generation prompt for a YouTube Music Short.
+    user = f"""
+Create a Flux prompt for a vertical YouTube music Short.
 
 Song name: "{song_name}"
-Music style: {style}
+Main music style: {style}
 All detected styles: {all_styles}
+Scene mood variation: {mood_variant}
 
-Visual reference for this style: {visual_ref}
+Character direction:
+{girl_ref}
 
-Requirements:
-• ULTRA-VIBRANT, high-contrast, eye-catching — must stop the scroll
-• Must feel like a professional music channel visual (NOT stock photo)
-• Specific subjects: use the song name for creative inspiration
-• Include: dramatic lighting, vivid colors, dynamic energy
-• Vertical format (9:16) — subject centered and bold
-• Quality tags: "8K, ultra-detailed, professional photography, award-winning, 
-  cinematic lighting, Hasselblad quality, sharp focus, stunning"
-• Length: 80-120 words max
-• Style: descriptive, comma-separated visual elements
+Visual environment:
+{visual_ref}
 
-Start the prompt directly — no preamble."""
+Rules:
+- exactly one female subject
+- anime-style young woman
+- beautiful, cute, polished, premium aesthetic
+- tasteful and non-sexualized
+- strong face appeal and expressive eyes
+- centered subject for 9:16 vertical composition
+- music-themed atmosphere matching the genre
+- vivid colors, dramatic lighting, scroll-stopping look
+- no text, no watermark, no extra people, no collage
+- 60 to 100 words max
+- comma-separated visual elements only
+"""
 
     resp = client.messages.create(
-        model="claude-opus-4-5",
-        max_tokens=250,
+        model=get_anthropic_model(),
+        max_tokens=220,
         system=system,
         messages=[{"role": "user", "content": user}],
     )
+
     prompt = resp.content[0].text.strip().strip('"').strip("'")
-    print(f"  [Opus] Prompt gerado: {prompt[:100]}…")
+    prompt = _compact_prompt(prompt)
+    print(f"  [Claude] Prompt gerado ({len(prompt)} chars)")
     return prompt
 
 
-def _static_prompt(song_name: str, style: str, visual_ref: str) -> str:
-    """Prompt de alta qualidade sem API."""
+def _static_prompt(
+    song_name: str,
+    style: str,
+    visual_ref: str,
+    girl_ref: str,
+    mood_variant: str,
+) -> str:
     templates = [
         (
-            f"Epic music artwork for '{song_name}', {visual_ref}, "
-            f"ultra-vibrant colors, dramatic cinematic lighting, "
-            f"8K ultra-detailed, professional music photography, "
-            f"sharp focus, award-winning composition, stunning visual impact"
+            f"{girl_ref}, {visual_ref}, {mood_variant}, inspired by the feeling of '{song_name}', "
+            f"beautiful anime aesthetic, vivid lighting, premium music visual, elegant pose, "
+            f"cute expressive face, detailed hair, sharp focus, high contrast, 9:16 vertical, masterpiece"
         ),
         (
-            f"Professional music channel visual for {style} track '{song_name}', "
-            f"{visual_ref}, vivid saturated palette, dynamic energy, "
-            f"cinematic quality, Hasselblad photography, masterpiece"
+            f"music artwork for '{song_name}', {girl_ref}, {visual_ref}, {mood_variant}, "
+            f"cute and beautiful anime-style young woman, scroll-stopping composition, "
+            f"cinematic glow, polished colors, detailed eyes, centered subject, premium Shorts visual"
         ),
         (
-            f"Viral YouTube Shorts background, {style} music aesthetic, "
-            f"{visual_ref}, ultra high contrast, neon-vivid colors, "
-            f"professional lighting, stunning depth, 8K resolution"
+            f"viral YouTube Shorts anime music visual, {girl_ref}, {visual_ref}, {mood_variant}, "
+            f"stylish feminine character, premium aesthetic, dramatic light, vivid colors, "
+            f"high detail, clean composition, centered framing, elegant emotional atmosphere"
         ),
     ]
-    return random.choice(templates)
+    return _compact_prompt(random.choice(templates))
 
 
 # ══════════════════════════════════════════════════════════════════════
 # REPLICATE — GERAÇÃO DE IMAGEM
 # ══════════════════════════════════════════════════════════════════════
 
-# Modelos disponíveis por prioridade (schnell = rápido, dev = qualidade)
 REPLICATE_MODELS = [
-    "black-forest-labs/flux-schnell",   # rápido, bom — principal
-    "black-forest-labs/flux-dev",       # melhor qualidade — fallback lento
+    "black-forest-labs/flux-schnell",
+    "black-forest-labs/flux-dev",
 ]
 
-# Parâmetros otimizados para cada modelo
 MODEL_PARAMS = {
     "black-forest-labs/flux-schnell": {
         "num_inference_steps": 4,
@@ -223,15 +335,8 @@ MODEL_PARAMS = {
     },
 }
 
-SAVE_DIR  = Path("temp")
-MAX_TRIES = 3
-
 
 def generate_image(prompt: str, output_path: str = None) -> str | None:
-    """
-    Gera imagem via Replicate.
-    Retorna o caminho do arquivo salvo ou None em caso de falha.
-    """
     token = os.getenv("REPLICATE_API_TOKEN")
     if not token:
         print("  [Replicate] REPLICATE_API_TOKEN não configurado.")
@@ -240,16 +345,15 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
     os.environ["REPLICATE_API_TOKEN"] = token
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
-    # Adiciona sufixo de qualidade ao prompt
-    full_prompt = (
-        prompt + ", 8K, ultra-detailed, sharp focus, vivid colors, "
-        "professional photography, masterpiece, best quality"
+    full_prompt = _compact_prompt(
+        prompt
+        + ", anime-style, one female character, beautiful face, cute charm, premium composition, "
+          "vivid colors, cinematic lighting, detailed eyes, high contrast, sharp focus, masterpiece, best quality"
     )
 
     for model in REPLICATE_MODELS:
         params = {**MODEL_PARAMS.get(model, {}), "prompt": full_prompt}
 
-        # Adiciona negative prompt se o modelo suportar
         if "flux-dev" in model:
             params["negative_prompt"] = NEGATIVE_PROMPT
 
@@ -258,7 +362,6 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
                 print(f"  [Replicate] Tentativa {attempt} — {model.split('/')[-1]}")
                 output = replicate.run(model, input=params)
 
-                # output pode ser list, iterator ou URL direta
                 url = _extract_url(output)
                 if not url:
                     print("  [Replicate] URL não encontrada na resposta.")
@@ -279,17 +382,16 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
 
 
 def _extract_url(output) -> str | None:
-    """Extrai URL de saída do Replicate independente do formato."""
     if isinstance(output, str) and output.startswith("http"):
         return output
+
     if isinstance(output, list) and output:
         first = output[0]
-        # FileOutput do Replicate — tem atributo url
         if hasattr(first, "url"):
             return str(first.url)
         if isinstance(first, str) and first.startswith("http"):
             return first
-    # Iterator / generator
+
     try:
         for item in output:
             if hasattr(item, "url"):
@@ -298,23 +400,22 @@ def _extract_url(output) -> str | None:
                 return item
     except Exception:
         pass
+
     return None
 
 
 def _download_image(url: str, output_path: str = None) -> str | None:
-    """Faz download da imagem gerada."""
     try:
         resp = requests.get(url, timeout=60)
         resp.raise_for_status()
 
         if not output_path:
-            ts   = int(time.time())
+            ts = int(time.time())
             output_path = str(SAVE_DIR / f"ai_bg_{ts}.png")
 
         with open(output_path, "wb") as f:
             f.write(resp.content)
 
-        # Verifica se a imagem tem tamanho válido (> 50KB)
         size = os.path.getsize(output_path)
         if size < 50_000:
             print(f"  [Replicate] Imagem suspeita: {size} bytes — descartando.")
