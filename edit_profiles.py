@@ -1,314 +1,314 @@
 """
 edit_profiles.py — Perfis de edição profissionais por estilo musical.
-Cada perfil é calibrado para maximizar retenção em Shorts.
+Cores mais vivas e contraste otimizado para retenção em Shorts.
+Calibrado para o algoritmo de música no YouTube 2025.
 """
 
-# Todos os perfis seguem a mesma estrutura.
-# Parâmetros de zoom/shake são limites — o código os modula dinamicamente.
+# NOTA SOBRE BRIGHTNESS:
+# O valor base de brightness aqui é usado como BASE no flash_expression.
+# O flash dinâmico (beat/bass/drop) vai flutuar acima desse valor.
+# Valores positivos = mais brilhante, negativos = mais escuro.
+# Para canais de música: manter >= -0.02 para evitar imagens escuras.
 
 EDIT_PROFILES = {
 
     # ── PHONK ──────────────────────────────────────────────────────────────
     "phonk": {
-        # zoom
-        "zoom_speed":    0.030,   # velocidade do ciclo de zoom (seno)
-        "max_zoom":      1.20,    # limite máximo de zoom
-        "pulse_strength":0.005,   # pulso de respiração
+        "zoom_speed":     0.034,
+        "max_zoom":       1.22,
+        "pulse_strength": 0.006,
 
-        # cor
-        "brightness":   -0.04,
-        "contrast":      1.32,
-        "saturation":    1.30,
-        "sharpen":       1.55,
-        "blur":          0.0,
+        "brightness":     0.01,    # ligeiramente brilhante (evita escuro)
+        "contrast":       1.35,
+        "saturation":     1.45,    # mais vibrante
+        "sharpen":        1.60,
+        "blur":           0.0,
 
-        # shake
-        "shake_x":       5,
-        "shake_y":       5,
+        "shake_x":        6,
+        "shake_y":        5,
 
-        # flash
-        "beat_flash":    0.20,
-        "bass_flash":    0.28,
-        "drop_flash":    0.42,
+        "beat_flash":     0.22,
+        "bass_flash":     0.30,
+        "drop_flash":     0.45,
 
-        # color grading extra (hue shift, vignette)
-        "vignette":      0.55,
-        "hue_shift":     4,       # graus de hue shift no drop
+        "vignette":       0.50,
+        "hue_shift":      5,
 
         "fps": 30,
     },
 
     # ── TRAP ───────────────────────────────────────────────────────────────
     "trap": {
-        "zoom_speed":    0.026,
-        "max_zoom":      1.18,
-        "pulse_strength":0.004,
+        "zoom_speed":     0.028,
+        "max_zoom":       1.19,
+        "pulse_strength": 0.004,
 
-        "brightness":   -0.02,
-        "contrast":      1.26,
-        "saturation":    1.22,
-        "sharpen":       1.38,
-        "blur":          0.0,
+        "brightness":     0.02,
+        "contrast":       1.28,
+        "saturation":     1.35,
+        "sharpen":        1.42,
+        "blur":           0.0,
 
-        "shake_x":       4,
-        "shake_y":       4,
+        "shake_x":        4,
+        "shake_y":        4,
 
-        "beat_flash":    0.17,
-        "bass_flash":    0.24,
-        "drop_flash":    0.38,
+        "beat_flash":     0.19,
+        "bass_flash":     0.26,
+        "drop_flash":     0.40,
 
-        "vignette":      0.45,
-        "hue_shift":     3,
+        "vignette":       0.40,
+        "hue_shift":      3,
 
         "fps": 30,
     },
 
     # ── ROCK ───────────────────────────────────────────────────────────────
     "rock": {
-        "zoom_speed":    0.032,
-        "max_zoom":      1.22,
-        "pulse_strength":0.005,
+        "zoom_speed":     0.034,
+        "max_zoom":       1.24,
+        "pulse_strength": 0.005,
 
-        "brightness":   -0.04,
-        "contrast":      1.28,
-        "saturation":    1.14,
-        "sharpen":       1.50,
-        "blur":          0.0,
+        "brightness":     0.01,
+        "contrast":       1.32,
+        "saturation":     1.22,
+        "sharpen":        1.55,
+        "blur":           0.0,
 
-        "shake_x":       6,
-        "shake_y":       6,
+        "shake_x":        6,
+        "shake_y":        6,
 
-        "beat_flash":    0.20,
-        "bass_flash":    0.28,
-        "drop_flash":    0.44,
+        "beat_flash":     0.22,
+        "bass_flash":     0.30,
+        "drop_flash":     0.46,
 
-        "vignette":      0.60,
-        "hue_shift":     5,
+        "vignette":       0.55,
+        "hue_shift":      5,
 
         "fps": 30,
     },
 
     # ── METAL ──────────────────────────────────────────────────────────────
     "metal": {
-        "zoom_speed":    0.038,
-        "max_zoom":      1.24,
-        "pulse_strength":0.006,
+        "zoom_speed":     0.040,
+        "max_zoom":       1.26,
+        "pulse_strength": 0.007,
 
-        "brightness":   -0.06,
-        "contrast":      1.36,
-        "saturation":    1.08,
-        "sharpen":       1.65,
-        "blur":          0.0,
+        "brightness":     0.00,
+        "contrast":       1.38,
+        "saturation":     1.15,
+        "sharpen":        1.70,
+        "blur":           0.0,
 
-        "shake_x":       7,
-        "shake_y":       7,
+        "shake_x":        7,
+        "shake_y":        7,
 
-        "beat_flash":    0.22,
-        "bass_flash":    0.32,
-        "drop_flash":    0.50,
+        "beat_flash":     0.24,
+        "bass_flash":     0.34,
+        "drop_flash":     0.52,
 
-        "vignette":      0.70,
-        "hue_shift":     6,
+        "vignette":       0.65,
+        "hue_shift":      6,
 
         "fps": 30,
     },
 
     # ── ELECTRONIC ─────────────────────────────────────────────────────────
+    # Mais vibrante — canal de música eletrônica precisa de CORES VIVAS
     "electronic": {
-        "zoom_speed":    0.028,
-        "max_zoom":      1.20,
-        "pulse_strength":0.004,
+        "zoom_speed":     0.030,
+        "max_zoom":       1.22,
+        "pulse_strength": 0.005,
 
-        "brightness":    0.00,
-        "contrast":      1.28,
-        "saturation":    1.28,
-        "sharpen":       1.38,
-        "blur":          0.0,
+        "brightness":     0.03,    # mais brilhante que antes
+        "contrast":       1.32,
+        "saturation":     1.55,    # ultra saturado para neons vibrantes
+        "sharpen":        1.45,
+        "blur":           0.0,
 
-        "shake_x":       4,
-        "shake_y":       4,
+        "shake_x":        5,
+        "shake_y":        4,
 
-        "beat_flash":    0.18,
-        "bass_flash":    0.26,
-        "drop_flash":    0.42,
+        "beat_flash":     0.20,
+        "bass_flash":     0.28,
+        "drop_flash":     0.45,
 
-        "vignette":      0.40,
-        "hue_shift":     8,
+        "vignette":       0.35,    # vignette menor para não escurecer
+        "hue_shift":      10,
 
         "fps": 30,
     },
 
     # ── CINEMATIC ──────────────────────────────────────────────────────────
     "cinematic": {
-        "zoom_speed":    0.014,
-        "max_zoom":      1.10,
-        "pulse_strength":0.002,
+        "zoom_speed":     0.016,
+        "max_zoom":       1.12,
+        "pulse_strength": 0.002,
 
-        "brightness":   -0.01,
-        "contrast":      1.16,
-        "saturation":    1.04,
-        "sharpen":       1.12,
-        "blur":          0.0,
+        "brightness":     0.02,
+        "contrast":       1.20,
+        "saturation":     1.12,
+        "sharpen":        1.18,
+        "blur":           0.0,
 
-        "shake_x":       1,
-        "shake_y":       1,
+        "shake_x":        1,
+        "shake_y":        1,
 
-        "beat_flash":    0.08,
-        "bass_flash":    0.14,
-        "drop_flash":    0.22,
+        "beat_flash":     0.10,
+        "bass_flash":     0.16,
+        "drop_flash":     0.26,
 
-        "vignette":      0.65,
-        "hue_shift":     0,
+        "vignette":       0.60,
+        "hue_shift":      0,
 
         "fps": 30,
     },
 
     # ── LOFI ───────────────────────────────────────────────────────────────
     "lofi": {
-        "zoom_speed":    0.008,
-        "max_zoom":      1.06,
-        "pulse_strength":0.001,
+        "zoom_speed":     0.009,
+        "max_zoom":       1.07,
+        "pulse_strength": 0.001,
 
-        "brightness":    0.02,
-        "contrast":      1.06,
-        "saturation":    0.88,
-        "sharpen":       0.80,
-        "blur":          0.0,
+        "brightness":     0.03,    # mais warm/brilhante
+        "contrast":       1.10,
+        "saturation":     0.92,
+        "sharpen":        0.85,
+        "blur":           0.0,
 
-        "shake_x":       0,
-        "shake_y":       0,
+        "shake_x":        0,
+        "shake_y":        0,
 
-        "beat_flash":    0.04,
-        "bass_flash":    0.07,
-        "drop_flash":    0.10,
+        "beat_flash":     0.05,
+        "bass_flash":     0.08,
+        "drop_flash":     0.12,
 
-        "vignette":      0.40,
-        "hue_shift":     0,
+        "vignette":       0.35,
+        "hue_shift":      0,
 
         "fps": 30,
     },
 
     # ── INDIE ──────────────────────────────────────────────────────────────
     "indie": {
-        "zoom_speed":    0.012,
-        "max_zoom":      1.09,
-        "pulse_strength":0.002,
+        "zoom_speed":     0.014,
+        "max_zoom":       1.10,
+        "pulse_strength": 0.002,
 
-        "brightness":    0.00,
-        "contrast":      1.10,
-        "saturation":    0.96,
-        "sharpen":       0.95,
-        "blur":          0.0,
+        "brightness":     0.02,
+        "contrast":       1.14,
+        "saturation":     1.05,
+        "sharpen":        1.00,
+        "blur":           0.0,
 
-        "shake_x":       1,
-        "shake_y":       1,
+        "shake_x":        1,
+        "shake_y":        1,
 
-        "beat_flash":    0.06,
-        "bass_flash":    0.10,
-        "drop_flash":    0.15,
+        "beat_flash":     0.08,
+        "bass_flash":     0.12,
+        "drop_flash":     0.18,
 
-        "vignette":      0.45,
-        "hue_shift":     0,
+        "vignette":       0.40,
+        "hue_shift":      0,
 
         "fps": 30,
     },
 
     # ── POP ────────────────────────────────────────────────────────────────
     "pop": {
-        "zoom_speed":    0.020,
-        "max_zoom":      1.15,
-        "pulse_strength":0.003,
+        "zoom_speed":     0.022,
+        "max_zoom":       1.17,
+        "pulse_strength": 0.003,
 
-        "brightness":    0.02,
-        "contrast":      1.14,
-        "saturation":    1.20,
-        "sharpen":       1.12,
-        "blur":          0.0,
+        "brightness":     0.04,    # bem brilhante — pop é colorido
+        "contrast":       1.18,
+        "saturation":     1.40,
+        "sharpen":        1.20,
+        "blur":           0.0,
 
-        "shake_x":       2,
-        "shake_y":       2,
+        "shake_x":        2,
+        "shake_y":        2,
 
-        "beat_flash":    0.12,
-        "bass_flash":    0.18,
-        "drop_flash":    0.28,
+        "beat_flash":     0.14,
+        "bass_flash":     0.20,
+        "drop_flash":     0.32,
 
-        "vignette":      0.30,
-        "hue_shift":     2,
+        "vignette":       0.25,    # quase sem vignette — pop é aberto
+        "hue_shift":      3,
 
         "fps": 30,
     },
 
     # ── FUNK ───────────────────────────────────────────────────────────────
     "funk": {
-        "zoom_speed":    0.030,
-        "max_zoom":      1.20,
-        "pulse_strength":0.004,
+        "zoom_speed":     0.032,
+        "max_zoom":       1.22,
+        "pulse_strength": 0.005,
 
-        "brightness":    0.00,
-        "contrast":      1.28,
-        "saturation":    1.32,
-        "sharpen":       1.32,
-        "blur":          0.0,
+        "brightness":     0.02,
+        "contrast":       1.30,
+        "saturation":     1.50,    # funk é COLORIDO
+        "sharpen":        1.35,
+        "blur":           0.0,
 
-        "shake_x":       5,
-        "shake_y":       5,
+        "shake_x":        5,
+        "shake_y":        5,
 
-        "beat_flash":    0.20,
-        "bass_flash":    0.28,
-        "drop_flash":    0.42,
+        "beat_flash":     0.22,
+        "bass_flash":     0.30,
+        "drop_flash":     0.44,
 
-        "vignette":      0.40,
-        "hue_shift":     3,
+        "vignette":       0.35,
+        "hue_shift":      4,
 
         "fps": 30,
     },
 
     # ── DARK ───────────────────────────────────────────────────────────────
     "dark": {
-        "zoom_speed":    0.022,
-        "max_zoom":      1.15,
-        "pulse_strength":0.003,
+        "zoom_speed":     0.024,
+        "max_zoom":       1.17,
+        "pulse_strength": 0.003,
 
-        "brightness":   -0.07,
-        "contrast":      1.30,
-        "saturation":    0.92,
-        "sharpen":       1.20,
-        "blur":          0.0,
+        "brightness":    -0.01,    # ligeiramente escuro mas NÃO demais
+        "contrast":       1.34,
+        "saturation":     1.00,
+        "sharpen":        1.28,
+        "blur":           0.0,
 
-        "shake_x":       3,
-        "shake_y":       3,
+        "shake_x":        3,
+        "shake_y":        3,
 
-        "beat_flash":    0.14,
-        "bass_flash":    0.20,
-        "drop_flash":    0.30,
+        "beat_flash":     0.16,
+        "bass_flash":     0.22,
+        "drop_flash":     0.34,
 
-        "vignette":      0.75,
-        "hue_shift":     0,
+        "vignette":       0.70,
+        "hue_shift":      0,
 
         "fps": 30,
     },
 
     # ── DEFAULT ────────────────────────────────────────────────────────────
     "default": {
-        "zoom_speed":    0.022,
-        "max_zoom":      1.16,
-        "pulse_strength":0.003,
+        "zoom_speed":     0.024,
+        "max_zoom":       1.18,
+        "pulse_strength": 0.003,
 
-        "brightness":    0.00,
-        "contrast":      1.18,
-        "saturation":    1.12,
-        "sharpen":       1.18,
-        "blur":          0.0,
+        "brightness":     0.02,    # sempre positivo — evita escuro
+        "contrast":       1.22,
+        "saturation":     1.25,
+        "sharpen":        1.22,
+        "blur":           0.0,
 
-        "shake_x":       3,
-        "shake_y":       3,
+        "shake_x":        3,
+        "shake_y":        3,
 
-        "beat_flash":    0.14,
-        "bass_flash":    0.20,
-        "drop_flash":    0.32,
+        "beat_flash":     0.16,
+        "bass_flash":     0.22,
+        "drop_flash":     0.34,
 
-        "vignette":      0.40,
-        "hue_shift":     0,
+        "vignette":       0.38,
+        "hue_shift":      0,
 
         "fps": 30,
     },
