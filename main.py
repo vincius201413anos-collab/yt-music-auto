@@ -20,7 +20,6 @@ from ai_image_generator import generate_image, build_ai_prompt
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
-MAX_TRACKS_PER_RUN = 2
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
@@ -176,6 +175,7 @@ def get_next_track(state):
     if not tracks:
         return None
 
+    # prioridade para músicas novas
     for track in tracks:
         if track.get("is_new", False):
             track["is_new"] = False
@@ -193,6 +193,7 @@ def get_next_track(state):
 
         current_index = (current_index + 1) % len(tracks)
 
+    # se todas concluíram os 3 shorts, reinicia o ciclo
     for track in tracks:
         track["shorts_done"] = 0
         track["done"] = False
@@ -238,72 +239,6 @@ def resolve_background(style, filename, short_number, styles):
 
 
 # =========================
-# PROCESSAMENTO
-# =========================
-
-def process_track(service, state, track):
-    name = track["name"]
-    print(f"\n🔥 PROCESSANDO: {name}")
-
-    styles = detect_styles(name)
-    style = detect_style(name)
-    base_title = clean_title(name)
-
-    os.makedirs("temp", exist_ok=True)
-    audio_path = f"temp/{name}"
-
-    print("Baixando áudio do Drive...")
-    download_drive_file(service, track["id"], audio_path)
-
-    shorts_remaining = SHORTS_PER_TRACK - track.get("shorts_done", 0)
-    print(f"Faltam {shorts_remaining} short(s) para esta música")
-
-    for _ in range(shorts_remaining):
-        short_number = track["shorts_done"] + 1
-        print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
-
-        bg = resolve_background(style, name, short_number, styles)
-        output_path = build_output_path(base_title, style, short_number)
-
-        print("Gerando vídeo...")
-        video_path = create_short(audio_path, bg, output_path, style)
-        print(f"Vídeo gerado: {video_path}")
-
-        title, desc, tags = build_video_metadata(name, short_number, style, styles)
-
-        print("Upload YouTube...")
-        response = upload_video(video_path, title, desc, tags, "public")
-        if isinstance(response, dict):
-            print(f"Upload concluído. Video ID: {response.get('id')}")
-
-        try:
-            print("Tentando salvar backup no Drive...")
-            backup_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
-            if backup_folder_id:
-                upload_file_to_drive(service, backup_folder_id, video_path)
-                print("Backup salvo com sucesso.")
-            else:
-                print("Pasta 'backups' não encontrada. Pulando backup.")
-        except Exception as e:
-            print(f"Backup falhou, mas o bot continua normal: {e}")
-
-        track["shorts_done"] = short_number
-        track["done"] = track["shorts_done"] >= SHORTS_PER_TRACK
-        save_state(state)
-
-    print(f"Finalizado: {track['shorts_done']} short(s) para {name}")
-
-    try:
-        if os.path.exists(audio_path):
-            os.remove(audio_path)
-    except Exception:
-        pass
-
-    if track["done"]:
-        print(f"Música concluída nesta execução: {name}")
-
-
-# =========================
 # MAIN
 # =========================
 
@@ -326,19 +261,67 @@ def main():
     sync_tracks(state, files)
     save_state(state)
 
-    tracks_processed = 0
+    track = get_next_track(state)
+    if not track:
+        print("Nada pra postar")
+        save_state(state)
+        return
 
-    while tracks_processed < MAX_TRACKS_PER_RUN:
-        track = get_next_track(state)
+    name = track["name"]
+    print(f"Processando: {name}")
 
-        if not track:
-            print("Nada mais pra processar")
-            break
+    styles = detect_styles(name)
+    style = detect_style(name)
+    base_title = clean_title(name)
 
-        process_track(service, state, track)
-        tracks_processed += 1
+    os.makedirs("temp", exist_ok=True)
+    audio_path = f"temp/{name}"
 
-    print(f"\n✅ EXECUÇÃO FINALIZADA — músicas processadas: {tracks_processed}")
+    print("Baixando áudio do Drive...")
+    download_drive_file(service, track["id"], audio_path)
+
+    short_number = track.get("shorts_done", 0) + 1
+    print(f"Criando short {short_number}/{SHORTS_PER_TRACK}")
+
+    bg = resolve_background(style, name, short_number, styles)
+    output_path = build_output_path(base_title, style, short_number)
+
+    print("Gerando vídeo...")
+    video_path = create_short(audio_path, bg, output_path, style)
+    print(f"Vídeo gerado: {video_path}")
+
+    title, desc, tags = build_video_metadata(name, short_number, style, styles)
+
+    print("Upload YouTube...")
+    response = upload_video(video_path, title, desc, tags, "public")
+    if isinstance(response, dict):
+        print(f"Upload concluído. Video ID: {response.get('id')}")
+
+    try:
+        print("Tentando salvar backup no Drive...")
+        backup_folder_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
+        if backup_folder_id:
+            upload_file_to_drive(service, backup_folder_id, video_path)
+            print("Backup salvo com sucesso.")
+        else:
+            print("Pasta 'backups' não encontrada. Pulando backup.")
+    except Exception as e:
+        print(f"Backup falhou, mas o bot continua normal: {e}")
+
+    track["shorts_done"] = short_number
+    track["done"] = track["shorts_done"] >= SHORTS_PER_TRACK
+    save_state(state)
+
+    try:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+    except Exception:
+        pass
+
+    if track["done"]:
+        print(f"Música concluída nesta etapa: {name}")
+
+    print("FINALIZADO")
 
 
 if __name__ == "__main__":
