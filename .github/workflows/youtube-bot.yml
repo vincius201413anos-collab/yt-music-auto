@@ -32,10 +32,17 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Install FFmpeg
+      - name: Ensure FFmpeg
         run: |
-          sudo apt-get update -y
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+          if command -v ffmpeg >/dev/null 2>&1; then
+            echo "FFmpeg já existe no runner:"
+            ffmpeg -version | head -n 1
+          else
+            echo "FFmpeg não encontrado. Instalando..."
+            sudo apt-get update -y
+            sudo DEBIAN_FRONTEND=noninteractive apt-get install -y ffmpeg
+            ffmpeg -version | head -n 1
+          fi
 
       - name: Install dependencies
         run: |
