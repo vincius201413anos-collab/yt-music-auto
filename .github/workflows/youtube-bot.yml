@@ -3,30 +3,32 @@ name: youtube-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"   # todo hora exata — mais confiável que minuto arbitrário
+    - cron: "0 */2 * * *"   # a cada 2 horas — seguro no plano gratuito
 
 permissions:
   contents: write
 
 concurrency:
   group: youtube-bot-main
-  cancel-in-progress: false
+  cancel-in-progress: false   # nunca cancela run em andamento
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
     env:
       PYTHONUNBUFFERED: "1"
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -38,45 +40,46 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q ffmpeg
           ffmpeg -version | head -n 1
 
-      - name: Install dependencies
+      - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Prepare folders
-        run: mkdir -p output temp assets/backgrounds
+        run: |
+          mkdir -p output temp assets/backgrounds assets/source_videos
 
       - name: Run Bot
         env:
-          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_CREDENTIALS:          ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          DRIVE_FOLDER_ID:             ${{ secrets.DRIVE_FOLDER_ID }}
+          YOUTUBE_CREDENTIALS:         ${{ secrets.YOUTUBE_CREDENTIALS }}
+          OPENAI_API_KEY:              ${{ secrets.OPENAI_API_KEY }}
+          REPLICATE_API_TOKEN:         ${{ secrets.REPLICATE_API_TOKEN }}
+          HF_TOKEN:                    ${{ secrets.HF_TOKEN }}
         run: |
-          echo "=== BOT START $(date -u) ==="
+          echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
-          echo "=== BOT END $(date -u) ==="
+          echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
 
-      - name: Save videos artifact
+      - name: Save video artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: videos-${{ github.run_number }}
+          name: shorts-run-${{ github.run_number }}
           path: output/
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit state
+      - name: Commit state.json
         if: always()
         run: |
-          git config --global user.name "github-actions[bot]"
+          git config --global user.name  "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add state.json
           if git diff --cached --quiet; then
-            echo "Nada para commitar"
+            echo "state.json sem alterações."
             exit 0
           fi
           git fetch origin main
