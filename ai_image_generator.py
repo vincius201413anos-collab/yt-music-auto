@@ -1,36 +1,50 @@
 """
-ai_image_generator.py — Gerador de imagens IA de alta qualidade.
-Sempre prioriza uma personagem feminina estilizada, bonita e fofa,
-adaptada ao gênero da música, para visuais mais fortes em Shorts.
+ai_image_generator.py — Gerador de imagens IA premium.
+Prioriza personagem feminina anime-style bonita/fofa em todos os vídeos,
+com visual adaptado ao gênero da música.
 """
 
+from __future__ import annotations
+
 import os
+import random
 import re
 import time
-import random
-import requests
 from pathlib import Path
 
-import replicate
 import anthropic
-
-# ══════════════════════════════════════════════════════════════════════
-# CONFIG
-# ══════════════════════════════════════════════════════════════════════
+import replicate
+import requests
 
 SAVE_DIR = Path("temp")
 MAX_TRIES = 3
 
+_ANTHROPIC_CLIENT: anthropic.Anthropic | None = None
+
+
+# ══════════════════════════════════════════════════════════════════════
+# CLIENT / CONFIG
+# ══════════════════════════════════════════════════════════════════════
 
 def get_anthropic_model() -> str:
     return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-7")
 
 
+def get_anthropic_client() -> anthropic.Anthropic | None:
+    global _ANTHROPIC_CLIENT
+    api_key = os.getenv("ANTHROPIC_API_KEY")
+    if not api_key:
+        return None
+    if _ANTHROPIC_CLIENT is None:
+        _ANTHROPIC_CLIENT = anthropic.Anthropic(api_key=api_key)
+    return _ANTHROPIC_CLIENT
+
+
 # ══════════════════════════════════════════════════════════════════════
-# GUIA VISUAL BASE POR ESTILO
+# GUIAS VISUAIS
 # ══════════════════════════════════════════════════════════════════════
 
-STYLE_VISUAL_GUIDE = {
+STYLE_VISUAL_GUIDE: dict[str, str] = {
     "electronic": (
         "futuristic neon environment, electric blue and purple glow, holographic particles, "
         "night city lights, dynamic synthwave atmosphere, vivid luminous energy"
@@ -75,14 +89,33 @@ STYLE_VISUAL_GUIDE = {
         "mysterious moonlit atmosphere, vivid purple and teal mist, elegant shadows, "
         "gothic energy, dramatic dark fantasy mood, glowing accents"
     ),
+    "sertanejo": (
+        "warm sunset tones, country-romantic atmosphere, golden lights, emotional night setting, "
+        "soft cinematic countryside mood"
+    ),
+    "pagode": (
+        "warm urban-night glow, relaxed party mood, soft amber lights, stylish friendly atmosphere, "
+        "musical rooftop vibe"
+    ),
+    "gospel": (
+        "uplifting cinematic glow, hopeful light rays, serene atmosphere, warm elegant lighting, "
+        "spiritual peaceful mood"
+    ),
+    "k-pop": (
+        "polished neon pastel world, sparkling stage lights, glossy fashion energy, "
+        "premium idol aesthetic, vivid dreamy shine"
+    ),
+    "jazz": (
+        "soft vintage lighting, intimate lounge atmosphere, warm amber glow, elegant night mood, "
+        "nostalgic premium feel"
+    ),
     "default": (
         "dramatic music-inspired atmosphere, vivid neon lighting, polished cinematic mood, "
         "high contrast, premium visual impact"
     ),
 }
 
-# Guia da personagem feminina por estilo
-GIRL_STYLE_GUIDE = {
+GIRL_STYLE_GUIDE: dict[str, str] = {
     "electronic": (
         "one beautiful anime-style young woman, cute and elegant face, glowing headphones, "
         "futuristic outfit, luminous eyes, stylish hair, centered composition"
@@ -127,20 +160,33 @@ GIRL_STYLE_GUIDE = {
         "one beautiful gothic anime-style young woman, mysterious elegant expression, dark fashion, "
         "subtle glow accents, centered composition"
     ),
+    "sertanejo": (
+        "one beautiful anime-style young woman, romantic soft expression, pretty face, glossy hair, "
+        "warm natural beauty, centered composition"
+    ),
+    "pagode": (
+        "one beautiful anime-style young woman, charming smile, stylish casual look, soft glam makeup, "
+        "friendly and attractive expression, centered composition"
+    ),
+    "gospel": (
+        "one beautiful anime-style young woman, serene elegant expression, graceful beauty, soft luminous eyes, "
+        "modest stylish look, centered composition"
+    ),
+    "k-pop": (
+        "one beautiful anime-style young woman, polished idol beauty, glossy hair, expressive eyes, "
+        "cute and premium fashion styling, centered composition"
+    ),
+    "jazz": (
+        "one beautiful anime-style young woman, elegant and expressive, vintage-inspired look, "
+        "soft warm lighting, dreamy nostalgic vibe, centered composition"
+    ),
     "default": (
-        "one beautiful anime-style young woman, cute and stylish, expressive eyes, "
-        "premium polished look, centered composition"
+        "one beautiful anime-style young woman, cute and stylish, expressive eyes, pretty face, "
+        "soft glossy hair, premium polished look, centered composition"
     ),
 }
 
-NEGATIVE_PROMPT = (
-    "text, watermark, signature, logo, border, frame, split image, collage, multiple people, "
-    "duplicate person, two girls, extra arms, extra fingers, deformed hands, bad anatomy, ugly face, "
-    "blurry, muddy, dull, flat lighting, underexposed, overexposed, low contrast, low quality, "
-    "stock photo, realistic photo, elderly, child, sexualized pose, revealing outfit, bikini, cleavage focus"
-)
-
-MOOD_VARIANTS = {
+MOOD_VARIANTS: dict[str, list[str]] = {
     "lofi": ["night window", "moonlight room", "city lights", "rainy night", "soft dreamy desk"],
     "indie": ["golden hour", "city rooftop", "window reflection", "warm film mood", "sunset room"],
     "pop": ["sparkle glow", "dreamy neon", "cute idol mood", "bright pastel energy", "soft glam"],
@@ -152,8 +198,26 @@ MOOD_VARIANTS = {
     "cinematic": ["epic god rays", "dramatic fog", "heroic framing", "emotional scale", "grand atmosphere"],
     "dark": ["moonlit mist", "purple shadow glow", "mysterious night", "gothic elegance", "dark fantasy vibe"],
     "funk": ["retro disco shine", "playful color burst", "groovy warm lights", "dancefloor glow", "stylish sparkle"],
+    "sertanejo": ["sunset romance", "night lights", "warm emotion", "country love mood", "golden-night vibe"],
+    "pagode": ["rooftop vibe", "warm groove", "urban romance", "party glow", "late-night charm"],
+    "gospel": ["hopeful light", "soft radiance", "uplifting serenity", "peaceful glow", "graceful atmosphere"],
+    "k-pop": ["stage sparkle", "idol glow", "pastel neon dream", "clean glam energy", "polished shine"],
+    "jazz": ["vinyl night", "lounge glow", "smoky amber light", "soft nostalgia", "late-night elegance"],
     "default": ["premium music mood", "anime aesthetic", "polished light", "dreamy scene", "vivid glow"],
 }
+
+QUALITY_SUFFIX = (
+    "masterpiece, best quality, ultra-detailed, sharp focus, vivid colors, cinematic composition, "
+    "anime aesthetic, 9:16 vertical format, no text, no watermark, single subject"
+)
+
+NEGATIVE_PROMPT = (
+    "text, watermark, signature, logo, border, frame, split image, collage, multiple people, "
+    "duplicate person, two girls, extra arms, extra fingers, deformed hands, bad anatomy, ugly face, "
+    "bad face, asymmetrical eyes, poorly drawn eyes, messy hair, blurry, muddy, dull, flat lighting, "
+    "underexposed, overexposed, low contrast, low quality, stock photo, realistic photo, elderly, child, "
+    "sexualized pose, revealing outfit, bikini, cleavage focus"
+)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -169,13 +233,11 @@ def _clean_song_name(filename: str) -> str:
 
 def _pick_variant(style: str, short_num: int) -> str:
     pool = MOOD_VARIANTS.get(style, MOOD_VARIANTS["default"])
-    if not pool:
-        return "premium music mood"
     index = max(0, (short_num - 1) % len(pool))
     return pool[index]
 
 
-def _compact_prompt(text: str, max_chars: int = 900) -> str:
+def _compact_prompt(text: str, max_chars: int = 950) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     return text[:max_chars]
 
@@ -184,28 +246,29 @@ def _compact_prompt(text: str, max_chars: int = 900) -> str:
 # PROMPT BUILDING
 # ══════════════════════════════════════════════════════════════════════
 
-def build_ai_prompt(style: str, filename: str, styles: list, short_num: int = 1) -> str:
-    """
-    Sempre gera prompt focado em uma personagem feminina estilizada,
-    bonita e fofa, adaptada ao gênero da música.
-    """
+def build_ai_prompt(
+    style: str,
+    filename: str,
+    styles: list[str],
+    short_num: int = 1,
+) -> str:
     song_name = _clean_song_name(filename)
     visual_ref = STYLE_VISUAL_GUIDE.get(style, STYLE_VISUAL_GUIDE["default"])
     girl_ref = GIRL_STYLE_GUIDE.get(style, GIRL_STYLE_GUIDE["default"])
     all_styles = ", ".join(s.title() for s in styles) if styles else style.title()
     mood_variant = _pick_variant(style, short_num)
 
-    api_key = os.getenv("ANTHROPIC_API_KEY")
-    if api_key:
+    client = get_anthropic_client()
+    if client is not None:
         try:
             return _opus_prompt(
+                client=client,
                 song_name=song_name,
                 style=style,
                 all_styles=all_styles,
                 visual_ref=visual_ref,
                 girl_ref=girl_ref,
                 mood_variant=mood_variant,
-                api_key=api_key,
             )
         except Exception as e:
             print(f"  [Claude] Falha ao gerar prompt: {e} — usando fallback")
@@ -220,23 +283,20 @@ def build_ai_prompt(style: str, filename: str, styles: list, short_num: int = 1)
 
 
 def _opus_prompt(
+    client: anthropic.Anthropic,
     song_name: str,
     style: str,
     all_styles: str,
     visual_ref: str,
     girl_ref: str,
     mood_variant: str,
-    api_key: str,
 ) -> str:
-    client = anthropic.Anthropic(api_key=api_key)
-
     system = (
         "You are a professional creative director for a YouTube music Shorts channel. "
-        "You create image prompts for Flux that are scroll-stopping, premium, vivid and beautiful. "
+        "You create Flux prompts that are scroll-stopping, premium, vivid and beautiful. "
         "The image must always feature exactly one beautiful anime-style young woman as the central subject. "
-        "She must feel tasteful, charming, visually striking, stylish and emotionally expressive. "
-        "Avoid realism. Avoid stock-photo vibes. Avoid generic backgrounds. "
-        "Output ONLY the final image prompt, in English, comma-separated, no explanation."
+        "She must feel tasteful, charming, visually striking, cute, polished and emotionally expressive. "
+        "Avoid realism. Avoid stock-photo vibes. Output only the final prompt."
     )
 
     user = f"""
@@ -257,8 +317,8 @@ Rules:
 - exactly one female subject
 - anime-style young woman
 - beautiful, cute, polished, premium aesthetic
+- expressive eyes, pretty face, soft glossy hair
 - tasteful and non-sexualized
-- strong face appeal and expressive eyes
 - centered subject for 9:16 vertical composition
 - music-themed atmosphere matching the genre
 - vivid colors, dramatic lighting, scroll-stopping look
@@ -273,11 +333,8 @@ Rules:
         system=system,
         messages=[{"role": "user", "content": user}],
     )
-
     prompt = resp.content[0].text.strip().strip('"').strip("'")
-    prompt = _compact_prompt(prompt)
-    print(f"  [Claude] Prompt gerado ({len(prompt)} chars)")
-    return prompt
+    return _compact_prompt(f"{prompt}, {QUALITY_SUFFIX}")
 
 
 def _static_prompt(
@@ -291,40 +348,32 @@ def _static_prompt(
         (
             f"{girl_ref}, {visual_ref}, {mood_variant}, inspired by the feeling of '{song_name}', "
             f"beautiful anime aesthetic, vivid lighting, premium music visual, elegant pose, "
-            f"cute expressive face, detailed hair, sharp focus, high contrast, 9:16 vertical, masterpiece"
+            f"cute expressive face, detailed hair, scroll-stopping composition, {QUALITY_SUFFIX}"
         ),
         (
             f"music artwork for '{song_name}', {girl_ref}, {visual_ref}, {mood_variant}, "
-            f"cute and beautiful anime-style young woman, scroll-stopping composition, "
-            f"cinematic glow, polished colors, detailed eyes, centered subject, premium Shorts visual"
+            f"cute and beautiful anime-style young woman, charming eyes, polished shading, "
+            f"centered subject, premium Shorts visual, {QUALITY_SUFFIX}"
         ),
         (
             f"viral YouTube Shorts anime music visual, {girl_ref}, {visual_ref}, {mood_variant}, "
             f"stylish feminine character, premium aesthetic, dramatic light, vivid colors, "
-            f"high detail, clean composition, centered framing, elegant emotional atmosphere"
+            f"high detail face, clean composition, elegant emotional atmosphere, {QUALITY_SUFFIX}"
         ),
     ]
     return _compact_prompt(random.choice(templates))
 
 
 # ══════════════════════════════════════════════════════════════════════
-# REPLICATE — GERAÇÃO DE IMAGEM
+# REPLICATE
 # ══════════════════════════════════════════════════════════════════════
 
 REPLICATE_MODELS = [
-    "black-forest-labs/flux-schnell",
     "black-forest-labs/flux-dev",
+    "black-forest-labs/flux-schnell",
 ]
 
 MODEL_PARAMS = {
-    "black-forest-labs/flux-schnell": {
-        "num_inference_steps": 4,
-        "aspect_ratio": "9:16",
-        "output_format": "png",
-        "output_quality": 95,
-        "go_fast": True,
-        "disable_safety_checker": True,
-    },
     "black-forest-labs/flux-dev": {
         "num_inference_steps": 28,
         "aspect_ratio": "9:16",
@@ -333,10 +382,18 @@ MODEL_PARAMS = {
         "output_quality": 95,
         "disable_safety_checker": True,
     },
+    "black-forest-labs/flux-schnell": {
+        "num_inference_steps": 4,
+        "aspect_ratio": "9:16",
+        "output_format": "png",
+        "output_quality": 95,
+        "go_fast": True,
+        "disable_safety_checker": True,
+    },
 }
 
 
-def generate_image(prompt: str, output_path: str = None) -> str | None:
+def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     token = os.getenv("REPLICATE_API_TOKEN")
     if not token:
         print("  [Replicate] REPLICATE_API_TOKEN não configurado.")
@@ -346,9 +403,8 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
     full_prompt = _compact_prompt(
-        prompt
-        + ", anime-style, one female character, beautiful face, cute charm, premium composition, "
-          "vivid colors, cinematic lighting, detailed eyes, high contrast, sharp focus, masterpiece, best quality"
+        f"{prompt}, anime-style, one female character, beautiful face, cute charm, "
+        f"premium composition, vivid colors, cinematic lighting, detailed eyes, high contrast"
     )
 
     for model in REPLICATE_MODELS:
@@ -381,7 +437,7 @@ def generate_image(prompt: str, output_path: str = None) -> str | None:
     return None
 
 
-def _extract_url(output) -> str | None:
+def _extract_url(output: object) -> str | None:
     if isinstance(output, str) and output.startswith("http"):
         return output
 
@@ -393,7 +449,7 @@ def _extract_url(output) -> str | None:
             return first
 
     try:
-        for item in output:
+        for item in output:  # type: ignore
             if hasattr(item, "url"):
                 return str(item.url)
             if isinstance(item, str) and item.startswith("http"):
@@ -404,7 +460,7 @@ def _extract_url(output) -> str | None:
     return None
 
 
-def _download_image(url: str, output_path: str = None) -> str | None:
+def _download_image(url: str, output_path: str | None = None) -> str | None:
     try:
         resp = requests.get(url, timeout=60)
         resp.raise_for_status()
