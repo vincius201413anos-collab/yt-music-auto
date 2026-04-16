@@ -120,25 +120,11 @@
       "is_new": false
     },
     {
-      "id": "1rcvMAVl3CpcXe5ndrl6xewzJQMoiBXbi",
-      "name": "Something shallow fuc 3 [INdie}.wav",
-      "shorts_done": 0,
-      "done": false,
-      "is_new": true
-    },
-    {
-      "id": "1gWapdMP29WW2nl9v-xXXRL5oBtvOCCl-",
-      "name": "something shallow fuck [indie].wav",
-      "shorts_done": 0,
-      "done": false,
-      "is_new": true
-    },
-    {
       "id": "1na4gN8jyAiuBxoSUokXDlEpyatKULuAX",
       "name": "We were something (1) [POP].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1fN3gS2v6VBUMc0vbui-Zf-JVi7Kf0vV4",
@@ -185,6 +171,20 @@
     {
       "id": "1ZG27yNLZSMKtkLaadylvgxKg4JP34Wse",
       "name": "Burning Souls [rock].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1gWapdMP29WW2nl9v-xXXRL5oBtvOCCl-",
+      "name": "something shallow fuck [Rock].wav",
+      "shorts_done": 0,
+      "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1rcvMAVl3CpcXe5ndrl6xewzJQMoiBXbi",
+      "name": "Something shallow fuc 3 [Rock}.wav",
       "shorts_done": 0,
       "done": false,
       "is_new": true
