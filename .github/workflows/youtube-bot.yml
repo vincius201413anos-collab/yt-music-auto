@@ -3,7 +3,7 @@ name: youtube-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "*/30 * * * *"
+    - cron: "7,37 * * * *"
 
 permissions:
   contents: write
@@ -58,9 +58,6 @@ jobs:
         run: |
           python main.py
 
-      # -------------------------
-      # ARTIFACT (OK MANTER)
-      # -------------------------
       - name: Save videos artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -70,15 +67,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 3
 
-      # -------------------------
-      # COMMIT (CORRIGIDO)
-      # -------------------------
       - name: Commit state only
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          # 🔥 ADICIONA SÓ O STATE
           git add state.json
 
           if git diff --cached --quiet; then
