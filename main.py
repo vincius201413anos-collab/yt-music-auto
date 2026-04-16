@@ -20,6 +20,7 @@ from ai_image_generator import generate_image, build_ai_prompt
 
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
+MAX_TRACKS_PER_RUN = 2
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
@@ -84,7 +85,6 @@ def generate_viral_title(base_title, style):
         "You’ll Replay This 😳",
         "This Gets Better Every Loop 🔁",
     ]
-
     return f"{random.choice(hooks)} | {base_title}"
 
 
@@ -147,6 +147,7 @@ def sync_tracks(state, drive_files):
 
     for file in drive_files:
         if file["name"] not in existing:
+            print(f"Nova música detectada: {file['name']}")
             state["tracks"].append({
                 "id": file["id"],
                 "name": file["name"],
@@ -164,22 +165,40 @@ def sync_tracks(state, drive_files):
     drive_names = {f["name"] for f in drive_files}
     state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
 
+    if state["tracks"]:
+        state["queue_index"] = state["queue_index"] % len(state["tracks"])
+    else:
+        state["queue_index"] = 0
+
 
 def get_next_track(state):
-    for t in state["tracks"]:
-        if t.get("is_new"):
-            t["is_new"] = False
-            return t
+    tracks = state.get("tracks", [])
+    if not tracks:
+        return None
 
-    for t in state["tracks"]:
-        if t.get("shorts_done", 0) < SHORTS_PER_TRACK:
-            return t
+    for track in tracks:
+        if track.get("is_new", False):
+            track["is_new"] = False
+            return track
 
-    for t in state["tracks"]:
-        t["shorts_done"] = 0
-        t["done"] = False
+    start_index = state.get("queue_index", 0) % len(tracks)
+    current_index = start_index
 
-    return state["tracks"][0] if state["tracks"] else None
+    for _ in range(len(tracks)):
+        track = tracks[current_index]
+
+        if track.get("shorts_done", 0) < SHORTS_PER_TRACK:
+            state["queue_index"] = (current_index + 1) % len(tracks)
+            return track
+
+        current_index = (current_index + 1) % len(tracks)
+
+    for track in tracks:
+        track["shorts_done"] = 0
+        track["done"] = False
+
+    state["queue_index"] = 1 % len(tracks) if len(tracks) > 1 else 0
+    return tracks[0]
 
 
 # =========================
@@ -205,6 +224,7 @@ def resolve_background(style, filename, short_number, styles):
     if img and os.path.exists(img):
         cached = f"temp/{Path(filename).stem}_{short_number}.png"
         shutil.copy2(img, cached)
+        print(f"[IA] Imagem salva em: {cached}")
         return cached
 
     fallback = "assets/backgrounds/default.jpg"
@@ -212,39 +232,18 @@ def resolve_background(style, filename, short_number, styles):
         print(f"Usando fallback: {fallback}")
         return fallback
 
-    raise FileNotFoundError("Nenhum background encontrado e fallback assets/backgrounds/default.jpg não existe.")
+    raise FileNotFoundError(
+        "Nenhum background encontrado e fallback assets/backgrounds/default.jpg não existe."
+    )
 
 
 # =========================
-# MAIN
+# PROCESSAMENTO
 # =========================
 
-def main():
-    print("BOT INICIADO")
-
-    if not DRIVE_FOLDER_ID:
-        raise ValueError("DRIVE_FOLDER_ID não encontrado nas variáveis de ambiente.")
-
-    state = load_state()
-    service = get_drive_service()
-
-    inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
-    if not inbox_id:
-        raise ValueError("Pasta 'inbox' não encontrada no Drive.")
-
-    files = list_audio_files_in_folder(service, inbox_id)
-    print(f"Áudios encontrados: {[f['name'] for f in files]}")
-
-    sync_tracks(state, files)
-
-    track = get_next_track(state)
-    if not track:
-        print("Nada pra postar")
-        save_state(state)
-        return
-
+def process_track(service, state, track):
     name = track["name"]
-    print(f"Processando: {name}")
+    print(f"\n🔥 PROCESSANDO: {name}")
 
     styles = detect_styles(name)
     style = detect_style(name)
@@ -294,10 +293,52 @@ def main():
 
     print(f"Finalizado: {track['shorts_done']} short(s) para {name}")
 
+    try:
+        if os.path.exists(audio_path):
+            os.remove(audio_path)
+    except Exception:
+        pass
+
     if track["done"]:
         print(f"Música concluída nesta execução: {name}")
 
-    print("FINALIZADO")
+
+# =========================
+# MAIN
+# =========================
+
+def main():
+    print("BOT INICIADO")
+
+    if not DRIVE_FOLDER_ID:
+        raise ValueError("DRIVE_FOLDER_ID não encontrado nas variáveis de ambiente.")
+
+    state = load_state()
+    service = get_drive_service()
+
+    inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
+    if not inbox_id:
+        raise ValueError("Pasta 'inbox' não encontrada no Drive.")
+
+    files = list_audio_files_in_folder(service, inbox_id)
+    print(f"Áudios encontrados: {[f['name'] for f in files]}")
+
+    sync_tracks(state, files)
+    save_state(state)
+
+    tracks_processed = 0
+
+    while tracks_processed < MAX_TRACKS_PER_RUN:
+        track = get_next_track(state)
+
+        if not track:
+            print("Nada mais pra processar")
+            break
+
+        process_track(service, state, track)
+        tracks_processed += 1
+
+    print(f"\n✅ EXECUÇÃO FINALIZADA — músicas processadas: {tracks_processed}")
 
 
 if __name__ == "__main__":
