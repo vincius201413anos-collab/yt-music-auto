@@ -3,7 +3,7 @@ name: youtube-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 * * * *"
+    - cron: "13 * * * *"
 
 permissions:
   contents: write
@@ -63,7 +63,9 @@ jobs:
           REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
+          echo "Entrando no bot..."
           python main.py
+          echo "Saindo do bot..."
 
       - name: Save videos artifact
         if: always()
