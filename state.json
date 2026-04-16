@@ -157,9 +157,9 @@
     {
       "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
       "name": "sorry motel [pop] [indie].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
@@ -190,5 +190,6 @@
       "is_new": true
     }
   ],
-  "queue_index": 0
+  "queue_index": 0,
+  "last_posted_track": "sorry motel [pop] [indie].wav"
 }
