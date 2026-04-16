@@ -199,9 +199,9 @@
     {
       "id": "15tAYlrLOZqdImeeGwmkdQGgzYXKHh99t",
       "name": "Ghost Signal [phonk].wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1XG8HZEXNvrWc_SY8fFR32UiV1LYz6UXk",
@@ -233,5 +233,5 @@
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "Faddet [eletronic]d (2).wav"
+  "last_posted_track": "Ghost Signal [phonk].wav"
 }
