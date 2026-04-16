@@ -213,9 +213,9 @@
     {
       "id": "1_UeSCIz-5T1S6Fwua_Gb0GH6_G9q16_Y",
       "name": "Faddet [eletronic]de.wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1d8NC1SxBdBSMDYFeNedo_zytMk0PwBQv",
@@ -233,5 +233,5 @@
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "Faddet [eletronic]dsa.wav"
+  "last_posted_track": "Faddet [eletronic]de.wav"
 }
