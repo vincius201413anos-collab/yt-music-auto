@@ -1,13 +1,12 @@
 """
 main.py — Bot de automação YouTube Shorts
-Claude Opus gera títulos e descrições virais dinamicamente.
+Agora prioriza imagem IA com personagem feminina estilizada em TODOS os vídeos.
 Arquitetura limpa, logs detalhados, tratamento robusto de erros.
 """
 
 import os
 import json
 import re
-import shutil
 import random
 import time
 import traceback
@@ -32,15 +31,15 @@ from ai_image_generator import generate_image, build_ai_prompt
 # CONFIGURAÇÃO
 # ══════════════════════════════════════════════════════════════════════════════
 
-STATE_FILE       = Path("state.json")
+STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 3
-DRIVE_FOLDER_ID  = os.getenv("DRIVE_FOLDER_ID")
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 
 HUMAN_DELAY_MIN = 10
 HUMAN_DELAY_MAX = 60
 
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
-TIKTOK_LINK  = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
+TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
 
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".opus"}
 
@@ -85,10 +84,9 @@ def human_delay():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# TÍTULOS VIRAIS — CLAUDE OPUS
+# TÍTULOS VIRAIS — CLAUDE
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Fallback estático quando a API falha
 STYLE_HOOKS = {
     "rock":       ["This Hits HARD 🔥", "You Feel This One 🎸", "Rock That Goes Crazy 🔥", "This Drop Is Insane 🤯", "Can't Skip This 🎸", "This One Is Wild ⚡"],
     "metal":      ["This Goes INSANE 🔥", "Heavy Drop Warning ⚠️", "Metal That Hits HARD 🔥", "Pure Chaos 🤯", "This One Is Brutal 😈", "No Skip Zone 🔥"],
@@ -113,15 +111,15 @@ FORMATS = [
 ]
 
 
+def get_anthropic_model() -> str:
+    return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-7")
+
+
 def generate_viral_title_opus(
     base_title: str,
     style: str,
     styles: list,
 ) -> str:
-    """
-    Usa Claude Opus para gerar título viral único, específico e
-    otimizado para o algoritmo do YouTube Shorts.
-    """
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         return _static_title(base_title, style)
@@ -131,7 +129,7 @@ def generate_viral_title_opus(
         all_styles = ", ".join(styles) if styles else style
 
         resp = client.messages.create(
-            model="claude-opus-4-5",
+            model=get_anthropic_model(),
             max_tokens=120,
             system=(
                 "You are a viral YouTube Shorts title expert. "
@@ -155,35 +153,33 @@ def generate_viral_title_opus(
                     f"- Create curiosity or emotional pull\n"
                     f"- Mix the song name with a viral hook naturally\n"
                     f"- Avoid overused phrases like 'hits different' or 'fire'\n"
-                    f"- Use current 2025 YouTube Shorts language"
+                    f"- Use current YouTube Shorts language"
                 ),
             }],
         )
 
         title = resp.content[0].text.strip().strip('"').strip("'")
         title = title[:100]
-        log(f"[Opus] Título gerado: {title}")
+        log(f"[Claude] Título gerado: {title}")
         return title
 
     except Exception as e:
-        log(f"[Opus] Falha no título: {e} — usando fallback")
+        log(f"[Claude] Falha no título: {e} — usando fallback")
         return _static_title(base_title, style)
 
 
 def _static_title(base_title: str, style: str) -> str:
-    """Título estático de alta qualidade."""
     clean = clean_for_youtube(base_title)
     hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
-    hook  = random.choice(hooks)
-    fmt   = random.choice(FORMATS)
+    hook = random.choice(hooks)
+    fmt = random.choice(FORMATS)
     return fmt.format(hook=hook, title=clean)[:100]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# METADATA — CLAUDE OPUS
+# METADATA — CLAUDE
 # ══════════════════════════════════════════════════════════════════════════════
 
-# Hashtags por estilo — curadas para máximo alcance
 STYLE_HASHTAGS = {
     "electronic": "#electronic #edm #electronicmusic #synthwave #clubmusic #rave #dancemusic #techno #trance #futuremusic",
     "phonk":      "#phonk #phonkmusic #darkphonk #phonkedit #drift #phonkvibes #russiaphonk #phonkrap #aggressive #phonktiktok",
@@ -192,11 +188,11 @@ STYLE_HASHTAGS = {
     "metal":      "#metal #metalmusic #heavymetal #deathmetal #metalhead #extrememetal #progressivemetal #metalcore #djent",
     "indie":      "#indie #indiemusic #indierock #alternativemusic #indievibes #bedroom #emotionalmusic #sadmusic",
     "lofi":       "#lofi #lofihiphop #lofichill #studymusic #relaxingmusic #chillvibes #lofibeats #lofimusic #chill",
-    "cinematic":  "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #cinemamusic #dramatic #epicorchestralmmusic",
+    "cinematic":  "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #cinemamusic #dramatic #epicorchestralmusic",
     "funk":       "#funk #funkmusic #groove #brazilianmusic #soulmusic #funkychill #groovemusic #partytime",
     "dark":       "#dark #darkmusic #darkvibes #darkambient #haunting #mysterious #darkness #darkwave #gothic",
     "pop":        "#pop #popmusic #popvibes #newmusic #chart #top40 #popbanger #hitmusic #mainstream",
-    "default":    "#music #newmusic #viralmusic #musiclover #underground #musicshorts #indiemúsic",
+    "default":    "#music #newmusic #viralmusic #musiclover #underground #musicshorts #indiemusic",
 }
 
 UNIVERSAL_TAGS = "#shorts #youtubeshorts #viral #fyp #foryou #trending #musicshorts"
@@ -207,9 +203,6 @@ def build_description_opus(
     style: str,
     styles: list,
 ) -> str:
-    """
-    Usa Claude Opus para criar descrição otimizada para SEO e conversão.
-    """
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
         return _static_description(base_title, style, styles)
@@ -219,7 +212,7 @@ def build_description_opus(
         all_styles = ", ".join(styles) if styles else style
 
         resp = client.messages.create(
-            model="claude-opus-4-5",
+            model=get_anthropic_model(),
             max_tokens=400,
             system=(
                 "You are a YouTube SEO expert specializing in music channels. "
@@ -250,15 +243,14 @@ def build_description_opus(
         return desc[:4500]
 
     except Exception as e:
-        log(f"[Opus] Falha na descrição: {e} — usando fallback")
+        log(f"[Claude] Falha na descrição: {e} — usando fallback")
         return _static_description(base_title, style, styles)
 
 
 def _static_description(base_title: str, style: str, styles: list) -> str:
-    """Descrição estática de alta qualidade."""
     clean = clean_for_youtube(base_title)
     style_tags = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
-    all_styles  = " | ".join(s.title() for s in styles) if styles else style.title()
+    all_styles = " | ".join(s.title() for s in styles) if styles else style.title()
 
     return (
         f"🎵 {clean}\n\n"
@@ -273,12 +265,11 @@ def _static_description(base_title: str, style: str, styles: list) -> str:
 
 
 def build_metadata(filename: str, short_num: int, style: str, styles: list):
-    """Monta título, descrição e tags otimizados."""
-    base  = clean_title(filename)
+    base = clean_title(filename)
     clean = clean_for_youtube(base)
 
     title = generate_viral_title_opus(clean, style, styles)
-    desc  = build_description_opus(clean, style, styles)
+    desc = build_description_opus(clean, style, styles)
 
     tags = list({
         "music", "shorts", "youtube shorts", "viral music",
@@ -287,6 +278,7 @@ def build_metadata(filename: str, short_num: int, style: str, styles: list):
         *[s for s in styles],
         *[f"{s} music" for s in styles],
         "independent music", "underground music", "new artist",
+        "anime aesthetic", "music aesthetic", "visual edit",
     })
 
     return title, desc, tags[:500]
@@ -327,14 +319,17 @@ def sync_tracks(state: dict, drive_files: list):
         if f["name"] not in existing:
             log(f"Nova música: {f['name']}")
             state["tracks"].append({
-                "id": f["id"], "name": f["name"],
-                "shorts_done": 0, "done": False, "is_new": True,
+                "id": f["id"],
+                "name": f["name"],
+                "shorts_done": 0,
+                "done": False,
+                "is_new": True,
             })
         else:
             tr = existing[f["name"]]
             tr["id"] = f["id"]
 
-    drive_names     = {f["name"] for f in drive_files}
+    drive_names = {f["name"] for f in drive_files}
     state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
 
     n = len(state["tracks"])
@@ -348,15 +343,13 @@ def get_next_track(state: dict):
 
     last = state.get("last_posted_track")
 
-    # Novas músicas têm prioridade absoluta
     new = [t for t in tracks if t.get("is_new")]
     if new:
         chosen = next((t for t in new if t["name"] != last), new[0])
         chosen["is_new"] = False
         return chosen
 
-    # Fila circular — pula done e evita repetir a última
-    idx   = state.get("queue_index", 0) % len(tracks)
+    idx = state.get("queue_index", 0) % len(tracks)
     avail = []
     for i in range(len(tracks)):
         t = tracks[(idx + i) % len(tracks)]
@@ -385,26 +378,31 @@ def get_next_track(state: dict):
 # ══════════════════════════════════════════════════════════════════════════════
 
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
-    # 1. Tenta background local primeiro
-    try:
-        bg = get_random_background(style, filename)
-        if bg and not str(bg).startswith("__AUTO"):
-            log(f"Background local: {bg}")
-            return bg
-    except Exception as e:
-        log(f"Background local falhou: {e}")
-
-    # 2. Gera imagem IA — Claude Opus cria o prompt
+    """
+    Prioriza SEMPRE imagem IA com personagem feminina estilizada.
+    Só cai para background local se a geração IA falhar.
+    """
     os.makedirs("temp", exist_ok=True)
-    prompt = build_ai_prompt(style, filename, styles)
-    log(f"Gerando imagem IA (Opus+Flux)…")
-    log(f"Prompt: {prompt[:120]}…")
+
+    # 1. IA primeiro — garante garota em todos os vídeos
+    prompt = build_ai_prompt(style, filename, styles, short_num=short_num)
+    log("Gerando imagem IA focada em personagem feminina estilizada…")
+    log(f"Prompt: {prompt[:140]}...")
 
     dest = f"temp/{Path(filename).stem}_{short_num}.png"
-    img  = generate_image(prompt, output_path=dest)
+    img = generate_image(prompt, output_path=dest)
     if img and os.path.exists(img):
         log(f"Imagem IA salva: {img}")
         return img
+
+    # 2. Fallback local se IA falhar
+    try:
+        bg = get_random_background(style, filename)
+        if bg and not str(bg).startswith("__AUTO"):
+            log(f"Fallback background local: {bg}")
+            return bg
+    except Exception as e:
+        log(f"Fallback local falhou: {e}")
 
     # 3. Fallback final
     fallback = "assets/backgrounds/default.jpg"
@@ -416,10 +414,10 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
 
 
 def build_output_path(base_title: str, style: str, short_num: int) -> str:
-    date   = datetime.utcnow().strftime("%Y-%m-%d")
+    date = datetime.utcnow().strftime("%Y-%m-%d")
     folder = Path("output") / date / style
     folder.mkdir(parents=True, exist_ok=True)
-    name   = f"{date}__{style}__{safe_filename(base_title)}__s{short_num}.mp4"
+    name = f"{date}__{style}__{safe_filename(base_title)}__s{short_num}.mp4"
     return str(folder / name)
 
 
@@ -429,13 +427,13 @@ def build_output_path(base_title: str, style: str, short_num: int) -> str:
 
 def main():
     log("═" * 50)
-    log("BOT INICIADO — Claude Opus Edition")
+    log("BOT INICIADO — Girl Visual Edition")
     log("═" * 50)
 
     if not DRIVE_FOLDER_ID:
         raise ValueError("DRIVE_FOLDER_ID não configurado.")
 
-    state   = load_state()
+    state = load_state()
     service = get_drive_service()
 
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
@@ -455,10 +453,10 @@ def main():
         log("Nenhuma faixa disponível. Encerrando.")
         return
 
-    name       = track["name"]
-    short_num  = track.get("shorts_done", 0) + 1
-    styles     = detect_styles(name)
-    style      = detect_style(name)
+    name = track["name"]
+    short_num = track.get("shorts_done", 0) + 1
+    styles = detect_styles(name)
+    style = detect_style(name)
     base_title = clean_title(name)
 
     log(f"Processando: {name}")
@@ -472,19 +470,20 @@ def main():
     download_drive_file(service, track["id"], audio_path)
     log("Download concluído.")
 
-    bg          = resolve_background(style, name, short_num, styles)
+    bg = resolve_background(style, name, short_num, styles)
     output_path = build_output_path(base_title, style, short_num)
 
     log("Gerando vídeo com overlays de retenção…")
-    # Passa song_name explicitamente para os overlays
     video_path = create_short(
-        audio_path, bg, output_path, style,
+        audio_path,
+        bg,
+        output_path,
+        style,
         song_name=clean_for_youtube(base_title),
     )
     log(f"Vídeo: {video_path}")
 
-    # Gera metadata com Claude Opus
-    log("Gerando metadata viral com Opus…")
+    log("Gerando metadata viral com Claude…")
     title, desc, tags = build_metadata(name, short_num, style, styles)
     log(f"Título: {title}")
 
@@ -495,7 +494,6 @@ def main():
     video_id = response.get("id", "?") if isinstance(response, dict) else "?"
     log(f"Publicado! https://youtu.be/{video_id}")
 
-    # Backup no Drive
     try:
         backup_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
         if backup_id:
@@ -507,13 +505,11 @@ def main():
     except Exception as e:
         log(f"Backup falhou (não crítico): {e}")
 
-    # Atualiza estado
     track["shorts_done"] = short_num
-    track["done"]        = short_num >= SHORTS_PER_TRACK
+    track["done"] = short_num >= SHORTS_PER_TRACK
     state["last_posted_track"] = name
     save_state(state)
 
-    # Limpa temp
     try:
         if os.path.exists(audio_path):
             os.remove(audio_path)
