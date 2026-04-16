@@ -26,10 +26,6 @@ SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?s
 TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
 
 
-# =========================
-# STATE
-# =========================
-
 def load_state():
     if not STATE_FILE.exists():
         return {"tracks": [], "queue_index": 0}
@@ -52,10 +48,6 @@ def save_state(state):
     with STATE_FILE.open("w", encoding="utf-8") as f:
         json.dump(state, f, ensure_ascii=False, indent=2)
 
-
-# =========================
-# UTIL
-# =========================
 
 def clean_title(filename):
     name = Path(filename).stem
@@ -137,10 +129,6 @@ def build_video_metadata(filename, short_number, style, styles):
     return title, description, final_tags
 
 
-# =========================
-# TRACK CONTROL
-# =========================
-
 def sync_tracks(state, drive_files):
     existing = {t["name"]: t for t in state["tracks"]}
 
@@ -175,7 +163,6 @@ def get_next_track(state):
     if not tracks:
         return None
 
-    # prioridade para músicas novas
     for track in tracks:
         if track.get("is_new", False):
             track["is_new"] = False
@@ -193,7 +180,6 @@ def get_next_track(state):
 
         current_index = (current_index + 1) % len(tracks)
 
-    # se todas concluíram os 3 shorts, reinicia o ciclo
     for track in tracks:
         track["shorts_done"] = 0
         track["done"] = False
@@ -201,10 +187,6 @@ def get_next_track(state):
     state["queue_index"] = 1 % len(tracks) if len(tracks) > 1 else 0
     return tracks[0]
 
-
-# =========================
-# BACKGROUND
-# =========================
 
 def resolve_background(style, filename, short_number, styles):
     try:
@@ -237,10 +219,6 @@ def resolve_background(style, filename, short_number, styles):
         "Nenhum background encontrado e fallback assets/backgrounds/default.jpg não existe."
     )
 
-
-# =========================
-# MAIN
-# =========================
 
 def main():
     print("BOT INICIADO")
