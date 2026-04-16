@@ -1,1 +1,9 @@
+- name: Prepare folders
+  run: |
+    mkdir -p output temp assets/backgrounds
 
+    if [ -e assets/source_videos ] && [ ! -d assets/source_videos ]; then
+      rm -f assets/source_videos
+    fi
+
+    mkdir -p assets/source_videos
