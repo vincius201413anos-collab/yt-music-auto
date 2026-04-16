@@ -206,9 +206,9 @@
     {
       "id": "1XG8HZEXNvrWc_SY8fFR32UiV1LYz6UXk",
       "name": "Faddet [eletronic]dsa.wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "1_UeSCIz-5T1S6Fwua_Gb0GH6_G9q16_Y",
@@ -233,5 +233,5 @@
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "Ghost Signal [phonk].wav"
+  "last_posted_track": "Faddet [eletronic]dsa.wav"
 }
