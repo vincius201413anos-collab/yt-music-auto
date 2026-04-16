@@ -33,13 +33,18 @@ TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_devic
 
 def load_state():
     if not STATE_FILE.exists():
-        return {"tracks": [], "queue_index": 0}
+        return {
+            "tracks": [],
+            "queue_index": 0,
+            "last_posted_track": None,
+        }
 
     with STATE_FILE.open("r", encoding="utf-8") as f:
         state = json.load(f)
 
     state.setdefault("tracks", [])
     state.setdefault("queue_index", 0)
+    state.setdefault("last_posted_track", None)
 
     for track in state["tracks"]:
         track.setdefault("shorts_done", 0)
@@ -57,6 +62,8 @@ def save_state(state):
 def clean_title(filename):
     name = Path(filename).stem
     name = re.sub(r"\[[^\]]+\]", "", name)
+    name = re.sub(r"\([^)]+\)", "", name)
+    name = re.sub(r"[{}]", "", name)
     name = re.sub(r"[_\-]+", " ", name)
     name = re.sub(r"\s+", " ", name).strip()
     return name.title()
@@ -69,19 +76,130 @@ def safe_filename(text):
     return text[:60]
 
 
+def clean_title_for_youtube(base_title):
+    title = base_title
+
+    # limpa sobras comuns que deixam o título feio
+    title = re.sub(r"\(\d+\)", "", title)
+    title = re.sub(r"\bshort\s*\d+\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(r"\bversion\s*\d+\b", "", title, flags=re.IGNORECASE)
+    title = re.sub(r"\s+", " ", title).strip(" -_|")
+
+    return title
+
+
 def generate_viral_title(base_title, style):
-    hooks = [
-        "Wait For This 😳",
-        "This Drop Hits HARD 🔥",
-        "Don’t Skip This 😳",
-        "This Part Goes CRAZY 🤯",
-        "This Feels Illegal 😈",
-        "This Is Addictive 🔁",
-        "Loop This 🔥",
-        "You’ll Replay This 😳",
-        "This Gets Better Every Loop 🔁",
+    clean = clean_title_for_youtube(base_title)
+
+    style_hooks = {
+        "rock": [
+            "This Hits HARD 🔥",
+            "You Feel This One 🎸",
+            "Rock That Goes Crazy 🔥",
+            "This Drop Is Insane 🤯",
+            "This One Is Wild ⚡",
+        ],
+        "metal": [
+            "This Goes INSANE 🔥",
+            "Heavy Drop Warning ⚠️",
+            "Metal That Hits HARD 🔥",
+            "This Is Pure Chaos 🤯",
+            "This One Is Brutal 😈",
+        ],
+        "phonk": [
+            "This Feels Illegal 😈",
+            "Night Drive Vibes 🌙",
+            "Phonk Energy 🔥",
+            "This One Is Different 😳",
+            "You’ll Replay This 🔁",
+        ],
+        "trap": [
+            "This Goes HARD 🔥",
+            "Trap Energy 😈",
+            "Luxury Vibes 💎",
+            "You’ll Replay This 🔁",
+            "This One Is Too Clean 😮‍🔥",
+        ],
+        "indie": [
+            "You Feel This One 🎧",
+            "Late Night Mood 🌌",
+            "This Hits Different 😳",
+            "Emotional Vibes 🌙",
+            "This One Stays With You ✨",
+        ],
+        "lofi": [
+            "Late Night Vibes 🌙",
+            "This Feels Different ✨",
+            "You’ll Loop This 🔁",
+            "Calm But Addictive 🎧",
+            "This One Is A Mood ☁️",
+        ],
+        "electronic": [
+            "This Drop Hits HARD 🔥",
+            "Electronic Energy ⚡",
+            "You’ll Replay This 🔁",
+            "This One Is Unreal 🤯",
+            "This Sounds Massive 🎧",
+        ],
+        "cinematic": [
+            "This Feels Cinematic 🎬",
+            "You Need To Hear This ✨",
+            "This One Hits Different 😳",
+            "Pure Atmosphere 🌌",
+            "This Sounds Huge 🔥",
+        ],
+        "funk": [
+            "This Hits Different 🔥",
+            "Party Energy ⚡",
+            "This One Goes Crazy 🤯",
+            "Don’t Skip This 😳",
+            "Brazilian Vibes 🔥",
+        ],
+        "dark": [
+            "Dark Vibes Only 😈",
+            "This One Feels Dangerous 🔥",
+            "You’ll Replay This 🌑",
+            "This Hits Different 😳",
+            "Too Dark, Too Good 🖤",
+        ],
+        "pop": [
+            "This Is Addictive 🔁",
+            "Don’t Skip This 😳",
+            "You’ll Love This One 💫",
+            "This Gets Better Every Loop 🔥",
+            "Too Clean To Ignore ✨",
+        ],
+        "default": [
+            "This Hits Different 😳",
+            "You’ll Replay This 🔁",
+            "Don’t Skip This 😳",
+            "This One Is Addictive 🔥",
+            "This Gets Better Every Loop 🔥",
+        ],
+    }
+
+    end_variations = [
+        "",
+        " (Best Part 🔥)",
+        " (Wait For It 😳)",
+        " (Loop Worthy 🔁)",
+        " (Too Clean ✨)",
+        "",
+        "",
     ]
-    return f"{random.choice(hooks)} | {base_title}"
+
+    hooks = style_hooks.get(style, style_hooks["default"])
+    hook = random.choice(hooks)
+    ending = random.choice(end_variations)
+
+    formats = [
+        f"{hook} | {clean}{ending}",
+        f"{clean} | {hook}",
+        f"{hook} — {clean}{ending}",
+        f"{clean} — {hook}",
+    ]
+
+    return random.choice(formats)
 
 
 def build_output_path(base_title, style, short_number):
@@ -97,10 +215,11 @@ def build_output_path(base_title, style, short_number):
 
 def build_video_metadata(filename, short_number, style, styles):
     base_title = clean_title(filename)
-    title = generate_viral_title(base_title, style)
+    clean_base_title = clean_title_for_youtube(base_title)
+    title = generate_viral_title(clean_base_title, style)
 
     description = (
-        f"{base_title}\n\n"
+        f"{clean_base_title}\n\n"
         f"Main style: {style}\n"
         f"Detected styles: {', '.join(styles)}\n"
         f"Short version {short_number}/{SHORTS_PER_TRACK}\n\n"
@@ -116,7 +235,7 @@ def build_video_metadata(filename, short_number, style, styles):
         "viral music",
         style,
         f"{style} music",
-        base_title.lower(),
+        clean_base_title.lower(),
     ]
 
     for s in styles:
@@ -168,29 +287,50 @@ def get_next_track(state):
     if not tracks:
         return None
 
-    for track in tracks:
-        if track.get("is_new", False):
-            track["is_new"] = False
-            return track
+    last_posted_track = state.get("last_posted_track")
+
+    # prioridade pra música nova, mas evita repetir a mesma se possível
+    new_tracks = [t for t in tracks if t.get("is_new", False)]
+    if new_tracks:
+        for track in new_tracks:
+            if track["name"] != last_posted_track:
+                track["is_new"] = False
+                return track
+
+        chosen = new_tracks[0]
+        chosen["is_new"] = False
+        return chosen
 
     start_index = state.get("queue_index", 0) % len(tracks)
     current_index = start_index
 
+    available_tracks = []
     for _ in range(len(tracks)):
         track = tracks[current_index]
 
         if track.get("shorts_done", 0) < SHORTS_PER_TRACK:
-            state["queue_index"] = (current_index + 1) % len(tracks)
-            return track
+            available_tracks.append((current_index, track))
 
         current_index = (current_index + 1) % len(tracks)
 
-    for track in tracks:
-        track["shorts_done"] = 0
-        track["done"] = False
+    if not available_tracks:
+        for track in tracks:
+            track["shorts_done"] = 0
+            track["done"] = False
 
-    state["queue_index"] = 1 % len(tracks) if len(tracks) > 1 else 0
-    return tracks[0]
+        # tenta de novo depois do reset
+        available_tracks = [(i, t) for i, t in enumerate(tracks)]
+
+    # evita repetir a última música se houver alternativa
+    for index, track in available_tracks:
+        if track["name"] != last_posted_track:
+            state["queue_index"] = (index + 1) % len(tracks)
+            return track
+
+    # fallback: se só existe ela mesma disponível
+    index, track = available_tracks[0]
+    state["queue_index"] = (index + 1) % len(tracks)
+    return track
 
 
 def resolve_background(style, filename, short_number, styles):
@@ -301,6 +441,7 @@ def main():
 
     track["shorts_done"] = short_number
     track["done"] = track["shorts_done"] >= SHORTS_PER_TRACK
+    state["last_posted_track"] = track["name"]
     save_state(state)
 
     try:
