@@ -185,9 +185,9 @@
     {
       "id": "1rcvMAVl3CpcXe5ndrl6xewzJQMoiBXbi",
       "name": "Something shallow fuc 3 [Rock}.wav",
-      "shorts_done": 0,
+      "shorts_done": 1,
       "done": false,
-      "is_new": true
+      "is_new": false
     },
     {
       "id": "19N5Eq0RQ5kM98IzplJ5hvKsTRVquWPyM",
@@ -233,5 +233,5 @@
     }
   ],
   "queue_index": 0,
-  "last_posted_track": "something shallow fuck [Rock].wav"
+  "last_posted_track": "Something shallow fuc 3 [Rock}.wav"
 }
