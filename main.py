@@ -19,6 +19,7 @@ from drive_service import (
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
+    upload_file_to_drive,
 )
 from background_selector import detect_style, detect_styles, get_random_background
 from video_generator import create_short
@@ -602,8 +603,16 @@ def main():
         video_id = response.get("id", "?") if isinstance(response, dict) else "?"
         log(f"Publicado! https://youtu.be/{video_id}")
 
-        # BACKUP DESATIVADO POR ENQUANTO
-        # Não salva mais no Drive nem no GitHub storage
+        try:
+            backup_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
+            if backup_id:
+                log("Salvando backup no Drive...")
+                upload_file_to_drive(service, backup_id, video_path)
+                log("Backup salvo com sucesso.")
+            else:
+                log("Pasta 'backups' não encontrada no Drive.")
+        except Exception as e:
+            log(f"Erro ao salvar backup: {e}")
 
         track["shorts_done"] = short_num
         track["done"] = short_num >= SHORTS_PER_TRACK
