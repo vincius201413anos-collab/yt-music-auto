@@ -1,86 +1,69 @@
 """
 main.py — Bot de automação YouTube Shorts
-Versão melhorada com:
-- lock de state.json
-- limpeza segura de temporários
-- singleton do cliente Anthropic
-- títulos mais específicos
-- imagem IA priorizada em todos os vídeos
+Versão 2.0 — Visual cinematográfico + títulos únicos + modelo corrigido.
 """
 
-from __future__ import annotations
-
-import json
 import os
-import random
+import json
 import re
+import random
 import time
 import traceback
-from datetime import datetime
 from pathlib import Path
-from typing import Any
+from datetime import datetime
 
 import anthropic
 
 from drive_service import (
-    download_drive_file,
-    find_folder_id,
     get_drive_service,
+    find_folder_id,
     list_audio_files_in_folder,
+    download_drive_file,
     upload_file_to_drive,
 )
 from background_selector import detect_style, detect_styles, get_random_background
 from video_generator import create_short
 from youtube_service import upload_video
-from ai_image_generator import build_ai_prompt, generate_image
-
-try:
-    import fcntl
-except ImportError:  # Windows fallback
-    fcntl = None
-
+from ai_image_generator import generate_image, build_ai_prompt
 
 # ══════════════════════════════════════════════════════════════════════════════
-# CONFIG
+# CONFIGURAÇÃO
 # ══════════════════════════════════════════════════════════════════════════════
 
 STATE_FILE = Path("state.json")
-SHORTS_PER_TRACK = 5
+SHORTS_PER_TRACK = 5   # 5 variações por música para maximizar alcance
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
-
 HUMAN_DELAY_MIN = 10
 HUMAN_DELAY_MAX = 60
-
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy?si=3fQcRGwSQ8O2vsqq6jOVow"
 TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit?is_from_webapp=1&sender_device=pc"
-
 AUDIO_EXTENSIONS = {".mp3", ".wav", ".flac", ".ogg", ".m4a", ".aac", ".opus"}
 
-_ANTHROPIC_CLIENT: anthropic.Anthropic | None = None
-
-
 # ══════════════════════════════════════════════════════════════════════════════
-# UTILS
+# SINGLETON ANTHROPIC — instancia uma única vez
 # ══════════════════════════════════════════════════════════════════════════════
 
-def get_anthropic_model() -> str:
-    return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-7")
-
+_anthropic_client: anthropic.Anthropic | None = None
 
 def get_anthropic_client() -> anthropic.Anthropic | None:
-    global _ANTHROPIC_CLIENT
-    api_key = os.getenv("ANTHROPIC_API_KEY")
+    global _anthropic_client
+    api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         return None
-    if _ANTHROPIC_CLIENT is None:
-        _ANTHROPIC_CLIENT = anthropic.Anthropic(api_key=api_key)
-    return _ANTHROPIC_CLIENT
+    if _anthropic_client is None:
+        _anthropic_client = anthropic.Anthropic(api_key=api_key)
+    return _anthropic_client
 
+def get_anthropic_model() -> str:
+    return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-5")
 
-def log(msg: str) -> None:
+# ══════════════════════════════════════════════════════════════════════════════
+# UTILITÁRIOS
+# ══════════════════════════════════════════════════════════════════════════════
+
+def log(msg: str):
     ts = datetime.utcnow().strftime("%H:%M:%S")
     print(f"[{ts}] {msg}")
-
 
 def clean_title(filename: str) -> str:
     name = Path(filename).stem
@@ -91,13 +74,11 @@ def clean_title(filename: str) -> str:
     name = re.sub(r"\s+", " ", name).strip()
     return name.title()
 
-
 def clean_for_youtube(title: str) -> str:
     title = re.sub(r"\(\d+\)", "", title)
     title = re.sub(r"\bshort\s*\d*\b", "", title, flags=re.IGNORECASE)
     title = re.sub(r"\bversion\s*\d*\b", "", title, flags=re.IGNORECASE)
     return re.sub(r"\s+", " ", title).strip(" -_|")
-
 
 def safe_filename(text: str) -> str:
     text = text.lower()
@@ -105,213 +86,278 @@ def safe_filename(text: str) -> str:
     text = re.sub(r"\s+", "_", text)
     return text[:60]
 
-
-def human_delay() -> None:
+def human_delay():
     secs = random.randint(HUMAN_DELAY_MIN, HUMAN_DELAY_MAX)
     log(f"Aguardando {secs}s (comportamento humano)…")
     time.sleep(secs)
 
-
 # ══════════════════════════════════════════════════════════════════════════════
-# TÍTULOS / DESCRIÇÕES
+# TÍTULOS VIRAIS — HOOKS ÚNICOS POR GÊNERO
 # ══════════════════════════════════════════════════════════════════════════════
 
-STYLE_HOOKS: dict[str, list[str]] = {
+# Formatos rotativos para A/B entre os 5 shorts
+TITLE_FORMATS_BY_POSITION = {
+    1: "{hook} | {title}",           # hook em destaque
+    2: "{title} | {hook}",           # nome da música em destaque
+    3: "You need to hear this 🎧 {title}",  # curiosidade
+    4: "{hook} — {title}",           # pausa dramática
+    5: "Play this at {time} 🌙 {title}",    # contexto de uso
+}
+
+STYLE_TIME_CONTEXT = {
+    "lofi": "3am",
+    "indie": "sunset",
+    "rock": "full volume",
+    "metal": "midnight",
+    "phonk": "night drive",
+    "trap": "the top",
+    "electronic": "the drop",
+    "dark": "2am",
+    "pop": "max volume",
+    "funk": "the party",
+    "cinematic": "the moment",
+    "default": "midnight",
+}
+
+STYLE_HOOKS = {
     "rock": [
-        "You won't skip this 🎸",
-        "This guitar lead is wild ⚡",
-        "That riff carries the whole short 🔥",
-        "Rock fans will replay this 🎧",
+        "Your speakers won't forgive you 🎸",
+        "This guitar hit different tonight 🔥",
+        "Can't skip, won't skip 🎸",
+        "This one goes to 11 ⚡",
+        "Your playlist needed this 🔥",
     ],
     "metal": [
-        "This drop turns brutal fast 😈",
-        "Metal fans, stay for the hit ⚠️",
-        "That breakdown came out of nowhere 🤯",
-        "Pure heavy energy from start 🔥",
+        "This drop is unreal 😈",
+        "Not for the faint-hearted 🔥",
+        "Your ears aren't ready 🖤",
+        "Warning: extremely heavy ⚠️",
+        "This hits like a freight train 😈",
     ],
     "phonk": [
-        "Night drive energy unlocked 🌙",
-        "This one feels illegal 😈",
-        "That drift vibe is too clean 🚗",
-        "Play this after midnight 🖤",
+        "Save this for the night drive 🌙",
+        "Your city needs this energy 😈",
+        "The underground found a new anthem 🔥",
+        "This doesn't belong on a playlist 😳",
+        "Night mode: activated 🖤",
     ],
     "trap": [
-        "This beat enters different 💎",
-        "That switch-up is too clean ✨",
-        "Trap fans will replay this 🔁",
-        "Luxury vibe with a hard drop 😮",
+        "This one built different 💎",
+        "Your headphones deserved this 👑",
+        "That baseline just walked in 🔥",
+        "Luxury frequency unlocked 💎",
+        "Certified banger, no debate 🏆",
     ],
     "indie": [
-        "Late-night mood in one short 🌌",
-        "This melody lingers after the end ✨",
-        "Indie fans, wait for the feeling 🎧",
-        "Soft vibe, strong replay value 🌙",
+        "You'll replay this all week 🎧",
+        "Someone left this feeling in a song 🌙",
+        "Your next favorite song 🎵",
+        "This one stays with you 🌅",
+        "The feeling you couldn't name 🎧",
     ],
     "lofi": [
-        "Perfect for tonight’s mood 🌙",
-        "Study with this one 📚",
-        "This loop feels too peaceful ☁️",
-        "That cozy vibe hits instantly 🎧",
+        "Sleep to this tonight 🌙",
+        "Your study playlist found its anchor 📚",
+        "3am and this is perfect ☁️",
+        "Quiet enough to think, beautiful enough to feel 🌙",
+        "This is what calm sounds like 🎧",
     ],
     "electronic": [
-        "Wait for the synth drop ⚡",
-        "Electronic fans, don’t skip this 🔥",
-        "That build-up pays off hard 🎛️",
-        "This one was made for replay 🔁",
+        "That drop will break your brain 🤯",
+        "The festival you never attended ⚡",
+        "Your ears are about to time travel 🚀",
+        "This frequency doesn't exist yet ⚡",
+        "The drop you won't see coming 🤯",
     ],
     "cinematic": [
-        "This feels bigger than a short 🎬",
-        "That atmosphere is unreal 🌌",
-        "Wait for the emotional lift ✨",
-        "This one sounds like a trailer 🔥",
+        "This sounds like a movie scene 🎬",
+        "Your moment has a soundtrack now 🎬",
+        "The feeling before something changes 🌌",
+        "This exists to give you chills 🎬",
+        "Goosebumps loading… 🌌",
     ],
     "funk": [
-        "This groove catches fast 🎵",
-        "Party energy in one short ⚡",
-        "That bounce is too addictive 🔥",
-        "Brazilian vibe done right 🇧🇷",
+        "Your body already knows this one 🕺",
+        "Play this and watch the room change 🔥",
+        "This groove is criminal 🎵",
+        "You weren't ready for this 🕺",
+        "Dance whether you want to or not 🔥",
     ],
     "dark": [
-        "This mood gets under your skin 🌑",
-        "Dark vibe done right 🖤",
-        "Play this when the lights are low 🌙",
-        "That atmosphere pulls you in 😈",
+        "This found you at the right moment 🌑",
+        "Beautiful and haunting 🖤",
+        "Some songs carry entire nights 🌙",
+        "Your soul needed this 🌑",
+        "The darkness has a melody 🖤",
     ],
     "pop": [
-        "This chorus sticks instantly 💫",
-        "Too catchy to skip ✨",
-        "That pop glow is addictive 🔁",
-        "This one lands fast 🎵",
+        "This one's going on every playlist 🌟",
+        "Warning: extremely catchy ✨",
+        "You'll sing this all week 💫",
+        "Certified earworm — you've been warned ✨",
+        "The song you didn't know you needed 🌸",
     ],
     "default": [
-        "You’ll want another replay 🔁",
-        "This one catches fast 🎧",
-        "Don’t skip the payoff ✨",
-        "Short, but hard to forget 🔥",
+        "Your playlist needed this upgrade 🎵",
+        "You won't regret pressing play 🎧",
+        "This is the one 🔥",
+        "Found: your new favorite 🎵",
+        "Don't say we didn't warn you 🎧",
     ],
 }
-
-TITLE_PATTERNS = {
-    1: [
-        "{hook} | {title}",
-        "{title} | {hook}",
-    ],
-    2: [
-        "Would you replay this? 🎧 | {title}",
-        "{title} | Hear the switch-up 😮",
-    ],
-    3: [
-        "Wait for the drop ⚡ | {title}",
-        "{title} | This part hits hardest 🔥",
-    ],
-    4: [
-        "This mood stays with you 🌙 | {title}",
-        "{title} | Not your average short ✨",
-    ],
-    5: [
-        "One more replay won’t hurt 🔁 | {title}",
-        "{title} | This deserves headphones 🎧",
-    ],
-}
-
-
-def _fallback_title(base_title: str, style: str, short_num: int) -> str:
-    clean = clean_for_youtube(base_title)
-    hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
-    hook = random.choice(hooks)
-    formats = TITLE_PATTERNS.get(short_num, TITLE_PATTERNS[1])
-    fmt = random.choice(formats)
-    return fmt.format(hook=hook, title=clean)[:100]
-
 
 def generate_viral_title(
     base_title: str,
     style: str,
     styles: list[str],
-    short_num: int,
+    short_num: int = 1,
 ) -> str:
     client = get_anthropic_client()
-    if client is None:
-        return _fallback_title(base_title, style, short_num)
+    if client:
+        try:
+            return _claude_title(client, base_title, style, styles, short_num)
+        except Exception as e:
+            log(f"[Claude] Falha no título: {e} — usando fallback")
+    return _static_title(base_title, style, short_num)
 
+
+def _claude_title(
+    client: anthropic.Anthropic,
+    base_title: str,
+    style: str,
+    styles: list[str],
+    short_num: int,
+) -> str:
     all_styles = ", ".join(styles) if styles else style
-    try:
-        resp = client.messages.create(
-            model=get_anthropic_model(),
-            max_tokens=120,
-            system=(
-                "You are a viral YouTube Shorts title expert. "
-                "Write short, punchy, specific music titles that maximize CTR. "
-                "Avoid stale phrases like 'hits different', 'goes hard', or generic clickbait. "
-                "Output only the title."
+    position_hint = {
+        1: "lead with an emotional hook, then the song name",
+        2: "lead with the song name, end with a punchy hook",
+        3: "use a curiosity question or statement",
+        4: "use contrast or dramatic pause",
+        5: "suggest when/where to listen to this song",
+    }.get(short_num, "make it compelling and unique")
+
+    resp = client.messages.create(
+        model=get_anthropic_model(),
+        max_tokens=120,
+        system=(
+            "You write viral YouTube Shorts titles for a music channel. "
+            "Your titles are punchy, emotionally resonant, and make people stop scrolling. "
+            "Each title must feel fresh and specific to the genre — never generic. "
+            "Include 1-2 relevant emojis. "
+            "Output ONLY the title — no explanation, no quotes."
+        ),
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Write a YouTube Shorts title for:\n"
+                f"Song: {base_title}\n"
+                f"Genre: {all_styles}\n"
+                f"Title strategy: {position_hint}\n\n"
+                f"Rules:\n"
+                f"- Max 80 characters\n"
+                f"- Specific to {style} music culture and audience\n"
+                f"- Creates emotional pull or curiosity\n"
+                f"- Sounds human, not AI-generated\n"
+                f"- Avoid: 'hits different', 'fire', 'banger', 'slaps' (overused)\n"
+                f"- Use current 2025 YouTube Shorts language"
             ),
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Create a YouTube Shorts title for:\n"
-                    f"Song: {base_title}\n"
-                    f"Style: {all_styles}\n"
-                    f"Variation number: {short_num} of 5\n\n"
-                    f"Rules:\n"
-                    f"- Max 80 characters\n"
-                    f"- Use 1-2 emojis max\n"
-                    f"- Be specific to the mood/genre\n"
-                    f"- Make it feel fresh and replayable\n"
-                    f"- Do not use overused phrases\n"
-                    f"- Variation intent:\n"
-                    f"  1 = direct hook\n"
-                    f"  2 = curiosity/question\n"
-                    f"  3 = drop/payoff\n"
-                    f"  4 = emotional/mood\n"
-                    f"  5 = replay/headphones CTA"
-                ),
-            }],
-        )
-        title = resp.content[0].text.strip().strip('"').strip("'")
-        title = title[:100]
-        log(f"[Claude] Título gerado: {title}")
-        return title
-    except Exception as e:
-        log(f"[Claude] Falha no título: {e} — usando fallback")
-        return _fallback_title(base_title, style, short_num)
+        }],
+    )
+    title = resp.content[0].text.strip().strip('"').strip("'")
+    log(f"[Claude] Título gerado: {title}")
+    return title[:100]
 
 
-STYLE_HASHTAGS: dict[str, str] = {
+def _static_title(base_title: str, style: str, short_num: int) -> str:
+    clean = clean_for_youtube(base_title)
+    hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
+    hook = hooks[(short_num - 1) % len(hooks)]
+    time_ctx = STYLE_TIME_CONTEXT.get(style, "midnight")
+    fmt = TITLE_FORMATS_BY_POSITION.get(short_num, "{hook} | {title}")
+    return fmt.format(hook=hook, title=clean, time=time_ctx)[:100]
+
+# ══════════════════════════════════════════════════════════════════════════════
+# METADATA — CLAUDE
+# ══════════════════════════════════════════════════════════════════════════════
+
+STYLE_HASHTAGS = {
     "electronic": "#electronic #edm #electronicmusic #synthwave #clubmusic #rave #dancemusic #techno #trance #futuremusic",
-    "phonk": "#phonk #phonkmusic #darkphonk #phonkedit #drift #phonkvibes #phonkrap #aggressive #nightdrive",
-    "trap": "#trap #trapmusic #trapbeats #hiphop #traprap #hardtrap #banger #drip #trapvibes",
-    "rock": "#rock #rockmusic #hardrock #guitarmusic #rockband #alternative #grunge #rockguitar",
-    "metal": "#metal #metalmusic #heavymetal #metalhead #metalcore #djent #breakdown",
-    "indie": "#indie #indiemusic #indierock #alternativemusic #indievibes #bedroompop #emotionalmusic",
-    "lofi": "#lofi #lofihiphop #lofichill #studymusic #relaxingmusic #chillvibes #lofibeats",
-    "cinematic": "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #dramaticmusic",
-    "funk": "#funk #funkmusic #groove #brazilianmusic #partytime #dancevibes",
-    "dark": "#dark #darkmusic #darkvibes #darkambient #darkwave #gothic",
-    "pop": "#pop #popmusic #popvibes #newmusic #hitmusic #catchy",
-    "default": "#music #newmusic #viralmusic #musiclover #musicshorts",
+    "phonk": "#phonk #phonkmusic #darkphonk #phonkedit #drift #phonkvibes #russiaphonk #phonkrap #aggressive #phonktiktok",
+    "trap": "#trap #trapmusic #trapbeats #hiphop #traprap #hardtrap #banger #trapart #drip #trapgang",
+    "rock": "#rock #rockmusic #hardrock #guitarmusic #livemusic #rockband #alternative #grunge #rockguitar #indierock",
+    "metal": "#metal #metalmusic #heavymetal #deathmetal #metalhead #extrememetal #progressivemetal #metalcore #djent",
+    "indie": "#indie #indiemusic #indierock #alternativemusic #indievibes #bedroom #emotionalmusic #sadmusic",
+    "lofi": "#lofi #lofihiphop #lofichill #studymusic #relaxingmusic #chillvibes #lofibeats #lofimusic #chill",
+    "cinematic": "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #cinemamusic #dramatic #epicorchestralmusic",
+    "funk": "#funk #funkmusic #groove #brazilianmusic #soulmusic #funkychill #groovemusic #partytime",
+    "dark": "#dark #darkmusic #darkvibes #darkambient #haunting #mysterious #darkness #darkwave #gothic",
+    "pop": "#pop #popmusic #popvibes #newmusic #chart #top40 #popbanger #hitmusic #mainstream",
+    "sertanejo": "#sertanejo #sertanejouniversitario #musicasertaneja #sertanejoromantic #brasil #musicabrasileira",
+    "mpb": "#mpb #musicapopularbrasileira #bossanova #brasil #musicabrasileira #jazz #acoustic",
+    "default": "#music #newmusic #viralmusic #musiclover #underground #musicshorts #indiemusic",
 }
 
 UNIVERSAL_TAGS = "#shorts #youtubeshorts #viral #fyp #foryou #trending #musicshorts"
 
+def build_description(
+    base_title: str,
+    style: str,
+    styles: list[str],
+) -> str:
+    client = get_anthropic_client()
+    if client:
+        try:
+            return _claude_description(client, base_title, style, styles)
+        except Exception as e:
+            log(f"[Claude] Falha na descrição: {e} — usando fallback")
+    return _static_description(base_title, style, styles)
 
-def _fallback_description(base_title: str, style: str, styles: list[str], short_num: int) -> str:
+
+def _claude_description(
+    client: anthropic.Anthropic,
+    base_title: str,
+    style: str,
+    styles: list[str],
+) -> str:
+    all_styles = ", ".join(styles) if styles else style
+    resp = client.messages.create(
+        model=get_anthropic_model(),
+        max_tokens=400,
+        system=(
+            "You are a YouTube SEO expert for music channels. "
+            "You write compelling, keyword-rich descriptions that feel human. "
+            "Connect with fans emotionally. Drive subscriptions and Spotify streams."
+        ),
+        messages=[{
+            "role": "user",
+            "content": (
+                f"Write a YouTube Shorts description for:\n"
+                f"Song: {base_title}\n"
+                f"Style: {all_styles}\n\n"
+                f"Include:\n"
+                f"1. Emotional hook (1-2 sentences about the feeling of {style} music)\n"
+                f"2. Spotify link placeholder: [SPOTIFY]\n"
+                f"3. TikTok link placeholder: [TIKTOK]\n"
+                f"4. Brief call to subscribe\n"
+                f"5. Hashtags for {style}\n\n"
+                f"Under 300 words. Feels human, not corporate."
+            ),
+        }],
+    )
+    desc = resp.content[0].text.strip()
+    desc = desc.replace("[SPOTIFY]", SPOTIFY_LINK)
+    desc = desc.replace("[TIKTOK]", TIKTOK_LINK)
+    return desc[:4500]
+
+
+def _static_description(base_title: str, style: str, styles: list[str]) -> str:
     clean = clean_for_youtube(base_title)
     style_tags = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
     all_styles = " | ".join(s.title() for s in styles) if styles else style.title()
-
-    mood_lines = {
-        1: "Immediate hook and strong visual mood.",
-        2: "A replayable moment with a clean emotional pull.",
-        3: "Built for the payoff, drop, and retention moment.",
-        4: "Focused on atmosphere, feeling, and replay value.",
-        5: "A variation made to test click-through and repeat plays.",
-    }
-    mood = mood_lines.get(short_num, mood_lines[1])
-
     return (
         f"🎵 {clean}\n\n"
-        f"Style: {all_styles}\n"
-        f"Mood: {mood}\n\n"
+        f"Style: {all_styles}\n\n"
         f"🎧 Full track on Spotify:\n{SPOTIFY_LINK}\n\n"
         f"📲 Follow on TikTok for more:\n{TIKTOK_LINK}\n\n"
         f"🔔 Subscribe for daily music drops\n"
@@ -319,52 +365,6 @@ def _fallback_description(base_title: str, style: str, styles: list[str], short_
         f"{style_tags}\n"
         f"{UNIVERSAL_TAGS}"
     )
-
-
-def build_description(
-    base_title: str,
-    style: str,
-    styles: list[str],
-    short_num: int,
-) -> str:
-    client = get_anthropic_client()
-    if client is None:
-        return _fallback_description(base_title, style, styles, short_num)
-
-    all_styles = ", ".join(styles) if styles else style
-    try:
-        resp = client.messages.create(
-            model=get_anthropic_model(),
-            max_tokens=350,
-            system=(
-                "You are a YouTube SEO expert for music Shorts. "
-                "Write short, human, search-friendly descriptions."
-            ),
-            messages=[{
-                "role": "user",
-                "content": (
-                    f"Write a YouTube Shorts description for:\n"
-                    f"Song: {base_title}\n"
-                    f"Style: {all_styles}\n"
-                    f"Variation: {short_num} of 5\n\n"
-                    f"Include:\n"
-                    f"- a 1-2 sentence hook\n"
-                    f"- a short mood/SEO phrase for searchability\n"
-                    f"- Spotify placeholder [SPOTIFY]\n"
-                    f"- TikTok placeholder [TIKTOK]\n"
-                    f"- CTA to subscribe\n"
-                    f"- relevant hashtags\n"
-                    f"Keep it under 250 words."
-                ),
-            }],
-        )
-        desc = resp.content[0].text.strip()
-        desc = desc.replace("[SPOTIFY]", SPOTIFY_LINK)
-        desc = desc.replace("[TIKTOK]", TIKTOK_LINK)
-        return desc[:4500]
-    except Exception as e:
-        log(f"[Claude] Falha na descrição: {e} — usando fallback")
-        return _fallback_description(base_title, style, styles, short_num)
 
 
 def build_metadata(
@@ -375,137 +375,99 @@ def build_metadata(
 ) -> tuple[str, str, list[str]]:
     base = clean_title(filename)
     clean = clean_for_youtube(base)
-
     title = generate_viral_title(clean, style, styles, short_num)
-    desc = build_description(clean, style, styles, short_num)
-
+    desc = build_description(clean, style, styles)
     tags = list({
-        "music",
-        "shorts",
-        "youtube shorts",
-        "viral music",
-        "new music",
-        "music video",
-        style,
-        f"{style} music",
+        "music", "shorts", "youtube shorts", "viral music",
+        "new music", "music video", style, f"{style} music",
         clean.lower(),
-        *styles,
+        *[s for s in styles],
         *[f"{s} music" for s in styles],
-        "independent music",
-        "underground music",
-        "new artist",
-        "anime aesthetic",
-        "music aesthetic",
-        "visual edit",
+        "independent music", "underground music", "new artist",
+        "anime aesthetic", "music aesthetic", "visual edit",
     })
     return title, desc, tags[:500]
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # ESTADO
 # ══════════════════════════════════════════════════════════════════════════════
 
-def load_state() -> dict[str, Any]:
+def load_state() -> dict:
     if not STATE_FILE.exists():
         return {"tracks": [], "queue_index": 0, "last_posted_track": None}
-
     with STATE_FILE.open("r", encoding="utf-8") as f:
-        if fcntl:
-            fcntl.flock(f, fcntl.LOCK_SH)
-        try:
-            state = json.load(f)
-        finally:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_UN)
-
+        state = json.load(f)
     state.setdefault("tracks", [])
     state.setdefault("queue_index", 0)
     state.setdefault("last_posted_track", None)
-
-    for track in state["tracks"]:
-        track.setdefault("shorts_done", 0)
-        track.setdefault("done", False)
-        track.setdefault("is_new", False)
-
+    for t in state["tracks"]:
+        t.setdefault("shorts_done", 0)
+        t.setdefault("done", False)
+        t.setdefault("is_new", False)
     return state
 
-
-def save_state(state: dict[str, Any]) -> None:
-    STATE_FILE.parent.mkdir(parents=True, exist_ok=True)
+def save_state(state: dict):
     with STATE_FILE.open("w", encoding="utf-8") as f:
-        if fcntl:
-            fcntl.flock(f, fcntl.LOCK_EX)
-        try:
-            json.dump(state, f, ensure_ascii=False, indent=2)
-            f.flush()
-            os.fsync(f.fileno())
-        finally:
-            if fcntl:
-                fcntl.flock(f, fcntl.LOCK_UN)
+        json.dump(state, f, ensure_ascii=False, indent=2)
 
-
-def sync_tracks(state: dict[str, Any], drive_files: list[dict[str, str]]) -> None:
-    existing = {track["name"]: track for track in state["tracks"]}
-
-    for file_item in drive_files:
-        if file_item["name"] not in existing:
-            log(f"Nova música: {file_item['name']}")
+def sync_tracks(state: dict, drive_files: list):
+    existing = {t["name"]: t for t in state["tracks"]}
+    for f in drive_files:
+        if f["name"] not in existing:
+            log(f"Nova música: {f['name']}")
             state["tracks"].append({
-                "id": file_item["id"],
-                "name": file_item["name"],
+                "id": f["id"],
+                "name": f["name"],
                 "shorts_done": 0,
                 "done": False,
                 "is_new": True,
             })
         else:
-            existing[file_item["name"]]["id"] = file_item["id"]
-
+            existing[f["name"]]["id"] = f["id"]
     drive_names = {f["name"] for f in drive_files}
-    state["tracks"] = [track for track in state["tracks"] if track["name"] in drive_names]
+    state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
+    n = len(state["tracks"])
+    state["queue_index"] = state["queue_index"] % n if n else 0
 
-    total = len(state["tracks"])
-    state["queue_index"] = state["queue_index"] % total if total else 0
-
-
-def get_next_track(state: dict[str, Any]) -> dict[str, Any] | None:
+def get_next_track(state: dict) -> dict | None:
     tracks = state["tracks"]
     if not tracks:
         return None
 
     last = state.get("last_posted_track")
 
-    new_tracks = [t for t in tracks if t.get("is_new")]
-    if new_tracks:
-        chosen = next((t for t in new_tracks if t["name"] != last), new_tracks[0])
+    # Prioriza músicas novas
+    new = [t for t in tracks if t.get("is_new")]
+    if new:
+        chosen = next((t for t in new if t["name"] != last), new[0])
         chosen["is_new"] = False
         return chosen
 
     idx = state.get("queue_index", 0) % len(tracks)
-    available: list[tuple[int, dict[str, Any]]] = []
+    avail = []
     for i in range(len(tracks)):
-        track = tracks[(idx + i) % len(tracks)]
-        if track.get("shorts_done", 0) < SHORTS_PER_TRACK:
-            available.append(((idx + i) % len(tracks), track))
+        t = tracks[(idx + i) % len(tracks)]
+        if t.get("shorts_done", 0) < SHORTS_PER_TRACK:
+            avail.append(((idx + i) % len(tracks), t))
 
-    if not available:
+    if not avail:
         log("Todas as músicas completadas — resetando fila.")
-        for track in tracks:
-            track["shorts_done"] = 0
-            track["done"] = False
-        available = list(enumerate(tracks))
+        for t in tracks:
+            t["shorts_done"] = 0
+            t["done"] = False
+        avail = list(enumerate(tracks))
 
-    for i, track in available:
-        if track["name"] != last:
+    for i, t in avail:
+        if t["name"] != last:
             state["queue_index"] = (i + 1) % len(tracks)
-            return track
+            return t
 
-    i, track = available[0]
+    i, t = avail[0]
     state["queue_index"] = (i + 1) % len(tracks)
-    return track
-
+    return t
 
 # ══════════════════════════════════════════════════════════════════════════════
-# BACKGROUND
+# BACKGROUND — IA SEMPRE PRIMEIRO
 # ══════════════════════════════════════════════════════════════════════════════
 
 def resolve_background(
@@ -514,22 +476,20 @@ def resolve_background(
     short_num: int,
     styles: list[str],
 ) -> str:
-    """
-    IA primeiro: garante visual com personagem feminina.
-    Fallback local só se a geração falhar.
-    """
     os.makedirs("temp", exist_ok=True)
 
+    # 1. IA primeiro — personagem cinematográfica por gênero
     prompt = build_ai_prompt(style, filename, styles, short_num=short_num)
-    log("Gerando imagem IA focada em personagem feminina estilizada…")
-    log(f"Prompt: {prompt[:140]}...")
+    log(f"Gerando imagem IA — gênero: {style}, variação {short_num}")
+    log(f"Prompt: {prompt[:120]}...")
 
     dest = f"temp/{Path(filename).stem}_{short_num}.png"
-    image_path = generate_image(prompt, output_path=dest)
-    if image_path and os.path.exists(image_path):
-        log(f"Imagem IA salva: {image_path}")
-        return image_path
+    img = generate_image(prompt, output_path=dest)
+    if img and os.path.exists(img):
+        log(f"Imagem IA salva: {img}")
+        return img
 
+    # 2. Fallback local
     try:
         bg = get_random_background(style, filename)
         if bg and not str(bg).startswith("__AUTO"):
@@ -538,6 +498,7 @@ def resolve_background(
     except Exception as e:
         log(f"Fallback local falhou: {e}")
 
+    # 3. Fallback final
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
         log("Usando fallback default.jpg")
@@ -553,14 +514,13 @@ def build_output_path(base_title: str, style: str, short_num: int) -> str:
     name = f"{date}__{style}__{safe_filename(base_title)}__s{short_num}.mp4"
     return str(folder / name)
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ══════════════════════════════════════════════════════════════════════════════
 
-def main() -> None:
+def main():
     log("═" * 50)
-    log("BOT INICIADO — Premium Girl Visual Edition")
+    log("BOT INICIADO — Cinematic Girl Visual Edition v2.0")
     log("═" * 50)
 
     if not DRIVE_FOLDER_ID:
@@ -575,8 +535,8 @@ def main() -> None:
 
     files = list_audio_files_in_folder(service, inbox_id)
     log(f"Áudios no Drive: {len(files)}")
-    for file_item in files:
-        log(f"  • {file_item['name']}")
+    for f in files:
+        log(f"  • {f['name']}")
 
     sync_tracks(state, files)
     save_state(state)
@@ -593,17 +553,17 @@ def main() -> None:
     base_title = clean_title(name)
 
     log(f"Processando: {name}")
-    log(f"Estilo: {style} | Estilos: {styles}")
+    log(f"Estilo: {style} | Estilos detectados: {styles}")
     log(f"Short {short_num}/{SHORTS_PER_TRACK}")
 
     os.makedirs("temp", exist_ok=True)
     audio_path = f"temp/{name}"
 
-    try:
-        log("Baixando áudio…")
-        download_drive_file(service, track["id"], audio_path)
-        log("Download concluído.")
+    log("Baixando áudio…")
+    download_drive_file(service, track["id"], audio_path)
+    log("Download concluído.")
 
+    try:
         bg = resolve_background(style, name, short_num, styles)
         output_path = build_output_path(base_title, style, short_num)
 
@@ -634,8 +594,6 @@ def main() -> None:
                 log("Salvando backup no Drive…")
                 upload_file_to_drive(service, backup_id, video_path)
                 log("Backup salvo.")
-            else:
-                log("Pasta 'backups' não encontrada — pulando.")
         except Exception as e:
             log(f"Backup falhou (não crítico): {e}")
 
@@ -646,14 +604,16 @@ def main() -> None:
 
         log(f"✅ Concluído: {name} (short {short_num}/{SHORTS_PER_TRACK})")
         log(f"   YouTube: https://youtu.be/{video_id}")
-        log("═" * 50)
 
     finally:
+        # Garante limpeza mesmo se algo falhar
         try:
             if os.path.exists(audio_path):
                 os.remove(audio_path)
         except Exception:
             pass
+
+    log("═" * 50)
 
 
 if __name__ == "__main__":
