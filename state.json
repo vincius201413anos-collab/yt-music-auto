@@ -59,7 +59,7 @@
     {
       "id": "1ZW6X9BU5IihRU78PDA2ttP8vs4CGwlN0",
       "name": "coma black and white [rock].wav",
-      "shorts_done": 1,
+      "shorts_done": 2,
       "done": false,
       "is_new": false
     },
@@ -232,6 +232,6 @@
       "is_new": false
     }
   ],
-  "queue_index": 8,
-  "last_posted_track": "Desencana 3 [Pop].wav"
+  "queue_index": 9,
+  "last_posted_track": "coma black and white [rock].wav"
 }
