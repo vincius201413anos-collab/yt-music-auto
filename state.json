@@ -52,7 +52,7 @@
     {
       "id": "133BWFy_UQiRN-qsl5DZsoGr3bJy5BUWy",
       "name": "Desencana 3 [Pop].wav",
-      "shorts_done": 1,
+      "shorts_done": 2,
       "done": false,
       "is_new": false
     },
@@ -232,6 +232,6 @@
       "is_new": false
     }
   ],
-  "queue_index": 7,
-  "last_posted_track": "Desencana 4 [Indie].wav"
+  "queue_index": 8,
+  "last_posted_track": "Desencana 3 [Pop].wav"
 }
