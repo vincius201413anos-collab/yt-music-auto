@@ -1,1 +1,7 @@
-
+output/
+temp/
+*.mp4
+*.mov
+*.avi
+*.mkv
+__pycache__/
