@@ -3,14 +3,14 @@ name: youtube-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */2 * * *"   # a cada 2 horas — seguro no plano gratuito
+    - cron: "0 */2 * * *"
 
 permissions:
   contents: write
 
 concurrency:
   group: youtube-bot-main
-  cancel-in-progress: false   # nunca cancela run em andamento
+  cancel-in-progress: false
 
 jobs:
   run-bot:
@@ -21,7 +21,6 @@ jobs:
       PYTHONUNBUFFERED: "1"
 
     steps:
-
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -68,15 +67,6 @@ jobs:
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
           echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
-
-      - name: Save video artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: shorts-run-${{ github.run_number }}
-          path: output/
-          if-no-files-found: ignore
-          retention-days: 7
 
       - name: Commit state.json
         if: always()
