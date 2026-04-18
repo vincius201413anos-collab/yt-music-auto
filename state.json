@@ -130,7 +130,7 @@
       "id": "15tAYlrLOZqdImeeGwmkdQGgzYXKHh99t",
       "name": "Ghost Signal [phonk].wav",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 18
+  "alpha_index": 19
 }
