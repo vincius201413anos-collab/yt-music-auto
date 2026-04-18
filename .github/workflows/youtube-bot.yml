@@ -1,38 +1,30 @@
 name: youtube-bot
-
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */2 * * *"
-
 permissions:
   contents: write
-
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
-
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-
     env:
       PYTHONUNBUFFERED: "1"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
-
       - name: Install FFmpeg + fonts
         run: |
           sudo apt-get update -y -q
@@ -43,16 +35,13 @@ jobs:
           ffmpeg -version | head -n 1
           echo "Fontes disponíveis:"
           fc-list | grep -i "bold" | head -5 || true
-
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Prepare folders
         run: |
           mkdir -p output temp assets/backgrounds assets/source_videos
-
       - name: Run Bot
         env:
           GOOGLE_CREDENTIALS:          ${{ secrets.GOOGLE_CREDENTIALS }}
@@ -63,16 +52,17 @@ jobs:
           REPLICATE_API_TOKEN:         ${{ secrets.REPLICATE_API_TOKEN }}
           HF_TOKEN:                    ${{ secrets.HF_TOKEN }}
           OPENAI_API_KEY:              ${{ secrets.OPENAI_API_KEY }}
-
           # Facebook / Meta
           FB_PAGE_ID:                  ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_ACCESS_TOKEN:        ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           FB_ENABLE_POSTING:           ${{ secrets.FB_ENABLE_POSTING }}
+          # Drive Backup
+          ENABLE_DRIVE_BACKUP:         ${{ secrets.ENABLE_DRIVE_BACKUP }}
+          DRIVE_BACKUP_FOLDER_ID:      ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
           echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
-
       - name: Commit state.json
         if: always()
         run: |
