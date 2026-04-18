@@ -137,7 +137,7 @@
       "id": "1d_78GnR_8ol3rUwsH0dbZSYMGrT4f5o4",
       "name": "Jinxed Happiness [rock].wav",
       "shorts_done": 2,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 19
+  "alpha_index": 20
 }
