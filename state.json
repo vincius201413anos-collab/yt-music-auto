@@ -53,7 +53,7 @@
       "id": "10pQiYCnFDvPSzy8WXtYrl0AFUfrqac7A",
       "name": "coma black and white (1)[rock].wav",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 7
+  "alpha_index": 8
 }
