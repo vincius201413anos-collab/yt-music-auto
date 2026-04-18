@@ -63,19 +63,119 @@ def human_delay():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# METADATA
+# METADATA — HOOKS VIRAIS PT-BR
 # ══════════════════════════════════════════════════════════════════════
 
+# Cada estilo tem 10 hooks únicos — o build_title roda em ciclo sem repetir
 STYLE_HOOKS = {
-    "phonk": ["Night mode: activated 🖤", "Save this for the night drive 🌙", "Underground anthem 🔥", "This doesn't belong on a playlist 😳", "Your city needs this energy 😈"],
-    "trap": ["This one built different 💎", "Luxury frequency unlocked 💎", "That baseline just walked in 🔥", "Certified banger 🏆", "Your headphones deserved this 👑"],
-    "rock": ["Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸", "This guitar hit different tonight 🔥", "This one goes to 11 ⚡", "Your playlist needed this 🔥"],
-    "metal": ["Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥", "Your ears aren't ready 🖤", "This drop is unreal 😈", "This hits like a freight train 😈"],
-    "lofi": ["Sleep to this tonight 🌙", "3am and this is perfect ☁️", "Your study playlist found its anchor 📚", "This is what calm sounds like 🎧", "Quiet enough to think, beautiful enough to feel 🌙"],
-    "indie": ["You'll replay this all week 🎧", "Your next favorite song 🎵", "Someone left this feeling in a song 🌙", "The feeling you couldn't name 🎧", "This one stays with you 🌅"],
-    "electronic": ["That drop will break your brain 🤯", "The festival you never attended ⚡", "This frequency doesn't exist yet ⚡", "The drop you won't see coming 🤯", "Your ears are about to time travel 🚀"],
-    "dark": ["This found you at the right moment 🌑", "Beautiful and haunting 🖤", "The darkness has a melody 🖤", "Your soul needed this 🌑", "Some songs carry entire nights 🌙"],
-    "default": ["Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧", "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧", "This is the one 🔥"],
+    "phonk": [
+        "Não coloca isso no fone às 3am 🌑",
+        "Isso deveria ser ilegal 😈",
+        "POV: dirigindo na madrugada 🌙",
+        "Ninguém tá falando dessa música 😳",
+        "O phonk que você tava procurando 🔥",
+        "Esse som não sai da cabeça 🔁",
+        "Encontrei isso às 2am e arrependi 😈",
+        "Esse acorde é crime 🖤",
+        "Salva antes de sumir 📌",
+        "Sua playlist tava incompleta até agora 😳",
+    ],
+    "trap": [
+        "Que beat é esse meu Deus 🤯",
+        "Isso vai entrar na sua playlist hoje 💎",
+        "Ninguém tá ouvindo isso ainda 😳",
+        "POV: você acabou de descobrir sua nova favorita 🔁",
+        "Esse grave devia ser proibido 🔥",
+        "Salva esse vídeo agora 📌",
+        "Sua playlist tava pedindo isso 💎",
+        "Achou antes de ficar famosa 👑",
+        "Não deu pra parar de ouvir 😮",
+        "Isso não é pra qualquer um 😈",
+    ],
+    "rock": [
+        "Essa guitarra vai te destruir 🎸",
+        "Não dá pra não bater cabeça 🤘",
+        "Que riff é esse meu Deus 🔥",
+        "Volume no máximo obrigatório ⚡",
+        "Isso tá criminosamente bom 🎸",
+        "Sua playlist de rock tava precisando disso 🔥",
+        "Não dá pra ouvir uma vez só 🔁",
+        "Deixa o drop chegar 😤",
+        "Isso vai abrir seu pescoço 🤘",
+        "Ninguém falou de banda assim 😳",
+    ],
+    "metal": [
+        "Isso não é pra qualquer um ⚠️",
+        "Seu fone não aguenta 🔥",
+        "Aviso: absurdamente pesado 😈",
+        "Esse drop é surreal 🤯",
+        "Encontrei o inferno em forma de música 🖤",
+        "Prepare o pescoço 🤘",
+        "Isso vai te destruir do bom jeito 😈",
+        "Nível de peso: ilegal ⚠️",
+        "Salva pra ouvir no escuro 🌑",
+        "Sua playlist precisava de caos 🔥",
+    ],
+    "lofi": [
+        "Coloca isso e some do mundo 🎧",
+        "Perfeito pra 3am ☁️",
+        "Isso é o que paz soa 🌙",
+        "Ouve enquanto chove 🌧️",
+        "A playlist de estudo que você merece 📚",
+        "Isso acalmou até minha ansiedade 😮",
+        "POV: você finalmente relaxou 🌙",
+        "Loop infinito garantido 🔁",
+        "Esse som te abraça 🎧",
+        "Não sei o que é isso mas tô bem 🌿",
+    ],
+    "indie": [
+        "Você vai repetir isso a semana toda 🎧",
+        "Esse som te acompanha 🌅",
+        "A sensação que você não sabia que precisava 🌙",
+        "Sua próxima música favorita 🎵",
+        "Encontrei isso e não consigo parar 🔁",
+        "Isso fica com você 🌌",
+        "Quem fez isso é um gênio 😳",
+        "Fica mais bonita cada loop 🎧",
+        "POV: você achou antes de virar viral 👀",
+        "Coloca fone e desaparece 🌿",
+    ],
+    "electronic": [
+        "Esse drop vai quebrar seu cérebro 🤯",
+        "Que frequência é essa?? ⚡",
+        "Não tava preparado pra isso 🚀",
+        "O drop que você não viu vir 🤯",
+        "Isso existe?? ⚡",
+        "Volume máximo ou não vale 🔥",
+        "Esse grave é irreal 😮",
+        "Sua playlist de academia precisa disso ⚡",
+        "Isso não deveria soar tão bom 🤯",
+        "Festival em casa agora 🎉",
+    ],
+    "dark": [
+        "Encontrou você no momento certo 🌑",
+        "Belo e perturbador ao mesmo tempo 🖤",
+        "Não ouça isso sozinho 😳",
+        "Esse som carrega uma noite inteira 🌙",
+        "Sua alma precisava disso 🌑",
+        "Não consigo tirar esse acorde da cabeça 🖤",
+        "Isso dá medo do jeito certo 😈",
+        "POV: madrugada e esse som 🌑",
+        "Encontrei o vazio e ele tem melodia 🖤",
+        "Isso não é pra qualquer horário 🌙",
+    ],
+    "default": [
+        "Ninguém tá falando dessa música 😳",
+        "Isso vai entrar na sua playlist hoje 🎧",
+        "POV: você achou a música do mês 🔁",
+        "Que som é esse?? 🤯",
+        "Salva esse vídeo antes de sumir 📌",
+        "Não consegui ouvir só uma vez 🔁",
+        "Achou antes de virar famosa 👀",
+        "Sua playlist tava incompleta 🎵",
+        "Loop garantido 🔁",
+        "Isso é bom demais pra ser real 😮",
+    ],
 }
 
 STYLE_HASHTAGS = {
@@ -94,15 +194,19 @@ UNIVERSAL = "#shorts #youtubeshorts #reels #fbreels #viral #fyp #trending #music
 
 def build_title(base: str, style: str, short_num: int) -> str:
     hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
+    # Usa short_num como índice ciclico — nunca repete o hook nos 5 shorts
     hook = hooks[(short_num - 1) % len(hooks)]
-    formats = {
-        1: f"{hook} | {base}",
-        2: f"{base} | {hook}",
-        3: f"You need to hear this 🎧 {base}",
-        4: f"{hook} — {base}",
-        5: f"{base} 🎵 {hook}",
-    }
-    return formats.get(short_num, f"{hook} | {base}")[:100]
+
+    # 5 formatos diferentes, 1 por short — varia estrutura e não só o hook
+    formats = [
+        f"{hook} | {base}",           # short 1: hook na frente
+        f"{base} 🎵 {hook}",          # short 2: nome na frente
+        f"{hook} — {base}",           # short 3: traço separa
+        f"🔥 {base} | {hook}",        # short 4: emoji abre
+        f"{hook} 👇 {base}",          # short 5: chama pra ver
+    ]
+    fmt = formats[(short_num - 1) % len(formats)]
+    return fmt[:100]
 
 
 def build_description(base: str, style: str) -> str:
@@ -341,7 +445,6 @@ def main():
 
         results = publish(video_path, title, description)
 
-        # Backup sempre roda se DRIVE_BACKUP_FOLDER_ID estiver configurado
         if DRIVE_BACKUP_FOLDER_ID:
             try:
                 log("Salvando backup no Drive...")
