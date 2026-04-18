@@ -4,7 +4,7 @@
       "id": "1Rj4xWv0rLpc6gmpzjnxYTxCk_U1cuRjB",
       "name": "se desencana [indie].wav",
       "shorts_done": 4,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -148,7 +148,7 @@
       "is_new": false
     },
     {
-      "id": "1E3EncLj2OvQQnMWYV8af9BIVtsEW3xtg",
+      "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
       "name": "sorry motel [pop] [indie].wav",
       "shorts_done": 1,
       "done": false,
@@ -233,5 +233,6 @@
     }
   ],
   "queue_index": 9,
-  "last_posted_track": "coma black and white [rock].wav"
+  "last_posted_track": "coma black and white [rock].wav",
+  "index": 0
 }
