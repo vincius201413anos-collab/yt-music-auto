@@ -6,6 +6,8 @@ on:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
@@ -28,7 +30,7 @@ jobs:
           GOOGLE_CREDENTIALS:     ${{ secrets.GOOGLE_CREDENTIALS }}
           YOUTUBE_CREDENTIALS:    ${{ secrets.YOUTUBE_CREDENTIALS }}
           FB_PAGE_ID:             ${{ secrets.FB_PAGE_ID }}
-          FB_ACCESS_TOKEN:        ${{ secrets.FB_ACCESS_TOKEN }}
+          FB_PAGE_ACCESS_TOKEN:   ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           ENABLE_YOUTUBE:         "true"
           ENABLE_FACEBOOK:        "true"
         run: python main.py
