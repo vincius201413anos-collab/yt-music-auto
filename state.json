@@ -144,7 +144,7 @@
       "id": "1dEA1Py7H_O7LCvCFl6HS7eCdvI1J6lt2",
       "name": "Lose control [trap].wav",
       "shorts_done": 3,
-      "done": true,
+      "done": 2,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 20
+  "alpha_index": 21
 }
