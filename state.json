@@ -32,7 +32,7 @@
       "id": "1j9Bm6fmY-1KmVAnlutHOXHX_J3oYsSvh",
       "name": "choir (1) [Metal] [rock].wav",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 4
+  "alpha_index": 5
 }
