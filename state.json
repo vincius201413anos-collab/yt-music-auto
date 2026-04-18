@@ -10,8 +10,8 @@
     {
       "id": "1gIYVMMpLe4ShrFViWZ58GjrsqqE2FE2C",
       "name": "se desencana h[indie].wav",
-      "shorts_done": 2,
-      "done": false,
+      "shorts_done": 1,
+      "done": 1,
       "is_new": false
     },
     {
@@ -232,7 +232,7 @@
       "is_new": false
     }
   ],
-  "queue_index": 9,
   "last_posted_track": "coma black and white [rock].wav",
-  "index": 1
+  "index": 2,
+  "posted_ids": []
 }
