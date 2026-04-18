@@ -67,7 +67,7 @@
       "id": "133BWFy_UQiRN-qsl5DZsoGr3bJy5BUWy",
       "name": "Desencana 3 [Pop].wav",
       "shorts_done": 2,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 9
+  "alpha_index": 10
 }
