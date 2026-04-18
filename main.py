@@ -8,6 +8,7 @@ from datetime import datetime
 
 from drive_service import (
     get_drive_service,
+    get_oauth_drive_service,
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
@@ -64,54 +65,15 @@ def human_delay():
 # ══════════════════════════════════════════════════════════════════════
 
 STYLE_HOOKS = {
-    "phonk": [
-        "Night mode: activated 🖤", "Save this for the night drive 🌙",
-        "Underground anthem 🔥", "This doesn't belong on a playlist 😳",
-        "Your city needs this energy 😈"
-    ],
-    "trap": [
-        "This one built different 💎", "Luxury frequency unlocked 💎",
-        "That baseline just walked in 🔥", "Certified banger 🏆",
-        "Your headphones deserved this 👑"
-    ],
-    "rock": [
-        "Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸",
-        "This guitar hit different tonight 🔥", "This one goes to 11 ⚡",
-        "Your playlist needed this 🔥"
-    ],
-    "metal": [
-        "Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥",
-        "Your ears aren't ready 🖤", "This drop is unreal 😈",
-        "This hits like a freight train 😈"
-    ],
-    "lofi": [
-        "Sleep to this tonight 🌙", "3am and this is perfect ☁️",
-        "Your study playlist found its anchor 📚",
-        "This is what calm sounds like 🎧",
-        "Quiet enough to think, beautiful enough to feel 🌙"
-    ],
-    "indie": [
-        "You'll replay this all week 🎧", "Your next favorite song 🎵",
-        "Someone left this feeling in a song 🌙",
-        "The feeling you couldn't name 🎧",
-        "This one stays with you 🌅"
-    ],
-    "electronic": [
-        "That drop will break your brain 🤯", "The festival you never attended ⚡",
-        "This frequency doesn't exist yet ⚡",
-        "The drop you won't see coming 🤯",
-        "Your ears are about to time travel 🚀"
-    ],
-    "dark": [
-        "This found you at the right moment 🌑", "Beautiful and haunting 🖤",
-        "The darkness has a melody 🖤", "Your soul needed this 🌑",
-        "Some songs carry entire nights 🌙"
-    ],
-    "default": [
-        "Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧",
-        "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧",
-        "This is the one 🔥"
-    ],
+    "phonk":      ["Night mode: activated 🖤", "Save this for the night drive 🌙", "Underground anthem 🔥", "This doesn't belong on a playlist 😳", "Your city needs this energy 😈"],
+    "trap":       ["This one built different 💎", "Luxury frequency unlocked 💎", "That baseline just walked in 🔥", "Certified banger 🏆", "Your headphones deserved this 👑"],
+    "rock":       ["Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸", "This guitar hit different tonight 🔥", "This one goes to 11 ⚡", "Your playlist needed this 🔥"],
+    "metal":      ["Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥", "Your ears aren't ready 🖤", "This drop is unreal 😈", "This hits like a freight train 😈"],
+    "lofi":       ["Sleep to this tonight 🌙", "3am and this is perfect ☁️", "Your study playlist found its anchor 📚", "This is what calm sounds like 🎧", "Quiet enough to think, beautiful enough to feel 🌙"],
+    "indie":      ["You'll replay this all week 🎧", "Your next favorite song 🎵", "Someone left this feeling in a song 🌙", "The feeling you couldn't name 🎧", "This one stays with you 🌅"],
+    "electronic": ["That drop will break your brain 🤯", "The festival you never attended ⚡", "This frequency doesn't exist yet ⚡", "The drop you won't see coming 🤯", "Your ears are about to time travel 🚀"],
+    "dark":       ["This found you at the right moment 🌑", "Beautiful and haunting 🖤", "The darkness has a melody 🖤", "Your soul needed this 🌑", "Some songs carry entire nights 🌙"],
+    "default":    ["Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧", "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧", "This is the one 🔥"],
 }
 
 STYLE_HASHTAGS = {
@@ -154,26 +116,25 @@ def build_description(base: str, style: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# ESTADO — fila única, sem conflito de chaves
+# ESTADO — fila alfabética, 1 short por música por rodada
 # ══════════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
     if not STATE_FILE.exists():
-        return {"tracks": [], "index": 0, "posted_ids": []}
+        return {"tracks": [], "alpha_index": 0}
 
     with STATE_FILE.open("r", encoding="utf-8") as f:
         state = json.load(f)
 
-    # Normaliza chaves antigas / conflitantes
-    state.pop("queue_index", None)          # remove chave legada
+    # Limpa chaves legadas conflitantes
+    state.pop("queue_index", None)
+    state.pop("index", None)
     state.setdefault("tracks", [])
-    state.setdefault("index", 0)
-    state.setdefault("posted_ids", [])      # histórico de IDs já postados
+    state.setdefault("alpha_index", 0)
 
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
-        t.setdefault("shorts_done", t.get("done", 0))  # compatibilidade
 
     return state
 
@@ -184,66 +145,65 @@ def save_state(state: dict):
 
 
 def sync_tracks(state: dict, files: list):
-    """Sincroniza lista de faixas com o Drive. Marca novas como is_new=True."""
     existing = {t["name"]: t for t in state["tracks"]}
 
     for f in files:
         if f["name"] not in existing:
-            log(f"🆕 Nova musica detectada: {f['name']}")
+            log(f"🆕 Nova musica: {f['name']}")
             state["tracks"].append({
                 "id": f["id"],
                 "name": f["name"],
                 "done": 0,
-                "shorts_done": 0,
                 "is_new": True,
             })
         else:
-            existing[f["name"]]["id"] = f["id"]  # atualiza ID caso tenha mudado
+            existing[f["name"]]["id"] = f["id"]
 
-    # Remove músicas deletadas do Drive
     drive_names = {f["name"] for f in files}
     state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
 
-    # Corrige index se necessário
+    # Mantém ordem alfabética sempre
+    state["tracks"].sort(key=lambda t: t["name"].lower())
+
     n = len(state["tracks"])
-    state["index"] = state["index"] % n if n else 0
+    state["alpha_index"] = state.get("alpha_index", 0) % n if n else 0
 
 
 def get_next_track(state: dict) -> dict | None:
     """
-    Lógica de fila:
-    1. Prioridade TOTAL para músicas novas (is_new=True), na ordem em que chegaram
-    2. Se não há novas, pega a próxima na fila circular que ainda tem shorts pendentes
-    3. Se todas completaram os 5 shorts, reseta a fila
+    Fila: 1 short por música em ordem alfabética.
+    Prioridade para músicas novas (is_new=True).
+    Quando todas da rodada foram postadas, reseta para 0 e começa de novo.
     """
     tracks = state["tracks"]
     if not tracks:
         return None
 
-    # 1. Prioridade: músicas novas não postadas ainda
+    # Prioridade: nova música ainda não postada
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) == 0]
     if new_tracks:
-        chosen = new_tracks[0]
-        log(f"🆕 Prioridade para música nova: {chosen['name']}")
+        chosen = new_tracks[0]  # primeira nova em ordem alfabética
+        log(f"🆕 Prioridade para nova: {chosen['name']}")
         chosen["is_new"] = False
         return chosen
 
-    # 2. Fila circular — próxima com shorts pendentes
+    # Fila alfabética: pega a do índice atual que tem short pendente
     n = len(tracks)
-    idx = state.get("index", 0) % n
+    idx = state.get("alpha_index", 0) % n
+
+    # Tenta a partir do índice atual
     for i in range(n):
         t = tracks[(idx + i) % n]
         if t.get("done", 0) < SHORTS_PER_TRACK:
-            state["index"] = (idx + i + 1) % n
+            state["alpha_index"] = (idx + i + 1) % n
             return t
 
-    # 3. Reset completo da fila
-    log("🔄 Todas as músicas completaram os shorts — resetando fila.")
+    # Todas completaram — reseta tudo
+    log("🔄 Rodada completa — resetando todos os shorts.")
     for t in tracks:
         t["done"] = 0
-        t["shorts_done"] = 0
-    state["index"] = 0
-    return tracks[0] if tracks else None
+    state["alpha_index"] = 0
+    return tracks[0]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -296,12 +256,11 @@ def publish(video_path: str, title: str, description: str) -> dict:
             log(f"  YouTube ERRO: {e}")
             results["youtube"] = {"ok": False, "error": str(e)}
     else:
-        log("  YouTube desabilitado")
         results["youtube"] = {"ok": False, "skipped": True}
 
     if ENABLE_FACEBOOK:
         try:
-            log("Postando no Facebook...")
+            log("Postando no Facebook Reels...")
             res = upload_to_facebook(video_path, title, description)
             fb_id = res.get("id") or res.get("video_id", "?")
             log(f"  Facebook OK -> ID: {fb_id}")
@@ -313,7 +272,6 @@ def publish(video_path: str, title: str, description: str) -> dict:
             log(f"  Facebook ERRO: {e}")
             results["facebook"] = {"ok": False, "error": str(e)}
     else:
-        log("  Facebook desabilitado")
         results["facebook"] = {"ok": False, "skipped": True}
 
     return results
@@ -325,14 +283,15 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
 def main():
     log("=" * 50)
-    log("BOT INICIANDO - YouTube Shorts + Facebook")
+    log("BOT INICIANDO - YouTube Shorts + Facebook Reels")
     log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
     log(f"  Facebook: {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
     log("=" * 50)
 
     if not DRIVE_FOLDER_ID:
-        raise ValueError("DRIVE_FOLDER_ID nao configurado nos secrets.")
+        raise ValueError("DRIVE_FOLDER_ID nao configurado.")
 
+    # Service Account para leitura do Drive (inbox/backups)
     service = get_drive_service()
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
@@ -351,7 +310,7 @@ def main():
 
     track = get_next_track(state)
     if not track:
-        log("Nenhuma faixa disponivel. Encerrando.")
+        log("Nenhuma faixa disponivel.")
         return
 
     name = track["name"]
@@ -392,15 +351,16 @@ def main():
 
         results = publish(video_path, title, description)
 
-        # Backup no Drive
+        # Backup usando OAuth do YouTube (tem acesso ao Meu Drive pessoal)
         try:
-            backup_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
+            log("Salvando backup no Drive...")
+            oauth_service = get_oauth_drive_service()
+            backup_id = find_folder_id(oauth_service, DRIVE_FOLDER_ID, "backups")
             if backup_id:
-                log("Salvando backup no Drive...")
-                upload_file_to_drive(service, backup_id, video_path)
+                upload_file_to_drive(oauth_service, backup_id, video_path)
                 log("  Backup salvo!")
             else:
-                log("  Pasta 'backups' nao encontrada — pulando backup.")
+                log("  Pasta 'backups' nao encontrada.")
         except Exception as e:
             log(f"  Backup falhou (nao critico): {e}")
 
@@ -410,14 +370,7 @@ def main():
         if not any_ok and not all_skipped:
             raise RuntimeError("Nenhuma plataforma recebeu o video.")
 
-        # Atualiza estado SOMENTE após sucesso
         track["done"] = short_num
-        track["shorts_done"] = short_num
-        if short_num >= SHORTS_PER_TRACK:
-            # Avança fila para próxima música diferente
-            n = len(state["tracks"])
-            state["index"] = (state["tracks"].index(track) + 1) % n
-
         save_state(state)
 
         log("=" * 50)
