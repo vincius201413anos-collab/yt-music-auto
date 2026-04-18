@@ -74,7 +74,7 @@
       "id": "1MwgXAO6PHTsudI3OridfIo84R6YWpgQ5",
       "name": "Desencana 4 [Indie].wav",
       "shorts_done": 2,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 10
+  "alpha_index": 11
 }
