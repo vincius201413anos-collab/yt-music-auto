@@ -8,7 +8,6 @@ from datetime import datetime
 
 from drive_service import (
     get_drive_service,
-    get_oauth_drive_service,
     find_folder_id,
     list_audio_files_in_folder,
     download_drive_file,
@@ -24,13 +23,17 @@ from ai_image_generator import generate_image, build_ai_prompt
 # CONFIG
 # ══════════════════════════════════════════════════════════════════════
 
-STATE_FILE       = Path("state.json")
+STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 5
-DRIVE_FOLDER_ID  = os.getenv("DRIVE_FOLDER_ID")
-SPOTIFY_LINK     = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
-TIKTOK_LINK      = "https://www.tiktok.com/@darkmrkedit"
 
-ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE", "true").lower() == "true"
+DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
+DRIVE_BACKUP_FOLDER_ID = os.getenv("DRIVE_BACKUP_FOLDER_ID", "").strip()
+ENABLE_DRIVE_BACKUP = os.getenv("ENABLE_DRIVE_BACKUP", "false").lower() == "true"
+
+SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
+TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit"
+
+ENABLE_YOUTUBE = os.getenv("ENABLE_YOUTUBE", "true").lower() == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "true").lower() == "true"
 
 
@@ -65,27 +68,27 @@ def human_delay():
 # ══════════════════════════════════════════════════════════════════════
 
 STYLE_HOOKS = {
-    "phonk":      ["Night mode: activated 🖤", "Save this for the night drive 🌙", "Underground anthem 🔥", "This doesn't belong on a playlist 😳", "Your city needs this energy 😈"],
-    "trap":       ["This one built different 💎", "Luxury frequency unlocked 💎", "That baseline just walked in 🔥", "Certified banger 🏆", "Your headphones deserved this 👑"],
-    "rock":       ["Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸", "This guitar hit different tonight 🔥", "This one goes to 11 ⚡", "Your playlist needed this 🔥"],
-    "metal":      ["Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥", "Your ears aren't ready 🖤", "This drop is unreal 😈", "This hits like a freight train 😈"],
-    "lofi":       ["Sleep to this tonight 🌙", "3am and this is perfect ☁️", "Your study playlist found its anchor 📚", "This is what calm sounds like 🎧", "Quiet enough to think, beautiful enough to feel 🌙"],
-    "indie":      ["You'll replay this all week 🎧", "Your next favorite song 🎵", "Someone left this feeling in a song 🌙", "The feeling you couldn't name 🎧", "This one stays with you 🌅"],
+    "phonk": ["Night mode: activated 🖤", "Save this for the night drive 🌙", "Underground anthem 🔥", "This doesn't belong on a playlist 😳", "Your city needs this energy 😈"],
+    "trap": ["This one built different 💎", "Luxury frequency unlocked 💎", "That baseline just walked in 🔥", "Certified banger 🏆", "Your headphones deserved this 👑"],
+    "rock": ["Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸", "This guitar hit different tonight 🔥", "This one goes to 11 ⚡", "Your playlist needed this 🔥"],
+    "metal": ["Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥", "Your ears aren't ready 🖤", "This drop is unreal 😈", "This hits like a freight train 😈"],
+    "lofi": ["Sleep to this tonight 🌙", "3am and this is perfect ☁️", "Your study playlist found its anchor 📚", "This is what calm sounds like 🎧", "Quiet enough to think, beautiful enough to feel 🌙"],
+    "indie": ["You'll replay this all week 🎧", "Your next favorite song 🎵", "Someone left this feeling in a song 🌙", "The feeling you couldn't name 🎧", "This one stays with you 🌅"],
     "electronic": ["That drop will break your brain 🤯", "The festival you never attended ⚡", "This frequency doesn't exist yet ⚡", "The drop you won't see coming 🤯", "Your ears are about to time travel 🚀"],
-    "dark":       ["This found you at the right moment 🌑", "Beautiful and haunting 🖤", "The darkness has a melody 🖤", "Your soul needed this 🌑", "Some songs carry entire nights 🌙"],
-    "default":    ["Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧", "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧", "This is the one 🔥"],
+    "dark": ["This found you at the right moment 🌑", "Beautiful and haunting 🖤", "The darkness has a melody 🖤", "Your soul needed this 🌑", "Some songs carry entire nights 🌙"],
+    "default": ["Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧", "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧", "This is the one 🔥"],
 }
 
 STYLE_HASHTAGS = {
-    "phonk":      "#phonk #darkphonk #phonkmusic #drift #phonkvibes #phonkedit",
-    "trap":       "#trap #trapmusic #808 #trapbeats #hiphop #banger",
-    "rock":       "#rock #rockmusic #guitarmusic #hardrock #alternative",
-    "metal":      "#metal #heavymetal #metalhead #metalcore #deathmetal",
-    "lofi":       "#lofi #lofihiphop #studymusic #chillvibes #lofibeats",
-    "indie":      "#indie #indiemusic #alternativemusic #emotional #indievibes",
+    "phonk": "#phonk #darkphonk #phonkmusic #drift #phonkvibes #phonkedit",
+    "trap": "#trap #trapmusic #808 #trapbeats #hiphop #banger",
+    "rock": "#rock #rockmusic #guitarmusic #hardrock #alternative",
+    "metal": "#metal #heavymetal #metalhead #metalcore #deathmetal",
+    "lofi": "#lofi #lofihiphop #studymusic #chillvibes #lofibeats",
+    "indie": "#indie #indiemusic #alternativemusic #emotional #indievibes",
     "electronic": "#electronic #edm #synthwave #electronicmusic #rave",
-    "dark":       "#dark #darkmusic #gothic #darkambient #darkwave",
-    "default":    "#music #newmusic #viralmusic #underground #musiclover",
+    "dark": "#dark #darkmusic #gothic #darkambient #darkwave",
+    "default": "#music #newmusic #viralmusic #underground #musiclover",
 }
 UNIVERSAL = "#shorts #youtubeshorts #reels #fbreels #viral #fyp #trending #musicshorts"
 
@@ -126,7 +129,6 @@ def load_state() -> dict:
     with STATE_FILE.open("r", encoding="utf-8") as f:
         state = json.load(f)
 
-    # Limpa chaves legadas conflitantes
     state.pop("queue_index", None)
     state.pop("index", None)
     state.setdefault("tracks", [])
@@ -161,8 +163,6 @@ def sync_tracks(state: dict, files: list):
 
     drive_names = {f["name"] for f in files}
     state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
-
-    # Mantém ordem alfabética sempre
     state["tracks"].sort(key=lambda t: t["name"].lower())
 
     n = len(state["tracks"])
@@ -170,35 +170,26 @@ def sync_tracks(state: dict, files: list):
 
 
 def get_next_track(state: dict) -> dict | None:
-    """
-    Fila: 1 short por música em ordem alfabética.
-    Prioridade para músicas novas (is_new=True).
-    Quando todas da rodada foram postadas, reseta para 0 e começa de novo.
-    """
     tracks = state["tracks"]
     if not tracks:
         return None
 
-    # Prioridade: nova música ainda não postada
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) == 0]
     if new_tracks:
-        chosen = new_tracks[0]  # primeira nova em ordem alfabética
+        chosen = new_tracks[0]
         log(f"🆕 Prioridade para nova: {chosen['name']}")
         chosen["is_new"] = False
         return chosen
 
-    # Fila alfabética: pega a do índice atual que tem short pendente
     n = len(tracks)
     idx = state.get("alpha_index", 0) % n
 
-    # Tenta a partir do índice atual
     for i in range(n):
         t = tracks[(idx + i) % n]
         if t.get("done", 0) < SHORTS_PER_TRACK:
             state["alpha_index"] = (idx + i + 1) % n
             return t
 
-    # Todas completaram — reseta tudo
     log("🔄 Rodada completa — resetando todos os shorts.")
     for t in tracks:
         t["done"] = 0
@@ -286,12 +277,12 @@ def main():
     log("BOT INICIANDO - YouTube Shorts + Facebook Reels")
     log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
     log(f"  Facebook: {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
+    log(f"  Backup   : {'ATIVO' if ENABLE_DRIVE_BACKUP else 'DESABILITADO'}")
     log("=" * 50)
 
     if not DRIVE_FOLDER_ID:
         raise ValueError("DRIVE_FOLDER_ID nao configurado.")
 
-    # Service Account para leitura do Drive (inbox/backups)
     service = get_drive_service()
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
@@ -351,18 +342,18 @@ def main():
 
         results = publish(video_path, title, description)
 
-        # Backup usando OAuth do YouTube (tem acesso ao Meu Drive pessoal)
-        try:
-            log("Salvando backup no Drive...")
-            oauth_service = get_oauth_drive_service()
-            backup_id = find_folder_id(oauth_service, DRIVE_FOLDER_ID, "backups")
-            if backup_id:
-                upload_file_to_drive(oauth_service, backup_id, video_path)
-                log("  Backup salvo!")
-            else:
-                log("  Pasta 'backups' nao encontrada.")
-        except Exception as e:
-            log(f"  Backup falhou (nao critico): {e}")
+        if ENABLE_DRIVE_BACKUP:
+            try:
+                if DRIVE_BACKUP_FOLDER_ID:
+                    log("Salvando backup no Drive...")
+                    upload_file_to_drive(service, DRIVE_BACKUP_FOLDER_ID, video_path)
+                    log("  Backup salvo!")
+                else:
+                    log("  Backup ignorado: DRIVE_BACKUP_FOLDER_ID nao configurado.")
+            except Exception as e:
+                log(f"  Backup falhou (nao critico): {e}")
+        else:
+            log("  Backup desabilitado.")
 
         any_ok = any(r.get("ok") for r in results.values())
         all_skipped = all(r.get("skipped") for r in results.values())
