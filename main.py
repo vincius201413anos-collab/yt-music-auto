@@ -28,7 +28,6 @@ SHORTS_PER_TRACK = 5
 
 DRIVE_FOLDER_ID = os.getenv("DRIVE_FOLDER_ID")
 DRIVE_BACKUP_FOLDER_ID = os.getenv("DRIVE_BACKUP_FOLDER_ID", "").strip()
-ENABLE_DRIVE_BACKUP = os.getenv("ENABLE_DRIVE_BACKUP", "false").lower() == "true"
 
 SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
 TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit"
@@ -119,7 +118,7 @@ def build_description(base: str, style: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# ESTADO — fila alfabética, 1 short por música por rodada
+# ESTADO
 # ══════════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
@@ -277,7 +276,7 @@ def main():
     log("BOT INICIANDO - YouTube Shorts + Facebook Reels")
     log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
     log(f"  Facebook: {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
-    log(f"  Backup   : {'ATIVO' if ENABLE_DRIVE_BACKUP else 'DESABILITADO'}")
+    log(f"  Backup   : {'ATIVO' if DRIVE_BACKUP_FOLDER_ID else 'DESABILITADO'}")
     log("=" * 50)
 
     if not DRIVE_FOLDER_ID:
@@ -342,18 +341,16 @@ def main():
 
         results = publish(video_path, title, description)
 
-        if ENABLE_DRIVE_BACKUP:
+        # Backup sempre roda se DRIVE_BACKUP_FOLDER_ID estiver configurado
+        if DRIVE_BACKUP_FOLDER_ID:
             try:
-                if DRIVE_BACKUP_FOLDER_ID:
-                    log("Salvando backup no Drive...")
-                    upload_file_to_drive(service, DRIVE_BACKUP_FOLDER_ID, video_path)
-                    log("  Backup salvo!")
-                else:
-                    log("  Backup ignorado: DRIVE_BACKUP_FOLDER_ID nao configurado.")
+                log("Salvando backup no Drive...")
+                upload_file_to_drive(service, DRIVE_BACKUP_FOLDER_ID, video_path)
+                log("  Backup salvo!")
             except Exception as e:
                 log(f"  Backup falhou (nao critico): {e}")
         else:
-            log("  Backup desabilitado.")
+            log("  Backup ignorado: DRIVE_BACKUP_FOLDER_ID nao configurado.")
 
         any_ok = any(r.get("ok") for r in results.values())
         all_skipped = all(r.get("skipped") for r in results.values())
