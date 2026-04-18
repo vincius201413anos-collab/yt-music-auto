@@ -4,8 +4,8 @@
       "id": "1xmPvrTJaVpwQ6Wl9JK7-5cARkLn_plV3",
       "name": "Artemis II - Rise To The Moon (1) [Instrumental].wav",
       "shorts_done": 0,
-      "done": false,
-      "is_new": true
+      "done": 1,
+      "is_new": false
     },
     {
       "id": "1qo4nnGTUBrINRqdwSQt-mb3A4MZ3tntF",
@@ -131,6 +131,90 @@
       "name": "Ghost Signal [phonk].wav",
       "shorts_done": 0,
       "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1d_78GnR_8ol3rUwsH0dbZSYMGrT4f5o4",
+      "name": "Jinxed Happiness [rock].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1dEA1Py7H_O7LCvCFl6HS7eCdvI1J6lt2",
+      "name": "Lose control [trap].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1TXMKl03GEMJTq80rrtC82OJIL74wa3Go",
+      "name": "manson deep [rock].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1TALkxa0EPGRZqA1dDwAi0uyMHjZW7GiB",
+      "name": "se desencana 2 [indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1Rj4xWv0rLpc6gmpzjnxYTxCk_U1cuRjB",
+      "name": "se desencana [indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1gIYVMMpLe4ShrFViWZ58GjrsqqE2FE2C",
+      "name": "se desencana h[indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1rcvMAVl3CpcXe5ndrl6xewzJQMoiBXbi",
+      "name": "Something shallow fuc 3 [Rock}.wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1KWJgtejl-WiA8Fj9PAX-h9_3x27Wfk7O",
+      "name": "something shallow fuck [music].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1gWapdMP29WW2nl9v-xXXRL5oBtvOCCl-",
+      "name": "something shallow fuck [Rock].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1E3EncLj2OvQQnMWYV8af9BIVtsEW3xtg",
+      "name": "sorry motel [pop] [indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
+      "name": "sorry motel [pop] [indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1na4gN8jyAiuBxoSUokXDlEpyatKULuAX",
+      "name": "We were something (1) [POP].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1fN3gS2v6VBUMc0vbui-Zf-JVi7Kf0vV4",
+      "name": "We were something [POP].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "11JmIIuXvyIhpJhg81NK_5xOBtvpY37v5",
+      "name": "“Hollow Echoes” (3)[Rock].wav",
+      "done": 0,
       "is_new": true
     }
   ],
