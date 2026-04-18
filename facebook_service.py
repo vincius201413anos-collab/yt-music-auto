@@ -1,22 +1,25 @@
-import requests
 import os
+import requests
 
 FB_PAGE_ID = os.getenv("FB_PAGE_ID")
 FB_TOKEN = os.getenv("FB_PAGE_ACCESS_TOKEN")
 
 
 def upload_facebook_reel(video_path, caption):
-    url = f"https://graph.facebook.com/v19.0/{FB_PAGE_ID}/video_reels"
+    if not FB_PAGE_ID or not FB_TOKEN:
+        raise ValueError("FB_PAGE_ID ou FB_PAGE_ACCESS_TOKEN não configurado.")
 
-    files = {
-        "video_file": open(video_path, "rb")
-    }
+    url = f"https://graph.facebook.com/v23.0/{FB_PAGE_ID}/video_reels"
 
-    data = {
-        "description": caption,
-        "access_token": FB_TOKEN
-    }
+    with open(video_path, "rb") as video_file:
+        files = {
+            "source": video_file
+        }
+        data = {
+            "description": caption,
+            "access_token": FB_TOKEN
+        }
+        response = requests.post(url, files=files, data=data, timeout=120)
 
-    response = requests.post(url, files=files, data=data)
-    print("FB RESPONSE:", response.text)
+    response.raise_for_status()
     return response.json()
