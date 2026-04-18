@@ -151,7 +151,7 @@
       "id": "1TXMKl03GEMJTq80rrtC82OJIL74wa3Go",
       "name": "manson deep [rock].wav",
       "shorts_done": 2,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 21
+  "alpha_index": 22
 }
