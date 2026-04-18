@@ -29,7 +29,7 @@ DRIVE_FOLDER_ID  = os.getenv("DRIVE_FOLDER_ID")
 SPOTIFY_LINK     = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
 TIKTOK_LINK      = "https://www.tiktok.com/@darkmrkedit"
 
-ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE",  "true").lower() == "true"
+ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE", "true").lower() == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "true").lower() == "true"
 
 
@@ -38,7 +38,7 @@ def log(msg: str):
 
 
 # ══════════════════════════════════════════════════════════════════════
-# UTILITARIOS
+# UTILITÁRIOS
 # ══════════════════════════════════════════════════════════════════════
 
 def clean_title(filename: str) -> str:
@@ -47,9 +47,11 @@ def clean_title(filename: str) -> str:
     name = re.sub(r"[_\-]+", " ", name)
     return re.sub(r"\s+", " ", name).strip().title()
 
+
 def safe_filename(text: str) -> str:
     text = re.sub(r"[^\w\s\-]", "", text.lower())
     return re.sub(r"\s+", "_", text)[:60]
+
 
 def human_delay():
     secs = random.randint(10, 40)
@@ -58,40 +60,58 @@ def human_delay():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# METADATA — titulos e descricoes virais
+# METADATA — títulos e descrições virais
 # ══════════════════════════════════════════════════════════════════════
 
 STYLE_HOOKS = {
-    "phonk":      ["Night mode: activated 🖤", "Save this for the night drive 🌙",
-                   "Underground anthem 🔥", "This doesn't belong on a playlist 😳",
-                   "Your city needs this energy 😈"],
-    "trap":       ["This one built different 💎", "Luxury frequency unlocked 💎",
-                   "That baseline just walked in 🔥", "Certified banger 🏆",
-                   "Your headphones deserved this 👑"],
-    "rock":       ["Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸",
-                   "This guitar hit different tonight 🔥", "This one goes to 11 ⚡",
-                   "Your playlist needed this 🔥"],
-    "metal":      ["Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥",
-                   "Your ears aren't ready 🖤", "This drop is unreal 😈",
-                   "This hits like a freight train 😈"],
-    "lofi":       ["Sleep to this tonight 🌙", "3am and this is perfect ☁️",
-                   "Your study playlist found its anchor 📚",
-                   "This is what calm sounds like 🎧",
-                   "Quiet enough to think, beautiful enough to feel 🌙"],
-    "indie":      ["You'll replay this all week 🎧", "Your next favorite song 🎵",
-                   "Someone left this feeling in a song 🌙",
-                   "The feeling you couldn't name 🎧",
-                   "This one stays with you 🌅"],
-    "electronic": ["That drop will break your brain 🤯", "The festival you never attended ⚡",
-                   "This frequency doesn't exist yet ⚡",
-                   "The drop you won't see coming 🤯",
-                   "Your ears are about to time travel 🚀"],
-    "dark":       ["This found you at the right moment 🌑", "Beautiful and haunting 🖤",
-                   "The darkness has a melody 🖤", "Your soul needed this 🌑",
-                   "Some songs carry entire nights 🌙"],
-    "default":    ["Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧",
-                   "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧",
-                   "This is the one 🔥"],
+    "phonk": [
+        "Night mode: activated 🖤", "Save this for the night drive 🌙",
+        "Underground anthem 🔥", "This doesn't belong on a playlist 😳",
+        "Your city needs this energy 😈"
+    ],
+    "trap": [
+        "This one built different 💎", "Luxury frequency unlocked 💎",
+        "That baseline just walked in 🔥", "Certified banger 🏆",
+        "Your headphones deserved this 👑"
+    ],
+    "rock": [
+        "Your speakers won't forgive you 🎸", "Can't skip, won't skip 🎸",
+        "This guitar hit different tonight 🔥", "This one goes to 11 ⚡",
+        "Your playlist needed this 🔥"
+    ],
+    "metal": [
+        "Warning: extremely heavy ⚠️", "Not for the faint-hearted 🔥",
+        "Your ears aren't ready 🖤", "This drop is unreal 😈",
+        "This hits like a freight train 😈"
+    ],
+    "lofi": [
+        "Sleep to this tonight 🌙", "3am and this is perfect ☁️",
+        "Your study playlist found its anchor 📚",
+        "This is what calm sounds like 🎧",
+        "Quiet enough to think, beautiful enough to feel 🌙"
+    ],
+    "indie": [
+        "You'll replay this all week 🎧", "Your next favorite song 🎵",
+        "Someone left this feeling in a song 🌙",
+        "The feeling you couldn't name 🎧",
+        "This one stays with you 🌅"
+    ],
+    "electronic": [
+        "That drop will break your brain 🤯", "The festival you never attended ⚡",
+        "This frequency doesn't exist yet ⚡",
+        "The drop you won't see coming 🤯",
+        "Your ears are about to time travel 🚀"
+    ],
+    "dark": [
+        "This found you at the right moment 🌑", "Beautiful and haunting 🖤",
+        "The darkness has a melody 🖤", "Your soul needed this 🌑",
+        "Some songs carry entire nights 🌙"
+    ],
+    "default": [
+        "Your playlist needed this upgrade 🎵", "You won't regret pressing play 🎧",
+        "Found: your new favorite 🎵", "Don't say we didn't warn you 🎧",
+        "This is the one 🔥"
+    ],
 }
 
 STYLE_HASHTAGS = {
@@ -110,7 +130,7 @@ UNIVERSAL = "#shorts #youtubeshorts #reels #fbreels #viral #fyp #trending #music
 
 def build_title(base: str, style: str, short_num: int) -> str:
     hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
-    hook  = hooks[(short_num - 1) % len(hooks)]
+    hook = hooks[(short_num - 1) % len(hooks)]
     formats = {
         1: f"{hook} | {base}",
         2: f"{base} | {hook}",
@@ -140,12 +160,16 @@ def build_description(base: str, style: str) -> str:
 def load_state() -> dict:
     if not STATE_FILE.exists():
         return {"tracks": [], "index": 0}
+
     with STATE_FILE.open("r", encoding="utf-8") as f:
         state = json.load(f)
+
     state.setdefault("tracks", [])
     state.setdefault("index", 0)
+
     for t in state["tracks"]:
         t.setdefault("done", 0)
+
     return state
 
 
@@ -156,19 +180,28 @@ def save_state(state: dict):
 
 def sync_tracks(state: dict, files: list):
     existing = {t["name"] for t in state["tracks"]}
+
     for f in files:
         if f["name"] not in existing:
             log(f"Nova musica: {f['name']}")
-            state["tracks"].append({"id": f["id"], "name": f["name"], "done": 0})
+            state["tracks"].append({
+                "id": f["id"],
+                "name": f["name"],
+                "done": 0
+            })
         else:
             for t in state["tracks"]:
                 if t["name"] == f["name"]:
                     t["id"] = f["id"]
+
     drive_names = {f["name"] for f in files}
     state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
+
     n = len(state["tracks"])
     if n:
         state["index"] = state["index"] % n
+    else:
+        state["index"] = 0
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -178,18 +211,16 @@ def sync_tracks(state: dict, files: list):
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
     os.makedirs("temp", exist_ok=True)
 
-    # 1. Imagem IA
     try:
         prompt = build_ai_prompt(style, filename, styles, short_num=short_num)
-        dest   = f"temp/{Path(filename).stem}_{short_num}.png"
-        img    = generate_image(prompt, output_path=dest)
+        dest = f"temp/{Path(filename).stem}_{short_num}.png"
+        img = generate_image(prompt, output_path=dest)
         if img and os.path.exists(img):
             log(f"Imagem IA gerada: {img}")
             return img
     except Exception as e:
         log(f"IA falhou, usando fallback: {e}")
 
-    # 2. Background local
     try:
         bg = get_random_background(style, filename)
         if bg and not str(bg).startswith("__AUTO"):
@@ -197,7 +228,6 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
     except Exception:
         pass
 
-    # 3. Default
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
         return fallback
@@ -206,7 +236,7 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PUBLICACAO
+# PUBLICAÇÃO
 # ══════════════════════════════════════════════════════════════════════
 
 def publish(video_path: str, title: str, description: str) -> dict:
@@ -215,7 +245,7 @@ def publish(video_path: str, title: str, description: str) -> dict:
     if ENABLE_YOUTUBE:
         try:
             log("Postando no YouTube...")
-            res   = upload_video(video_path, title, description, [], "public")
+            res = upload_video(video_path, title, description, [], "public")
             yt_id = res.get("id", "?") if isinstance(res, dict) else "?"
             log(f"  YouTube OK -> https://youtu.be/{yt_id}")
             results["youtube"] = {"ok": True, "id": yt_id}
@@ -225,11 +255,12 @@ def publish(video_path: str, title: str, description: str) -> dict:
             results["youtube"] = {"ok": False, "error": str(e)}
     else:
         log("  YouTube desabilitado")
+        results["youtube"] = {"ok": False, "skipped": True}
 
     if ENABLE_FACEBOOK:
         try:
-            log("Postando no Facebook Reels...")
-            res   = upload_to_facebook(video_path, title, description)
+            log("Postando no Facebook...")
+            res = upload_to_facebook(video_path, title, description)
             fb_id = res.get("id") or res.get("video_id", "?")
             log(f"  Facebook OK -> ID: {fb_id}")
             results["facebook"] = {"ok": True, "id": fb_id}
@@ -241,6 +272,7 @@ def publish(video_path: str, title: str, description: str) -> dict:
             results["facebook"] = {"ok": False, "error": str(e)}
     else:
         log("  Facebook desabilitado")
+        results["facebook"] = {"ok": False, "skipped": True}
 
     return results
 
@@ -251,15 +283,15 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
 def main():
     log("=" * 50)
-    log("BOT INICIANDO - YouTube Shorts + Facebook Reels")
-    log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE  else 'DESABILITADO'}")
+    log("BOT INICIANDO - YouTube Shorts + Facebook")
+    log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
     log(f"  Facebook: {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
     log("=" * 50)
 
     if not DRIVE_FOLDER_ID:
         raise ValueError("DRIVE_FOLDER_ID nao configurado nos secrets.")
 
-    service  = get_drive_service()
+    service = get_drive_service()
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
         raise ValueError("Pasta 'inbox' nao encontrada no Drive.")
@@ -275,11 +307,11 @@ def main():
         log("Sem musicas. Encerrando.")
         return
 
-    track      = state["tracks"][state["index"]]
-    name       = track["name"]
-    short_num  = track["done"] + 1
-    styles     = detect_styles(name)
-    style      = detect_style(name)
+    track = state["tracks"][state["index"]]
+    name = track["name"]
+    short_num = track["done"] + 1
+    styles = detect_styles(name)
+    style = detect_style(name)
     title_base = clean_title(name)
 
     log(f"Musica : {name}")
@@ -288,12 +320,14 @@ def main():
     os.makedirs("temp", exist_ok=True)
     audio_path = f"temp/{name}"
 
-    date       = datetime.utcnow().strftime("%Y-%m-%d")
+    date = datetime.utcnow().strftime("%Y-%m-%d")
     output_dir = Path("output") / date / style
     output_dir.mkdir(parents=True, exist_ok=True)
     video_path = str(
         output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
     )
+
+    bg = None
 
     try:
         log("Baixando audio do Drive...")
@@ -306,14 +340,12 @@ def main():
         video_path = create_short(audio_path, bg, video_path, style, song_name=title_base)
         log(f"Video pronto: {video_path}")
 
-        title       = build_title(title_base, style, short_num)
+        title = build_title(title_base, style, short_num)
         description = build_description(title_base, style)
         log(f"Titulo: {title}")
 
-        # publica no YouTube e Facebook ao mesmo tempo
         results = publish(video_path, title, description)
 
-        # salva backup na pasta music-auto/backups do Drive
         try:
             backup_id = find_folder_id(service, DRIVE_FOLDER_ID, "backups")
             if backup_id:
@@ -325,16 +357,17 @@ def main():
         except Exception as e:
             log(f"  Backup falhou (nao critico): {e}")
 
-        # verifica se ao menos uma plataforma funcionou
         any_ok = any(r.get("ok") for r in results.values())
-        if not any_ok and not all(r.get("skipped") for r in results.values()):
+        all_skipped = all(r.get("skipped") for r in results.values())
+
+        if not any_ok and not all_skipped:
             raise RuntimeError("Nenhuma plataforma recebeu o video.")
 
-        # atualiza fila
         track["done"] += 1
         if track["done"] >= SHORTS_PER_TRACK:
-            track["done"]  = 0
+            track["done"] = 0
             state["index"] = (state["index"] + 1) % len(state["tracks"])
+
         save_state(state)
 
         log("=" * 50)
@@ -342,12 +375,12 @@ def main():
         log("=" * 50)
 
     finally:
-        # limpa arquivos temporarios sempre, mesmo em erro
-        for path in [audio_path, video_path]:
+        for path in [audio_path, video_path, bg]:
             try:
-                if path and os.path.exists(path):
-                    os.remove(path)
-                    log(f"Temporario removido: {path}")
+                if path and isinstance(path, str) and os.path.exists(path):
+                    if path.startswith("temp/") or path.startswith("output/"):
+                        os.remove(path)
+                        log(f"Temporario removido: {path}")
             except Exception:
                 pass
 
