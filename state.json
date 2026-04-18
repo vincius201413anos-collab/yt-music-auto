@@ -39,7 +39,7 @@
       "id": "1ySyyS8MJuj9EB-Ehq4R_piqVP9ig3rBk",
       "name": "choir 2.0 [rock].wav",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 5
+  "alpha_index": 6
 }
