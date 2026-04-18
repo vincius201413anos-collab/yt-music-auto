@@ -2,7 +2,7 @@ import os
 import time
 import requests
 
-GRAPH_VERSION = "v23.0"
+GRAPH_VERSION = "v19.0"
 BASE_URL = f"https://graph.facebook.com/{GRAPH_VERSION}"
 
 
@@ -42,14 +42,14 @@ def _start_reel_upload(page_id, token, file_size):
     return video_id, upload_url
 
 
-def _transfer_reel_bytes(upload_url, video_path):
+def _transfer_reel_bytes(upload_url, video_path, token):
     file_size = os.path.getsize(video_path)
 
     with open(video_path, "rb") as f:
         response = requests.post(
             upload_url,
             headers={
-                "Authorization": "OAuth",
+                "Authorization": f"OAuth {token}",
                 "offset": "0",
                 "file_size": str(file_size),
             },
@@ -61,7 +61,7 @@ def _transfer_reel_bytes(upload_url, video_path):
     return response.json() if response.text else {}
 
 
-def _finish_reel_upload(page_id, token, video_id, title, description):
+def _finish_reel_upload(page_id, token, video_id, description):
     url = f"{BASE_URL}/{page_id}/video_reels"
 
     response = requests.post(
@@ -90,10 +90,10 @@ def upload_to_facebook(video_path, title, description, max_retries=3):
             video_id, upload_url = _start_reel_upload(page_id, token, file_size)
             print(f"[Facebook] Sessão iniciada. video_id={video_id}")
 
-            _transfer_reel_bytes(upload_url, video_path)
+            _transfer_reel_bytes(upload_url, video_path, token)
             print("[Facebook] Upload dos bytes concluído.")
 
-            result = _finish_reel_upload(page_id, token, video_id, title, description)
+            result = _finish_reel_upload(page_id, token, video_id, description)
             fb_id = result.get("id") or result.get("video_id") or video_id
 
             print(f"[Facebook] ✅ Publicado com sucesso! ID: {fb_id}")
