@@ -88,7 +88,7 @@
       "id": "1XtaOE0I3ls8Dvx7u2IZ71w-BKTw7akC5",
       "name": "Faddet [eletronic].wav",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 12
+  "alpha_index": 13
 }
