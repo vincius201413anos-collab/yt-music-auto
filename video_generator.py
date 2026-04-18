@@ -1,5 +1,6 @@
 """
 video_generator.py — Gerador de Shorts profissional.
+Versão otimizada para GitHub Actions.
 Melhorias de retenção: hook text overlay nos primeiros 3s,
 progress bar, zoom orgânico, flash sincronizado, color grade premium.
 """
@@ -21,8 +22,8 @@ from audio_analysis import (
 )
 
 # ── Parâmetros globais ────────────────────────────────────────────────────────
-MIN_DURATION   = 42
-MAX_DURATION   = 62       # reduzido: shorts mais curtos = mais retenção
+MIN_DURATION   = 20
+MAX_DURATION   = 28
 VIDEO_FADE_IN  = 0.3
 VIDEO_FADE_OUT = 0.6
 AUDIO_FADE_IN  = 0.3
@@ -34,6 +35,13 @@ MAX_SHAKE_Y    = 7
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
 # Fallback
 FONT_PATH_FALLBACK = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
+
+# Config de render otimizada
+FFMPEG_VIDEO_CODEC = "libx264"
+FFMPEG_CRF = "20"
+FFMPEG_PRESET = "veryfast"
+FFMPEG_AUDIO_CODEC = "aac"
+FFMPEG_AUDIO_BITRATE = "160k"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -59,12 +67,11 @@ def pick_window(audio_dur: float) -> tuple[float, float]:
     """
     dur = random.randint(
         MIN_DURATION,
-        min(MAX_DURATION, int(audio_dur)),
+        min(MAX_DURATION, max(MIN_DURATION, int(audio_dur))),
     )
     if audio_dur <= dur:
-        return 0.0, float(dur)
+        return 0.0, float(audio_dur)
 
-    # Começa entre 10% e 30% da música (evita intro e pega melhor parte)
     min_start = int(audio_dur * 0.10)
     max_start = min(int(audio_dur * 0.30), int(audio_dur - dur))
     start = random.randint(min_start, max(min_start, max_start))
@@ -77,10 +84,12 @@ def get_font() -> str:
         return FONT_PATH
     if os.path.exists(FONT_PATH_FALLBACK):
         return FONT_PATH_FALLBACK
-    # Busca qualquer fonte Bold disponível
+
     result = subprocess.run(
         ["find", "/usr/share/fonts", "-name", "*Bold*", "-name", "*.ttf"],
-        capture_output=True, text=True
+        capture_output=True,
+        text=True,
+        check=False,
     )
     fonts = [f for f in result.stdout.strip().split("\n") if f]
     return fonts[0] if fonts else FONT_PATH
@@ -92,7 +101,7 @@ def escape_text(text: str) -> str:
     text = text.replace("'", "\\'")
     text = text.replace(":", "\\:")
     text = text.replace("%", "\\%")
-    return text[:50]  # limita tamanho para caber na tela
+    return text[:50]
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -114,13 +123,8 @@ def build_audio_filter(duration: float) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
-    """
-    Hook text overlay — aparece nos primeiros 3.5s com fade suave.
-    Prova científica: os primeiros 2-3s determinam se o viewer fica.
-    """
     clean = escape_text(song_name)
 
-    # Linha superior: nome da música (grande)
     title_filter = (
         f"drawtext=fontfile='{font}'"
         f":text='{clean}'"
@@ -133,7 +137,6 @@ def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
         f":alpha='if(lt(t,0.3),t/0.3,if(lt(t,3.0),1.0,if(lt(t,3.8),(3.8-t)/0.8,0)))'"
     )
 
-    # Linha inferior: estilo (menor, mais discreta)
     style_label = escape_text(f"#{style.upper()} #SHORTS")
     style_filter = (
         f"drawtext=fontfile='{font}'"
@@ -150,27 +153,17 @@ def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
 
 
 def build_progress_bar_filter(duration: float) -> str:
-    """
-    Barra de progresso no rodapé — técnica de retenção eficaz.
-    Cria expectativa do tipo 'wait for the drop / best part'.
-    """
     return (
-        # Fundo da barra (escuro)
         f"drawbox=x=0:y=ih-10:w=iw:h=10:color=black@0.6:t=fill,"
-        # Barra de progresso que avança
         f"drawbox=x=0:y=ih-10"
         f":w='iw*t/{duration:.3f}'"
         f":h=10"
-        f":color=0xE8354A@0.95"   # vermelho vibrante
+        f":color=0xE8354A@0.95"
         f":t=fill"
     )
 
 
 def build_watermark_filter(font: str) -> str:
-    """
-    Marca d'água sutil no canto — branding do canal.
-    Aparece de forma discreta a partir de 3s.
-    """
     return (
         f"drawtext=fontfile='{font}'"
         f":text='@darkmrkedit'"
@@ -188,15 +181,11 @@ def build_watermark_filter(font: str) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _color_grade(profile: dict, flash_expr: str) -> str:
-    """Camada de color grade premium + flash sincronizado."""
     return (
-        # Primeiro passe: normalização base
         f"eq=contrast=1.08:brightness=0.01:saturation=1.05,"
-        # Segundo passe: perfil do estilo + flash dinâmico
         f"eq=contrast={profile['contrast']}"
         f":brightness='{flash_expr}'"
         f":saturation={profile['saturation']},"
-        # Sharpening
         f"unsharp=5:5:{profile['sharpen']}:5:5:0"
     )
 
@@ -216,8 +205,6 @@ def _fade_filter(duration: float) -> str:
     )
 
 
-# ── IMAGEM ESTÁTICA ───────────────────────────────────────────────────────────
-
 def build_image_filter(
     profile: dict,
     analysis: dict,
@@ -225,8 +212,8 @@ def build_image_filter(
     song_name: str,
     style: str,
 ) -> str:
-    fps        = profile["fps"]
-    font       = get_font()
+    fps = profile["fps"]
+    font = get_font()
     flash_expr = build_flash_expression(
         analysis,
         profile["brightness"],
@@ -235,18 +222,20 @@ def build_image_filter(
         profile["drop_flash"],
     )
     zoom_expr = build_zoom_expression(
-        analysis, duration, fps,
+        analysis,
+        duration,
+        fps,
         profile["max_zoom"],
         profile["zoom_speed"],
         profile["pulse_strength"],
     )
 
-    color  = _color_grade(profile, flash_expr)
-    vig    = _vignette_filter(profile.get("vignette", 0.4))
-    fades  = _fade_filter(duration)
-    hook   = build_hook_text_filter(song_name, style, font)
-    pbar   = build_progress_bar_filter(duration)
-    wtmk   = build_watermark_filter(font)
+    color = _color_grade(profile, flash_expr)
+    vig = _vignette_filter(profile.get("vignette", 0.4))
+    fades = _fade_filter(duration)
+    hook = build_hook_text_filter(song_name, style, font)
+    pbar = build_progress_bar_filter(duration)
+    wtmk = build_watermark_filter(font)
 
     parts = [
         "scale=1440:2560:force_original_aspect_ratio=increase",
@@ -273,8 +262,6 @@ def build_image_filter(
     return ",".join(parts)
 
 
-# ── VÍDEO ─────────────────────────────────────────────────────────────────────
-
 def build_video_filter(
     profile: dict,
     analysis: dict,
@@ -282,7 +269,7 @@ def build_video_filter(
     song_name: str,
     style: str,
 ) -> str:
-    fps  = profile["fps"]
+    fps = profile["fps"]
     font = get_font()
 
     flash_expr = build_flash_expression(
@@ -300,12 +287,12 @@ def build_video_filter(
     intro_hold = 0.6
     shake_gate = f"if(lt(t,{intro_hold}),0.15,1.0)"
 
-    color  = _color_grade(profile, flash_expr)
-    vig    = _vignette_filter(profile.get("vignette", 0.4))
-    fades  = _fade_filter(duration)
-    hook   = build_hook_text_filter(song_name, style, font)
-    pbar   = build_progress_bar_filter(duration)
-    wtmk   = build_watermark_filter(font)
+    color = _color_grade(profile, flash_expr)
+    vig = _vignette_filter(profile.get("vignette", 0.4))
+    fades = _fade_filter(duration)
+    hook = build_hook_text_filter(song_name, style, font)
+    pbar = build_progress_bar_filter(duration)
+    wtmk = build_watermark_filter(font)
 
     parts = [
         "scale=1140:2026:force_original_aspect_ratio=increase",
@@ -338,34 +325,32 @@ def create_short(
     background_path: str,
     output_name: str,
     style: str,
-    song_name: str = "",   # novo parâmetro para overlays
+    song_name: str = "",
 ) -> str:
     output_dir = os.path.dirname(output_name)
     if output_dir:
         os.makedirs(output_dir, exist_ok=True)
 
-    # Extrai nome da música do caminho se não passado
     if not song_name:
         song_name = Path(audio_path).stem
         song_name = re.sub(r"\[[^\]]*\]|\([^\)]*\)", "", song_name)
         song_name = re.sub(r"[_\-]+", " ", song_name).strip().title()
 
-    profile    = get_profile(style)
-    audio_dur  = get_duration(audio_path)
+    profile = get_profile(style)
+    audio_dur = get_duration(audio_path)
     start, dur = pick_window(audio_dur)
 
-    print(f"  Analisando áudio…")
+    print("  Analisando áudio…")
     analysis_full = full_analysis(audio_path)
-    analysis      = crop_analysis(analysis_full, start, dur)
+    analysis = crop_analysis(analysis_full, start, dur)
     save_debug({**analysis_full, "short_start": start, "short_duration": dur})
 
     audio_filter = build_audio_filter(dur)
 
-    ext      = Path(background_path).suffix.lower()
+    ext = Path(background_path).suffix.lower() if background_path else ""
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
-    # ── IMAGEM ──────────────────────────────────────────────────────────────
     if is_image:
         vf = build_image_filter(profile, analysis, dur, song_name, style)
 
@@ -378,44 +363,39 @@ def create_short(
             "-af", audio_filter,
             "-map", "0:v", "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-crf", "15", "-preset", "slow",
+            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
             "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
             "-movflags", "+faststart",
             output_name,
         ]
 
-    # ── VÍDEO ────────────────────────────────────────────────────────────────
     elif is_video:
-        bg_dur   = get_duration(background_path)
-        bg_start = (
-            0.0 if bg_dur <= dur
-            else random.uniform(0.0, bg_dur - dur)
-        )
+        bg_dur = get_duration(background_path)
+        bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
         vf = build_video_filter(profile, analysis, dur, song_name, style)
 
         cmd = [
             "ffmpeg", "-y",
             "-ss", str(bg_start), "-i", background_path,
-            "-ss", str(start),    "-i", audio_path,
+            "-ss", str(start), "-i", audio_path,
             "-t", str(dur),
             "-vf", vf,
             "-af", audio_filter,
             "-map", "0:v", "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-crf", "15", "-preset", "slow",
+            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
             "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
             "-movflags", "+faststart",
             output_name,
         ]
 
-    # ── FALLBACK (fundo preto) ───────────────────────────────────────────────
     else:
-        font    = get_font()
-        hook    = build_hook_text_filter(song_name, style, font)
-        pbar    = build_progress_bar_filter(dur)
-        wtmk    = build_watermark_filter(font)
+        font = get_font()
+        hook = build_hook_text_filter(song_name, style, font)
+        pbar = build_progress_bar_filter(dur)
+        wtmk = build_watermark_filter(font)
         fade_out = max(0.0, dur - VIDEO_FADE_OUT)
         vf = (
             f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
@@ -432,13 +412,14 @@ def create_short(
             "-af", audio_filter,
             "-map", "0:v", "-map", "1:a",
             "-shortest",
-            "-c:v", "libx264", "-crf", "15",
+            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
             "-pix_fmt", "yuv420p",
-            "-c:a", "aac", "-b:a", "192k",
+            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
             "-movflags", "+faststart",
             output_name,
         ]
 
-    print(f"  Renderizando vídeo…")
+    print("  FFmpeg command pronta. Iniciando render...")
     subprocess.run(cmd, check=True)
+    print("  Render concluído.")
     return output_name
