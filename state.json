@@ -123,7 +123,7 @@
       "id": "1KHjZiR-CCL4yD5WzKP-_uRIYgj4eMK0w",
       "name": "Ghost [rock][trap].mp3",
       "shorts_done": 1,
-      "done": false,
+      "done": 1,
       "is_new": false
     },
     {
@@ -234,5 +234,5 @@
   ],
   "last_posted_track": "coma black and white [rock].wav",
   "posted_ids": [],
-  "alpha_index": 17
+  "alpha_index": 18
 }
