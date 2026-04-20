@@ -1,6 +1,54 @@
 {
   "tracks": [
     {
+      "id": "1rmRY-zn9xfVPwYCulkOr63G8iDcPDZO9",
+      "name": "#03 RED PAVEMENT  [trap] (2).mp3",
+      "done": 1,
+      "is_new": false
+    },
+    {
+      "id": "1EKpF_H82lYDh_aYnuzwgc0Ve5PHr9U30",
+      "name": "#03 RED PAVEMENT  [trap] (3).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1MajrgTK3YPMge3sCG_UJw1nKlPPtZSz8",
+      "name": "#03 RED PAVEMENT  [trap] (4).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1GJtpiJG9KsyhpOPvQzrL65fhdh7lOE74",
+      "name": "#03 RED PAVEMENT  [trap] (5).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1TkBTacp2RnMAecovsN3mcbB0dVS9PHyn",
+      "name": "#03 RED PAVEMENT  [trap] (6).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1l8a8D6t5twdL_DhbkJxJsFRgE-GRxFVd",
+      "name": "#03 RED PAVEMENT  [trap].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "12WkJguIO7bTwgqzztXAK61ys7UGyId4A",
+      "name": "#06 IRON RITUAL  [trap] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1x2GdtU1Wuy6dBS5qybcRTXbApUxd1GpC",
+      "name": "#06 IRON RITUAL  [trap].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
       "id": "1xmPvrTJaVpwQ6Wl9JK7-5cARkLn_plV3",
       "name": "Artemis II - Rise To The Moon (1) [Instrumental].wav",
       "shorts_done": 0,
@@ -64,6 +112,30 @@
       "is_new": true
     },
     {
+      "id": "1wwQqSHNpwgtBsatdFXuTv8oY4N2FK3eT",
+      "name": "cyber  [trap] (2).wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1FDvKhgZJwg5ryGnuaP7sjKFuBs3ABBgs",
+      "name": "cyber  [trap].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "11sChIQRMUBWsYvqj71UyRspDb9_ek2q4",
+      "name": "Dark Ritual  [metal].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1u0m_EbceEkXenYpANMFeKVyIWAXCGXB0",
+      "name": "Dark Ritual [rock].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
       "id": "133BWFy_UQiRN-qsl5DZsoGr3bJy5BUWy",
       "name": "Desencana 3 [Pop].wav",
       "shorts_done": 0,
@@ -75,6 +147,18 @@
       "name": "Desencana 4 [Indie].wav",
       "shorts_done": 0,
       "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1l7eMIDnDrrGGjm5FZFASyzEGpjmjQ6n-",
+      "name": "DRIFT OR DIE  [trap] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1a7bVY0oZvPGc3nqOMpUx0MHjU-S-XklA",
+      "name": "DRIFT OR DIE  [trap].mp3",
+      "done": 0,
       "is_new": true
     },
     {
@@ -127,10 +211,40 @@
       "is_new": true
     },
     {
+      "id": "1XCJ2R_hx8l8z7f_KPPnfcGWh3vqVcdXU",
+      "name": "GHOST FREQUENCY  [trap] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1IoapZTWtVSt12s5ja7x8kthkIFXwDjEE",
+      "name": "GHOST FREQUENCY  [trap].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
       "id": "15tAYlrLOZqdImeeGwmkdQGgzYXKHh99t",
       "name": "Ghost Signal [phonk].wav",
       "shorts_done": 0,
       "done": false,
+      "is_new": true
+    },
+    {
+      "id": "1E3ZrSXunsqROfVXnYorQarCguLj2zDZC",
+      "name": "heavy bass drop in the first 5 seconds  [trap] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1IXgWhIolDxBufuZODHzUzJKfSoGow2k8",
+      "name": "heavy bass drop in the first 5 seconds  [trap] (3).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1tFJg5Dx064z8ZpjUoaWMbYB81xEvHAAL",
+      "name": "heavy bass drop in the first 5 seconds  [trap].mp3",
+      "done": 0,
       "is_new": true
     },
     {
@@ -148,6 +262,18 @@
     {
       "id": "1TXMKl03GEMJTq80rrtC82OJIL74wa3Go",
       "name": "manson deep [rock].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1uWISRhnKJKZ6ovBnbGEG-7spNVkp-lsD",
+      "name": "pander  [trap] (2).wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1OxPcigJH2MDYDJpy6sg12FO9VgbujlTD",
+      "name": "pander  [trap].wav",
       "done": 0,
       "is_new": true
     },
@@ -196,6 +322,42 @@
     {
       "id": "15WLsJsz-HSoeJf9ZAuBV4MBx9b4v0i-_",
       "name": "sorry motel [pop] [indie].wav",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "18EUjnABkCfk8aYt9ZykT5R_uLx1-L1p-",
+      "name": "STATIC SOUL  [trap].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1VhuZk_5V6E_87Bl_lir90goBF5Z9c5b1",
+      "name": "STATIC SOUL [trap].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1Qm_WpM7Dx8CDup8CUxz4niPaxm7GBU_y",
+      "name": "vik  [instrumental] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1m3QL5cOADxwlufAHGVI2b_gi1O6AxWCC",
+      "name": "vik  [instrumental].mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1IP5q9B_np_GJeNqR8LQAin7t1ArQeUbb",
+      "name": "vik  [trap] (2).mp3",
+      "done": 0,
+      "is_new": true
+    },
+    {
+      "id": "1yQ-_YWCzA4TT1-1bapeGzmQjau8MWchX",
+      "name": "vik  [trap].mp3",
       "done": 0,
       "is_new": true
     },
