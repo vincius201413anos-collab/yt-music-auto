@@ -1,6 +1,6 @@
 """
 ai_image_generator.py — geração visual premium para YouTube Shorts.
-Foco: CTR alto, semi-realismo, dark/trap/phonk vibe, variedade visual.
+Foco: CTR alto, anime style, dark/trap/phonk vibe, corpo inteiro, variedade visual.
 """
 
 import os
@@ -82,14 +82,14 @@ CHARACTER_POOL = [
 ]
 
 ATTITUDE_VARIATIONS = [
-    "confident smirk, dominant energy, strong eye contact",
-    "subtle seductive expression, intense gaze, cool attitude",
-    "cold expression, slightly arrogant look, dark feminine energy",
-    "playful teasing expression, direct eye contact, magnetic presence",
-    "unbothered attitude, looking down slightly, expensive aura",
-    "mysterious face, half-smile, dangerous elegance",
-    "piercing eyes, commanding presence, moody confidence",
-    "soft but provocative expression, editorial beauty mood",
+    "confident smirk, dominant energy",
+    "subtle seductive expression, cool attitude",
+    "cold expression, dark feminine energy",
+    "playful teasing expression, magnetic presence",
+    "unbothered attitude, expensive aura",
+    "mysterious face, half-smile",
+    "piercing eyes, moody confidence",
+    "soft but provocative editorial mood",
 ]
 
 STYLE_PROFILE = {
@@ -97,55 +97,55 @@ STYLE_PROFILE = {
         "tone": "dark urban drift energy, underground night vibe",
         "palette": "neon purple, crimson red, deep blue, black shadows",
         "fashion": "streetwear, oversized jacket, tactical details, luxury edge",
-        "camera": "close-up or medium portrait, dynamic angle, night reflections",
+        "camera": "full body shot, wide framing, camera far, dynamic angle, night reflections",
     },
     "trap": {
         "tone": "luxury night energy, dominant aura, expensive lifestyle mood",
         "palette": "purple neon, cold blue, gold highlights, deep black contrast",
         "fashion": "fashion-forward streetwear, leather, chains, designer silhouette",
-        "camera": "editorial portrait, strong face framing, premium lighting",
+        "camera": "full body shot, wide framing, camera far, editorial angle",
     },
     "rock": {
         "tone": "raw intensity, rebellious performance vibe",
         "palette": "red light, amber glow, black shadows, smoky contrast",
         "fashion": "band aesthetic, dark fitted outfit, stage attitude",
-        "camera": "performance portrait, dramatic angle, motion feel",
+        "camera": "full body shot, dynamic stage angle, motion feel",
     },
     "metal": {
         "tone": "dark fantasy aggression, commanding chaos",
         "palette": "black, deep red, ember orange, cold silver accents",
         "fashion": "gothic armor-inspired fashion, black leather, ritual details",
-        "camera": "epic portrait, dramatic shadows, powerful silhouette",
+        "camera": "full body shot, dramatic silhouette, epic framing",
     },
     "lofi": {
         "tone": "late-night introspective calm, dreamy mood",
         "palette": "soft blue, purple, warm lamp amber, haze",
         "fashion": "cozy dark casual, hoodie, soft textures",
-        "camera": "gentle portrait, soft focus background, intimate framing",
+        "camera": "full body shot, wider framing, intimate composition",
     },
     "indie": {
         "tone": "emotional, artistic, wistful confidence",
         "palette": "golden hour, dusty pink, muted teal, cinematic warmth",
         "fashion": "effortless vintage style, layered textures",
-        "camera": "cinematic portrait, natural pose, film-like mood",
+        "camera": "full body shot, cinematic framing, natural pose",
     },
     "electronic": {
         "tone": "festival euphoria, futuristic nightlife pulse",
         "palette": "electric blue, magenta, violet glow, laser contrast",
         "fashion": "futuristic nightlife fashion, glossy textures, cyber details",
-        "camera": "high-energy portrait, vivid lights, immersive depth",
+        "camera": "full body shot, wide rave framing, immersive neon depth",
     },
     "dark": {
         "tone": "haunting beauty, moonlit power, gothic softness",
         "palette": "violet, black, moon blue, silver highlights",
         "fashion": "dark gothic elegance, fitted silhouette, dramatic details",
-        "camera": "moody portrait, centered composition, ethereal contrast",
+        "camera": "full body shot, centered silhouette, ethereal framing",
     },
     "default": {
-        "tone": "cinematic modern portrait, magnetic presence",
-        "palette": "purple blue pink cinematic glow, rich shadows",
-        "fashion": "elevated streetwear with editorial styling",
-        "camera": "clean portrait, premium framing, depth of field",
+        "tone": "dark modern anime portrait mood, magnetic presence",
+        "palette": "purple blue pink anime glow, rich shadows",
+        "fashion": "elevated streetwear with anime editorial styling",
+        "camera": "full body shot, wide framing, character fully visible",
     },
 }
 
@@ -156,112 +156,112 @@ STYLE_PROFILE = {
 
 GENRE_POSES = {
     "lofi": [
-        "chin resting on hand, sitting at desk, thoughtful gaze",
-        "lying on bed face up, holding phone, relaxed expression",
-        "sitting at window watching rain, mug in hands",
-        "curled up on floor with headphones on, eyes closed",
-        "leaning back on chair, feet on desk, relaxed mood",
+        "sitting at desk reading, full body visible",
+        "lying on bed face up, full body visible",
+        "sitting at window watching rain, relaxed full body pose",
+        "curled up on floor with headphones on",
+        "leaning back on chair, relaxed posture",
         "drawing in sketchbook under lamp light",
-        "sitting in beanbag chair, calm posture",
-        "head tilted, looking out at night city",
-        "wrapped in blanket, sipping tea slowly",
+        "sitting in beanbag chair, calm full body posture",
+        "standing by window, looking out at night city",
+        "wrapped in blanket, seated full body pose",
         "stretching at desk, tired but composed",
     ],
     "indie": [
-        "holding a vinyl record, wistful expression",
+        "holding a vinyl record, standing full body pose",
         "sitting on rooftop ledge, legs dangling",
-        "arms out in wind, eyes closed, face to sunset",
-        "lying in grass, looking at sky",
+        "arms out in wind, full body visible",
+        "lying in grass, full body composition",
         "walking down empty street, looking back",
         "sitting on window sill, journal open",
-        "playing acoustic guitar, eyes half-closed",
+        "playing acoustic guitar, seated full body pose",
         "standing in field, hair blowing freely",
-        "leaning on brick wall, candid natural pose",
-        "hand on heart, emotional expression",
+        "leaning on brick wall, candid natural full body pose",
+        "hand on heart, emotional full body pose",
     ],
     "rock": [
-        "holding electric guitar overhead, stage energy",
-        "leaning into microphone, fierce eyes",
-        "jumping mid-air, guitar in hand",
-        "kneeling on stage, head bowed, spotlight",
-        "back to audience, facing concert crowd",
+        "holding electric guitar overhead, full body stage pose",
+        "leaning into microphone, fierce full body pose",
+        "jumping mid-air, full body visible",
+        "kneeling on stage, spotlight, full body visible",
+        "back to audience, full body composition",
         "guitar solo pose, intense and focused",
-        "sitting on amp, arms crossed, staring ahead",
+        "sitting on amp, arms crossed, full body visible",
         "hair flying with performance energy",
-        "fist raised to crowd, victorious",
-        "leaning into mic stand, eyes closed in emotion",
+        "fist raised to crowd, victorious stance",
+        "leaning into mic stand, full body emotion pose",
     ],
     "metal": [
-        "standing in storm, arms spread wide",
-        "hands forming horns gesture, fierce stare",
-        "kneeling with chains, looking up dramatically",
+        "standing in storm, arms spread wide, full body visible",
+        "hands forming horns gesture, fierce full body stance",
+        "kneeling with chains, dramatic full body pose",
         "standing at cliff edge, hair in wind",
         "arms raised calling down lightning",
         "sitting on gothic throne, commanding presence",
-        "back against ancient ruins, looking over shoulder",
+        "back against ancient ruins, full body visible",
         "walking through smoke and embers",
-        "hand extended, dark energy swirling",
-        "eyes glowing, dramatic posture",
+        "hand extended, dark energy swirling around body",
+        "glowing eyes, dramatic full body posture",
     ],
     "phonk": [
-        "leaning on car hood, arms crossed",
-        "in driver seat, one hand on wheel",
-        "walking toward camera, hoodie up, confident",
-        "crouching on concrete, looking up",
+        "leaning on car hood, full body visible",
+        "standing beside car, one hand on door",
+        "walking toward camera, hoodie up, confident full body pose",
+        "crouching on concrete, full body visible",
         "standing in rain, hands in pockets",
-        "back against graffiti wall, staring ahead",
+        "back against graffiti wall, full body stance",
         "sitting on hood, legs dangling",
-        "looking over shoulder at night city",
-        "arms on car roof, staring at horizon",
-        "in neon light, calm confident pose",
+        "looking over shoulder at night city, full body visible",
+        "arms on car roof, strong silhouette",
+        "in neon light, calm confident full body pose",
     ],
     "trap": [
-        "looking at camera through sunglasses, dripping confidence",
-        "sitting at poker table, chips in hand",
-        "standing at penthouse window, arms crossed",
-        "phone in hand, looking away, unbothered",
-        "leaning back in luxury chair, relaxed power",
-        "walking with bodyguard energy",
-        "at rooftop pool edge, city below",
+        "standing with sunglasses, dripping confidence, full body visible",
+        "sitting at poker table, seated full body pose",
+        "standing at penthouse window, full body visible",
+        "phone in hand, looking away, unbothered stance",
+        "leaning back in luxury chair, relaxed power pose",
+        "walking with bodyguard energy, full body shot",
+        "at rooftop pool edge, city below, full body visible",
         "gold jewelry caught in light, proud stance",
-        "one hand up showing rings, fierce look",
+        "one hand up showing rings, fierce full body look",
         "sitting on car, legs crossed, owning the scene",
     ],
     "electronic": [
-        "arms raised at festival, pure euphoria",
-        "eyes closed, lost in the music, crowd behind",
-        "jumping on stage, lights exploding",
+        "arms raised at festival, full body visible",
+        "lost in the music, crowd behind, full body pose",
+        "jumping on stage, full body visible",
         "hands touching holographic visuals",
-        "spinning, hair flying, laser beams",
+        "spinning, hair flying, laser beams around body",
         "screaming in joy at drop, crowd energy",
         "kneeling under spotlight, arms wide",
-        "facing giant LED wall, silhouette",
+        "facing giant LED wall, full body silhouette",
         "standing on speaker, commanding crowd",
-        "intense rave portrait pose, neon energy",
+        "intense rave full body pose, neon energy",
     ],
     "dark": [
-        "sitting in moonlight, arms wrapped around knees",
-        "standing in fog, looking away",
+        "sitting in moonlight, full body visible",
+        "standing in fog, full body visible",
         "floating pose, dark cloak billowing",
-        "kneeling at altar of candles, head bowed",
+        "kneeling at altar of candles, full body visible",
         "back against moonlit window, shadow play",
-        "hands reaching upward, darkness around",
+        "hands reaching upward, darkness around body",
         "sitting alone in empty cathedral",
-        "walking through mist, silhouette",
+        "walking through mist, silhouette visible",
         "standing at edge of cliff in storm",
         "lying on stone, peaceful but haunting",
     ],
     "default": [
-        "looking directly at camera, commanding",
-        "in profile, thoughtful gaze",
-        "hand near chin, confident pose",
+        "standing full body, commanding presence",
+        "full body profile pose, thoughtful gaze",
+        "hand near chin, confident full body pose",
         "sitting cross-legged, relaxed control",
         "standing in dramatic light, serene confidence",
         "walking toward viewer, magnetic presence",
-        "looking up beyond frame, cinematic emotion",
-        "arms crossed, knowing smile",
-        "head tilted, curious but intense look",
-        "silhouette against dramatic light",
+        "looking up beyond frame, full body composition",
+        "arms crossed, knowing smile, full body visible",
+        "head tilted, curious but intense look, full body visible",
+        "strong silhouette against dramatic light",
     ],
 }
 
@@ -387,35 +387,35 @@ LIGHTING_VARIATIONS = [
     "cold blue moonlight with dramatic rim light",
     "crimson red accent light with deep black shadows",
     "soft diffused light with moody purple undertones",
-    "harsh single spotlight, dramatic editorial contrast",
-    "city lights bokeh in background, face lit from the side",
+    "harsh single spotlight, dramatic anime contrast",
+    "city lights bokeh in background, neon side light",
     "storm light flashes, dark cinematic atmosphere",
-    "violet backlight with glossy highlights",
+    "violet backlight with glossy anime highlights",
     "warm amber edge light mixed with cool blue fill",
     "luxury nightclub lighting, reflective glow and shadow depth",
     "wet street reflections and neon spill light",
-    "dusty beam of light through window, cinematic haze",
+    "dusty beam of light through window, anime cinematic haze",
 ]
 
 QUALITY_SUFFIX = (
-    "masterpiece, best quality, ultra-detailed, sharp focus, "
-    "semi-realistic, cinematic portrait, ultra realistic skin texture, "
-    "9:16 vertical composition, centered subject, single adult woman, "
-    "high contrast, depth of field, 85mm lens, bokeh, "
-    "detailed eyes, expressive face, polished makeup, "
-    "professional photography style, editorial lighting, dramatic mood, "
-    "trending tiktok aesthetic, viral thumbnail style, high CTR composition, "
-    "no text, no watermark, no extra people, single subject only"
+    "masterpiece, best quality, anime style, highly detailed illustration, "
+    "sharp line art, clean linework, smooth shading, vibrant colors, "
+    "anime key visual, trending anime art, studio anime style, "
+    "full body shot, wide framing, camera far, character fully visible, "
+    "9:16 vertical composition, centered subject, strong silhouette, "
+    "no text, no watermark, no extra people, single character only"
 )
 
 NEGATIVE_PROMPT = (
+    "realistic, photo, hyperrealistic, photography, ultra realistic skin texture, 3d render, cgi, "
     "text, watermark, signature, logo, border, frame, "
     "split image, collage, multiple people, two girls, crowd focus, "
     "extra arms, extra fingers, deformed hands, bad anatomy, bad eyes, "
     "blurry, muddy, flat lighting, low quality, oversaturated, "
+    "cropped body, cropped legs, missing legs, close-up face, zoomed face, face crop, portrait crop, "
     "child, teenager, baby face, underage, elderly, "
     "nudity, explicit cleavage, bikini, lingerie, fetish, revealing outfit, "
-    "cropped face, duplicate face, distorted mouth, generic background"
+    "duplicate face, distorted mouth, generic background"
 )
 
 
@@ -520,12 +520,12 @@ def _claude_prompt(
 
     system = (
         "You are a master visual director for a premium YouTube Shorts music channel. "
-        "Create elite Flux prompts for scroll-stopping vertical cover art. "
-        "The image must feature exactly ONE adult woman, central subject, cinematic, seductive only in a subtle platform-safe way, never explicit, never underage. "
+        "Create elite Flux prompts for scroll-stopping vertical anime cover art. "
+        "The image must feature exactly ONE adult anime woman, full body or at least wide body framing, never close-up portrait, platform-safe, dark stylish anime aesthetic. "
         "Output ONLY the prompt in English, comma-separated, no explanation, no quotes."
     )
 
-    user = f"""Create a premium image prompt for a vertical YouTube music Short.
+    user = f"""Create a premium anime image prompt for a vertical YouTube music Short.
 
 Song: "{song_name}"
 Genre: {style} ({all_styles})
@@ -549,12 +549,13 @@ Fashion: {profile['fashion']}
 Camera: {profile['camera']}
 
 Rules:
-- Exactly one adult woman
-- Semi-realistic, premium editorial, cinematic portrait
-- Platform-safe, subtle seductive energy only, not explicit
-- Strong eyes and expression for click-through rate
-- Dark, stylish, memorable
-- 9:16 vertical, centered subject, premium composition
+- Exactly one adult anime woman
+- Anime illustration, not realistic, not photography
+- Full body shot or wide body framing
+- Character fully visible, no face crop, no portrait crop
+- Strong silhouette and stylish pose
+- Dark, neon, memorable
+- 9:16 vertical, centered subject
 - 70-120 words, comma-separated
 - No text, no watermark, no extra people"""
 
@@ -581,14 +582,18 @@ def _static_prompt(
     profile: dict,
 ) -> str:
     prompt = (
-        f"one adult woman, semi-realistic cinematic portrait, "
-        f"{character['hair']}, {character['skin']}, {character['eyes']}, {character['face']}, "
+        f"(masterpiece, best quality, anime style, highly detailed illustration), "
+        f"anime key visual, trending anime art, sharp line art, studio anime style, "
+        f"one adult anime woman, "
+        f"{character['hair']}, {character['eyes']}, {character['face']}, "
         f"{character['vibe']}, {attitude}, "
+        f"stylized anime proportions, clean line art, smooth shading, vibrant colors, "
         f"{profile['fashion']}, {profile['tone']}, {profile['palette']}, {profile['camera']}, "
         f"{pose}, {environment}, {lighting}, "
-        f"strong eye contact, expressive face, subtle provocative energy, platform-safe styling, "
-        f"luxury visual direction, polished skin texture, dramatic shadows, glossy highlights, "
-        f"{QUALITY_SUFFIX}"
+        f"full body shot, wide framing, camera far, character fully visible, no face crop, "
+        f"dynamic pose, strong silhouette, "
+        f"9:16 vertical composition, centered subject, "
+        f"NOT realistic, NOT photography, NOT 3d"
     )
     return _compact_prompt(prompt)
 
@@ -629,9 +634,8 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
     full_prompt = _compact_prompt(
         prompt
-        + ", premium editorial portrait, one adult woman, semi-realistic, "
-          "cinematic composition, dark feminine energy, detailed face, sharp eyes, "
-          "high contrast, dramatic lighting, premium skin texture, masterpiece"
+        + ", anime style, clean illustration, full body, wide framing, vibrant colors, "
+          "sharp line art, no realism, no photography"
     )
 
     for model in REPLICATE_MODELS:
