@@ -2,7 +2,8 @@
 video_generator.py — Gerador de Shorts profissional.
 Versão otimizada para GitHub Actions.
 Melhorias de retenção: hook text overlay nos primeiros 3s,
-progress bar, zoom orgânico, flash sincronizado, color grade premium.
+progress bar, zoom orgânico, flash sincronizado, color grade premium,
+logo overlay discreto em todos os vídeos.
 """
 
 import os
@@ -22,14 +23,14 @@ from audio_analysis import (
 )
 
 # ── Parâmetros globais ────────────────────────────────────────────────────────
-MIN_DURATION   = 20
-MAX_DURATION   = 28
-VIDEO_FADE_IN  = 0.3
+MIN_DURATION = 20
+MAX_DURATION = 28
+VIDEO_FADE_IN = 0.3
 VIDEO_FADE_OUT = 0.6
-AUDIO_FADE_IN  = 0.3
+AUDIO_FADE_IN = 0.3
 AUDIO_FADE_OUT = 0.8
-MAX_SHAKE_X    = 7
-MAX_SHAKE_Y    = 7
+MAX_SHAKE_X = 7
+MAX_SHAKE_Y = 7
 
 # Fonte padrão no Ubuntu (GitHub Actions)
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
@@ -42,6 +43,13 @@ FFMPEG_CRF = "20"
 FFMPEG_PRESET = "veryfast"
 FFMPEG_AUDIO_CODEC = "aac"
 FFMPEG_AUDIO_BITRATE = "160k"
+
+# Logo overlay
+LOGO_PATH = "assets/logo_darkmark.png"
+LOGO_RELATIVE_WIDTH = 0.11   # 11% da largura do vídeo
+LOGO_MARGIN_X = 24
+LOGO_MARGIN_Y = 120          # sobe um pouco por causa da progress bar inferior
+LOGO_OPACITY = 0.90
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -102,6 +110,31 @@ def escape_text(text: str) -> str:
     text = text.replace(":", "\\:")
     text = text.replace("%", "\\%")
     return text[:50]
+
+
+def logo_exists() -> bool:
+    return os.path.exists(LOGO_PATH)
+
+
+def build_logo_overlay_filter() -> str:
+    """
+    Overlay do logo no canto inferior direito.
+    O input [1:v] será o logo e [base] será o vídeo já processado.
+    """
+    logo_width_expr = f"min(iw,{int(1080 * LOGO_RELATIVE_WIDTH)})"
+
+    return (
+        f"[1:v]"
+        f"scale={logo_width_expr}:-1,"
+        f"format=rgba,"
+        f"colorchannelmixer=aa={LOGO_OPACITY}"
+        f"[logo];"
+        f"[base][logo]overlay="
+        f"x=W-w-{LOGO_MARGIN_X}:"
+        f"y=H-h-{LOGO_MARGIN_Y}:"
+        f"format=auto"
+        f"[vout]"
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -351,45 +384,91 @@ def create_short(
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
-    if is_image:
-        vf = build_image_filter(profile, analysis, dur, song_name, style)
+    use_logo = logo_exists()
 
-        cmd = [
-            "ffmpeg", "-y",
-            "-loop", "1", "-i", background_path,
-            "-ss", str(start), "-i", audio_path,
-            "-t", str(dur),
-            "-vf", vf,
-            "-af", audio_filter,
-            "-map", "0:v", "-map", "1:a",
-            "-shortest",
-            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
-            "-pix_fmt", "yuv420p",
-            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
-            "-movflags", "+faststart",
-            output_name,
-        ]
+    if is_image:
+        base_vf = build_image_filter(profile, analysis, dur, song_name, style)
+
+        if use_logo:
+            filter_complex = (
+                f"[0:v]{base_vf}[base];"
+                f"{build_logo_overlay_filter()}"
+            )
+            cmd = [
+                "ffmpeg", "-y",
+                "-loop", "1", "-i", background_path,
+                "-i", LOGO_PATH,
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-filter_complex", filter_complex,
+                "-map", "[vout]", "-map", "2:a",
+                "-af", audio_filter,
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
+        else:
+            cmd = [
+                "ffmpeg", "-y",
+                "-loop", "1", "-i", background_path,
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-vf", base_vf,
+                "-af", audio_filter,
+                "-map", "0:v", "-map", "1:a",
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
 
     elif is_video:
         bg_dur = get_duration(background_path)
         bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
-        vf = build_video_filter(profile, analysis, dur, song_name, style)
+        base_vf = build_video_filter(profile, analysis, dur, song_name, style)
 
-        cmd = [
-            "ffmpeg", "-y",
-            "-ss", str(bg_start), "-i", background_path,
-            "-ss", str(start), "-i", audio_path,
-            "-t", str(dur),
-            "-vf", vf,
-            "-af", audio_filter,
-            "-map", "0:v", "-map", "1:a",
-            "-shortest",
-            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
-            "-pix_fmt", "yuv420p",
-            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
-            "-movflags", "+faststart",
-            output_name,
-        ]
+        if use_logo:
+            filter_complex = (
+                f"[0:v]{base_vf}[base];"
+                f"{build_logo_overlay_filter()}"
+            )
+            cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(bg_start), "-i", background_path,
+                "-i", LOGO_PATH,
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-filter_complex", filter_complex,
+                "-map", "[vout]", "-map", "2:a",
+                "-af", audio_filter,
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
+        else:
+            cmd = [
+                "ffmpeg", "-y",
+                "-ss", str(bg_start), "-i", background_path,
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-vf", base_vf,
+                "-af", audio_filter,
+                "-map", "0:v", "-map", "1:a",
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
 
     else:
         font = get_font()
@@ -397,27 +476,51 @@ def create_short(
         pbar = build_progress_bar_filter(dur)
         wtmk = build_watermark_filter(font)
         fade_out = max(0.0, dur - VIDEO_FADE_OUT)
-        vf = (
+        base_vf = (
             f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
             f"fade=t=out:st={fade_out:.3f}:d={VIDEO_FADE_OUT},"
             f"{hook},{pbar},{wtmk}"
         )
-        cmd = [
-            "ffmpeg", "-y",
-            "-f", "lavfi",
-            "-i", f"color=c=black:s=1080x1920:d={dur}",
-            "-ss", str(start), "-i", audio_path,
-            "-t", str(dur),
-            "-vf", vf,
-            "-af", audio_filter,
-            "-map", "0:v", "-map", "1:a",
-            "-shortest",
-            "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
-            "-pix_fmt", "yuv420p",
-            "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
-            "-movflags", "+faststart",
-            output_name,
-        ]
+
+        if use_logo:
+            filter_complex = (
+                f"[0:v]{base_vf}[base];"
+                f"{build_logo_overlay_filter()}"
+            )
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", f"color=c=black:s=1080x1920:d={dur}",
+                "-i", LOGO_PATH,
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-filter_complex", filter_complex,
+                "-map", "[vout]", "-map", "2:a",
+                "-af", audio_filter,
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
+        else:
+            cmd = [
+                "ffmpeg", "-y",
+                "-f", "lavfi",
+                "-i", f"color=c=black:s=1080x1920:d={dur}",
+                "-ss", str(start), "-i", audio_path,
+                "-t", str(dur),
+                "-vf", base_vf,
+                "-af", audio_filter,
+                "-map", "0:v", "-map", "1:a",
+                "-shortest",
+                "-c:v", FFMPEG_VIDEO_CODEC, "-crf", FFMPEG_CRF, "-preset", FFMPEG_PRESET,
+                "-pix_fmt", "yuv420p",
+                "-c:a", FFMPEG_AUDIO_CODEC, "-b:a", FFMPEG_AUDIO_BITRATE,
+                "-movflags", "+faststart",
+                output_name,
+            ]
 
     print("  FFmpeg command pronta. Iniciando render...")
     subprocess.run(cmd, check=True)
