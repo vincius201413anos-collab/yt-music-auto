@@ -19,10 +19,6 @@ from youtube_service import upload_video
 from facebook_service import upload_to_facebook
 from ai_image_generator import generate_image, build_ai_prompt
 
-# ══════════════════════════════════════════════════════════════════════
-# CONFIG
-# ══════════════════════════════════════════════════════════════════════
-
 STATE_FILE = Path("state.json")
 SHORTS_PER_TRACK = 5
 
@@ -39,10 +35,6 @@ ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "true").lower() == "true"
 def log(msg: str):
     print(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}")
 
-
-# ══════════════════════════════════════════════════════════════════════
-# UTILITÁRIOS
-# ══════════════════════════════════════════════════════════════════════
 
 def clean_title(filename: str) -> str:
     name = Path(filename).stem
@@ -62,70 +54,66 @@ def human_delay():
     time.sleep(secs)
 
 
-# ══════════════════════════════════════════════════════════════════════
-# METADATA — VIRAL HOOKS IN ENGLISH
-# ══════════════════════════════════════════════════════════════════════
-
 STYLE_HOOKS = {
     "phonk": [
-        "Don't play this at 3am 🌑",
         "This should be illegal 😈",
+        "Don't play this at 3am 🌑",
         "POV: night drive with no destination 🌙",
-        "Nobody is talking about this song 😳",
-        "The phonk you've been looking for 🔥",
         "This sound won't leave your head 🔁",
-        "Found this at 2am and regretted nothing 😈",
-        "This chord is a crime 🖤",
-        "Save this before it disappears 📌",
         "Your playlist was incomplete until now 😳",
+        "Save this before it blows up 📌",
+        "Underground phonk hit detected 🚨",
+        "Found this at 2am and regretted nothing 😈",
+        "This beat is way too cold 🥶",
+        "Headphones mandatory for this one 🎧",
     ],
     "trap": [
-        "What is this beat omg 🤯",
-        "This is going in your playlist today 💎",
-        "Nobody is listening to this yet 😳",
-        "POV: you just found your new favorite 🔁",
         "This bass should be banned 🔥",
+        "Nobody is listening to this yet 😳",
+        "You found this before it blew up 👑",
+        "This ain't for everyone 😈",
         "Save this video right now 📌",
         "Your playlist was asking for this 💎",
-        "You found it before it blew up 👑",
+        "This beat has main character energy 🖤",
         "Couldn't stop listening 😮",
-        "This ain't for everyone 😈",
+        "This one sounds expensive 💸",
+        "The trap song you were missing 👇",
     ],
     "rock": [
         "This guitar will destroy you 🎸",
         "Impossible not to headbang 🤘",
-        "What kind of riff is this 🔥",
         "Max volume mandatory ⚡",
         "This is criminally good 🎸",
-        "Your rock playlist needed this 🔥",
-        "Can't listen just once 🔁",
         "Wait for the drop 😤",
-        "This will wreck your neck 🤘",
-        "Nobody talked about this band like this 😳",
+        "Your rock playlist needed this 🔥",
+        "This riff is ridiculous 🤯",
+        "Can't listen just once 🔁",
+        "This hits way too hard ⚡",
+        "Underrated and dangerous 🤘",
     ],
     "metal": [
         "This ain't for everyone ⚠️",
         "Your headphones can't handle this 🔥",
         "Warning: absurdly heavy 😈",
-        "This drop is unreal 🤯",
-        "Found hell in the form of music 🖤",
         "Prepare your neck 🤘",
         "This will destroy you in the best way 😈",
         "Heaviness level: illegal ⚠️",
         "Save this to listen in the dark 🌑",
-        "Your playlist needed chaos 🔥",
+        "Chaos in audio form 🖤",
+        "This drop is unreal 🤯",
+        "Found hell in music form 🔥",
     ],
     "lofi": [
         "Put this on and disappear 🎧",
         "Perfect for 3am ☁️",
         "This is what peace sounds like 🌙",
         "Listen while it rains 🌧️",
-        "The study playlist you deserve 📚",
-        "This calmed my anxiety instantly 😮",
-        "POV: you finally relaxed 🌙",
         "Infinite loop guaranteed 🔁",
         "This sound hugs you 🎧",
-        "Don't know what this is but I'm fine 🌿",
+        "Your late night needed this 🌌",
+        "This calmed my brain instantly 😮",
+        "Soft but addictive ☁️",
+        "For nights that feel too loud 🌙",
     ],
     "indie": [
         "You'll repeat this all week 🎧",
@@ -134,46 +122,46 @@ STYLE_HOOKS = {
         "Your next favorite song 🎵",
         "Found this and can't stop 🔁",
         "This one stays with you 🌌",
-        "Whoever made this is a genius 😳",
         "Gets better with every loop 🎧",
-        "POV: you found it before it went viral 👀",
-        "Put headphones on and vanish 🌿",
+        "You found it before it went viral 👀",
+        "This deserves way more attention 🖤",
+        "Headphones on for this one 🎶",
     ],
     "electronic": [
         "This drop will break your brain 🤯",
         "What frequency is this?? ⚡",
         "Was not ready for this 🚀",
-        "The drop you didn't see coming 🤯",
-        "Does this even exist?? ⚡",
         "Max volume or don't bother 🔥",
         "This bass is unreal 😮",
-        "Your gym playlist needs this ⚡",
-        "This shouldn't sound this good 🤯",
         "Festival at home right now 🎉",
+        "This shouldn't sound this good 🤯",
+        "Your gym playlist needs this ⚡",
+        "This one goes nuclear 🚨",
+        "Audio adrenaline detected 🌀",
     ],
     "dark": [
-        "Found you at the right moment 🌑",
-        "Beautiful and haunting at the same time 🖤",
         "Don't listen to this alone 😳",
-        "This sound carries an entire night 🌙",
+        "Beautiful and haunting at the same time 🖤",
         "Your soul needed this 🌑",
-        "Can't get this chord out of my head 🖤",
         "This is scary in the best way 😈",
         "POV: 3am and this song 🌑",
         "Found the void and it has a melody 🖤",
-        "This isn't for every hour 🌙",
+        "This sound carries an entire night 🌙",
+        "This one feels forbidden 🕯️",
+        "Dark music done right 🌑",
+        "This mood is dangerous 🖤",
     ],
     "default": [
         "Nobody is talking about this song 😳",
         "This is going in your playlist today 🎧",
-        "POV: you just found the song of the month 🔁",
-        "What is this sound?? 🤯",
         "Save this before it disappears 📌",
         "Couldn't listen just once 🔁",
         "You found it before it blew up 👀",
         "Your playlist was incomplete 🎵",
-        "Loop guaranteed 🔁",
         "This is too good to be real 😮",
+        "Main character music detected 🎬",
+        "This deserves more views 🚨",
+        "You'll come back to this one 🔁",
     ],
 }
 
@@ -181,45 +169,44 @@ STYLE_HASHTAGS = {
     "phonk": "#phonk #darkphonk #phonkmusic #drift #phonkvibes #phonkedit",
     "trap": "#trap #trapmusic #808 #trapbeats #hiphop #banger",
     "rock": "#rock #rockmusic #guitarmusic #hardrock #alternative",
-    "metal": "#metal #heavymetal #metalhead #metalcore #deathmetal",
+    "metal": "#metal #heavymetal #metalhead #metalcore #deathcore",
     "lofi": "#lofi #lofihiphop #studymusic #chillvibes #lofibeats",
     "indie": "#indie #indiemusic #alternativemusic #emotional #indievibes",
     "electronic": "#electronic #edm #synthwave #electronicmusic #rave",
     "dark": "#dark #darkmusic #gothic #darkambient #darkwave",
     "default": "#music #newmusic #viralmusic #underground #musiclover",
 }
-UNIVERSAL = "#shorts #youtubeshorts #reels #fbreels #viral #fyp #trending #musicshorts"
+
+UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts"
 
 
 def build_title(base: str, style: str, short_num: int) -> str:
     hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
     hook = hooks[(short_num - 1) % len(hooks)]
+
     formats = [
         f"{hook} | {base}",
-        f"{base} 🎵 {hook}",
-        f"{hook} — {base}",
-        f"🔥 {base} | {hook}",
+        f"{base} — {hook}",
+        f"🔥 {hook} | {base}",
         f"{hook} 👇 {base}",
+        f"{base} | {hook}",
     ]
-    fmt = formats[(short_num - 1) % len(formats)]
-    return fmt[:100]
+
+    title = formats[(short_num - 1) % len(formats)]
+    return title[:100]
 
 
 def build_description(base: str, style: str) -> str:
     tags = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
     return (
         f"🎵 {base}\n\n"
+        f"Like the vibe? Subscribe for more dark edits, trap, phonk and underground music.\n\n"
         f"🎧 Spotify:\n{SPOTIFY_LINK}\n\n"
         f"📲 TikTok:\n{TIKTOK_LINK}\n\n"
-        f"🔔 Subscribe for daily music!\n"
-        f"━━━━━━━━━━━━━━━━━━━━\n"
+        f"🔔 Subscribe for daily uploads.\n\n"
         f"{tags}\n{UNIVERSAL}"
     )
 
-
-# ══════════════════════════════════════════════════════════════════════
-# ESTADO
-# ══════════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
     if not STATE_FILE.exists():
@@ -296,10 +283,6 @@ def get_next_track(state: dict) -> dict | None:
     return tracks[0]
 
 
-# ══════════════════════════════════════════════════════════════════════
-# BACKGROUND
-# ══════════════════════════════════════════════════════════════════════
-
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
     os.makedirs("temp", exist_ok=True)
 
@@ -326,10 +309,6 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
 
     raise FileNotFoundError("Nenhum background disponivel.")
 
-
-# ══════════════════════════════════════════════════════════════════════
-# PUBLICAÇÃO
-# ══════════════════════════════════════════════════════════════════════
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
@@ -366,10 +345,6 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
     return results
 
-
-# ══════════════════════════════════════════════════════════════════════
-# MAIN
-# ══════════════════════════════════════════════════════════════════════
 
 def main():
     log("=" * 50)
