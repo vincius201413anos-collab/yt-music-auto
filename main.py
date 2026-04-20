@@ -49,161 +49,362 @@ def safe_filename(text: str) -> str:
 
 
 def human_delay():
-    secs = random.randint(10, 40)
-    log(f"Aguardando {secs}s...")
+    secs = random.randint(15, 45)
+    log(f"Aguardando {secs}s antes do proximo upload...")
     time.sleep(secs)
 
 
-STYLE_HOOKS = {
-    "phonk": [
-        "This should be illegal 😈",
-        "Don't play this at 3am 🌑",
-        "POV: night drive with no destination 🌙",
-        "This sound won't leave your head 🔁",
-        "Your playlist was incomplete until now 😳",
-        "Save this before it blows up 📌",
-        "Underground phonk hit detected 🚨",
-        "Found this at 2am and regretted nothing 😈",
-        "This beat is way too cold 🥶",
-        "Headphones mandatory for this one 🎧",
-    ],
-    "trap": [
-        "This bass should be banned 🔥",
-        "Nobody is listening to this yet 😳",
-        "You found this before it blew up 👑",
-        "This ain't for everyone 😈",
-        "Save this video right now 📌",
-        "Your playlist was asking for this 💎",
-        "This beat has main character energy 🖤",
-        "Couldn't stop listening 😮",
-        "This one sounds expensive 💸",
-        "The trap song you were missing 👇",
-    ],
-    "rock": [
-        "This guitar will destroy you 🎸",
-        "Impossible not to headbang 🤘",
-        "Max volume mandatory ⚡",
-        "This is criminally good 🎸",
-        "Wait for the drop 😤",
-        "Your rock playlist needed this 🔥",
-        "This riff is ridiculous 🤯",
-        "Can't listen just once 🔁",
-        "This hits way too hard ⚡",
-        "Underrated and dangerous 🤘",
-    ],
-    "metal": [
-        "This ain't for everyone ⚠️",
-        "Your headphones can't handle this 🔥",
-        "Warning: absurdly heavy 😈",
-        "Prepare your neck 🤘",
-        "This will destroy you in the best way 😈",
-        "Heaviness level: illegal ⚠️",
-        "Save this to listen in the dark 🌑",
-        "Chaos in audio form 🖤",
-        "This drop is unreal 🤯",
-        "Found hell in music form 🔥",
-    ],
-    "lofi": [
-        "Put this on and disappear 🎧",
-        "Perfect for 3am ☁️",
-        "This is what peace sounds like 🌙",
-        "Listen while it rains 🌧️",
-        "Infinite loop guaranteed 🔁",
-        "This sound hugs you 🎧",
-        "Your late night needed this 🌌",
-        "This calmed my brain instantly 😮",
-        "Soft but addictive ☁️",
-        "For nights that feel too loud 🌙",
-    ],
-    "indie": [
-        "You'll repeat this all week 🎧",
-        "This sound stays with you 🌅",
-        "The feeling you didn't know you needed 🌙",
-        "Your next favorite song 🎵",
-        "Found this and can't stop 🔁",
-        "This one stays with you 🌌",
-        "Gets better with every loop 🎧",
-        "You found it before it went viral 👀",
-        "This deserves way more attention 🖤",
-        "Headphones on for this one 🎶",
-    ],
-    "electronic": [
-        "This drop will break your brain 🤯",
-        "What frequency is this?? ⚡",
-        "Was not ready for this 🚀",
-        "Max volume or don't bother 🔥",
-        "This bass is unreal 😮",
-        "Festival at home right now 🎉",
-        "This shouldn't sound this good 🤯",
-        "Your gym playlist needs this ⚡",
-        "This one goes nuclear 🚨",
-        "Audio adrenaline detected 🌀",
-    ],
-    "dark": [
-        "Don't listen to this alone 😳",
-        "Beautiful and haunting at the same time 🖤",
-        "Your soul needed this 🌑",
-        "This is scary in the best way 😈",
-        "POV: 3am and this song 🌑",
-        "Found the void and it has a melody 🖤",
-        "This sound carries an entire night 🌙",
-        "This one feels forbidden 🕯️",
-        "Dark music done right 🌑",
-        "This mood is dangerous 🖤",
-    ],
-    "default": [
-        "Nobody is talking about this song 😳",
-        "This is going in your playlist today 🎧",
-        "Save this before it disappears 📌",
-        "Couldn't listen just once 🔁",
-        "You found it before it blew up 👀",
-        "Your playlist was incomplete 🎵",
-        "This is too good to be real 😮",
-        "Main character music detected 🎬",
-        "This deserves more views 🚨",
-        "You'll come back to this one 🔁",
-    ],
+# ══════════════════════════════════════════════════════════════════════
+# SISTEMA DE TÍTULOS — ULTRA VARIADO, ANTI-SHADOWBAN
+# ══════════════════════════════════════════════════════════════════════
+
+# Cada gênero tem múltiplas CATEGORIAS de hook para máxima variedade
+STYLE_HOOKS_MATRIX = {
+    "phonk": {
+        "vibe": [
+            "Only real ones know this sound 🌑",
+            "The underground called and left this 📲",
+            "Some sounds don't belong in daylight 🌙",
+            "This hit different at 3am 🕒",
+            "Your night just got darker 🖤",
+        ],
+        "reaction": [
+            "I wasn't ready for this one 😳",
+            "Replayed this 47 times already 🔁",
+            "Couldn't stop after the first 10 seconds 🎧",
+            "This broke my headphones (worth it) 🎧",
+            "My playlist deleted itself to make room 💀",
+        ],
+        "challenge": [
+            "Try not to feel this one 😈",
+            "Listen without losing focus. Impossible. 🚫",
+            "Tell me you're not addicted after this 🔁",
+            "One play and you'll understand 🌑",
+            "First listen changes you. Not sorry. 😈",
+        ],
+        "discovery": [
+            "You found this before it blows up 📌",
+            "Save this. You'll want it at midnight. 💾",
+            "Algorithm brought you here for a reason 🌐",
+            "This was hiding. Now it found you. 🕵️",
+            "Underground doesn't cover it 🔒",
+        ],
+    },
+    "trap": {
+        "vibe": [
+            "Your playlist just got expensive 💸",
+            "Only sounds this clean cost this much 💎",
+            "The bass that changed the standard 🔊",
+            "This is what confidence sounds like 👑",
+            "Not everyone has taste. You do. 🖤",
+        ],
+        "reaction": [
+            "The drop hit before I expected it 😮",
+            "I've had this on repeat since 2am 🔁",
+            "My speakers weren't built for this 🔊",
+            "Skipped every other song after finding this 💀",
+            "Couldn't finish it the first time. Too good. 😮",
+        ],
+        "challenge": [
+            "Play this and see who looks up 👀",
+            "Put this on at 3am, no headphones 🔊",
+            "Try to stay seated during the bridge 😤",
+            "Tell me you didn't feel that 808 🥁",
+            "Find a reason to skip this. I'll wait. 🕐",
+        ],
+        "discovery": [
+            "Before this hits 10 million 📈",
+            "The streets know. Now you do. 🏙️",
+            "Quietly destroying playlists everywhere 🔥",
+            "Nobody's talking about this yet 🤫",
+            "Underground certified, overground ready 🚀",
+        ],
+    },
+    "rock": {
+        "vibe": [
+            "This guitar doesn't ask permission 🎸",
+            "Built for stages that don't exist yet ⚡",
+            "Not everyone will get it. That's the point. 🤘",
+            "This is what pure energy sounds like 🔥",
+            "The riff that demands your full attention 🎸",
+        ],
+        "reaction": [
+            "First riff and I forgot what I was doing 🎸",
+            "Headbanged alone in my car 🤘",
+            "This shouldn't be this good 😤",
+            "I paused everything to find this track 🔍",
+            "The bridge destroyed me (in the best way) ⚡",
+        ],
+        "challenge": [
+            "Don't move during the solo. Impossible. 🎸",
+            "Try not to turn this up until it distorts 🔊",
+            "Listen without air-guitaring. Bet you can't. 🤘",
+            "Find one skip on this track. You won't. ⏭️",
+            "Tell me this doesn't deserve louder 📢",
+        ],
+        "discovery": [
+            "This band should be headlining already 🎪",
+            "Rock still has something to say 🎸",
+            "What you've been looking for without knowing ⚡",
+            "The comeback of actual guitar 🎸",
+            "Discovered this at 1am, no regrets 🌙",
+        ],
+    },
+    "metal": {
+        "vibe": [
+            "This isn't music. This is a force of nature. ⚠️",
+            "Built to break things that needed breaking 🔥",
+            "The heaviness you asked the universe for 🌑",
+            "Not for the faint of heart or quiet of room 🔊",
+            "This transcends genre. It's pure weight. ⚡",
+        ],
+        "reaction": [
+            "My neighbors finally moved because of this 😈",
+            "This drop hit me physically 💀",
+            "I needed to sit down after the breakdown 🤯",
+            "Couldn't process this on first listen 🔁",
+            "This changed what I thought was possible ⚡",
+        ],
+        "challenge": [
+            "Full volume, full commitment, full damage 🔊",
+            "Don't look away during the breakdown 😈",
+            "Survive the drop and earn your metal card 🤘",
+            "Max volume or don't even bother 🔊",
+            "Find something heavier. I challenge you. ⚔️",
+        ],
+        "discovery": [
+            "The underground doesn't want you to find this 🔒",
+            "This exists and not enough people know it ⚠️",
+            "Real heads already know. Now you know. 🤘",
+            "Buried in the algorithm for a reason 📉",
+            "Too good to stay hidden much longer 🌑",
+        ],
+    },
+    "lofi": {
+        "vibe": [
+            "This is what 3am sounds like when it's okay 🌙",
+            "Found the soundtrack to your unread thoughts 📖",
+            "Some music holds your hand without you asking 🎧",
+            "Peace you didn't know you needed today ☁️",
+            "The sound of an exhale after a long day 🌙",
+        ],
+        "reaction": [
+            "I paused everything to just exist in this 😮",
+            "First 10 seconds and I slowed down 🌿",
+            "This made the noise in my head quiet 🧠",
+            "Accidentally stayed up 2 hours with this on 🌙",
+            "Forgot I had a to-do list listening to this 📋",
+        ],
+        "challenge": [
+            "Try to listen without getting lost in thought 💭",
+            "One loop and tell me you're not calmer 🧘",
+            "Find a better study companion. I'll wait. 📚",
+            "Try to feel nothing during this. You can't. 🎧",
+            "Listen once and not add it to your playlist 🔁",
+        ],
+        "discovery": [
+            "The lofi gem that got away until now 💎",
+            "This deserved more than it got 🕊️",
+            "Playing this at the café and nobody asks to change it ☕",
+            "Algorithm finally did something right 🙏",
+            "Some music finds you at the right time ⏱️",
+        ],
+    },
+    "indie": {
+        "vibe": [
+            "This band sounds like how nostalgia feels 🌅",
+            "Written for everyone who felt this before words 📝",
+            "Music that makes you miss something you can't name 🌙",
+            "This is the feeling, not just the song 🌿",
+            "Your heart needed this before you did 💙",
+        ],
+        "reaction": [
+            "First verse hit and I stopped scrolling 🛑",
+            "I've replayed the bridge six times already 🔁",
+            "This song said what I couldn't find words for 💬",
+            "Added to my playlist before the song even ended ⚡",
+            "I don't know this band yet but I will 🔍",
+        ],
+        "challenge": [
+            "Try to explain why this one hits different 🤔",
+            "One listen and pretend it didn't stay with you 🎶",
+            "Don't add this to a playlist. I dare you. 📌",
+            "Find the moment you stopped hearing and started feeling 🎧",
+            "Explain the bridge without getting emotional 😤",
+        ],
+        "discovery": [
+            "Before everyone discovers this one 🔮",
+            "Some artists deserve more rooms than they get 🎪",
+            "Hidden because it's real, not because it's bad 💎",
+            "The internet finds everything eventually. Found. 🌐",
+            "Heard this once and wanted to tell everyone 📣",
+        ],
+    },
+    "electronic": {
+        "vibe": [
+            "This drop exists in a different dimension 🌀",
+            "Built for speakers that could handle it 🔊",
+            "Some frequencies were made for stadiums 🏟️",
+            "This is what the future sounds like already 🚀",
+            "Peak energy. No other explanation needed. ⚡",
+        ],
+        "reaction": [
+            "The drop came when I wasn't ready 💀",
+            "This made me pace my apartment at midnight 🌙",
+            "Heard it once in a set and hunted it for weeks 🔍",
+            "This is why I don't sleep before festivals 🎉",
+            "My body moved before my brain processed this 🕺",
+        ],
+        "challenge": [
+            "Stay still during the drop. Not possible. 🕺",
+            "Full volume, dark room, and no regrets 🔊",
+            "Don't feel the bass in your chest. Can't. 🫀",
+            "Find a harder drop anywhere. Go ahead. 🔎",
+            "Listen without wanting to be in a crowd 🏟️",
+        ],
+        "discovery": [
+            "Before this fills every festival stage 🌍",
+            "Producers are taking notes right now 📝",
+            "The ID you were looking for 🔍",
+            "Underground until it isn't. Watch. 👀",
+            "This producer is about to be everywhere 🚀",
+        ],
+    },
+    "dark": {
+        "vibe": [
+            "Some music only makes sense past midnight 🌑",
+            "Beautiful in a way that makes you ache 🖤",
+            "This melody was not made for daylight 🕯️",
+            "The sound of something vast and quiet 🌌",
+            "Darkness with a pulse 🌑",
+        ],
+        "reaction": [
+            "This stopped me completely. Just listened. 🕯️",
+            "I don't know what this made me feel but it was real 😶",
+            "This rewired something I didn't know was wired 🧠",
+            "Listened four times trying to understand it 🔁",
+            "This stayed in my head for three days 💭",
+        ],
+        "challenge": [
+            "Listen alone at night and feel nothing. Can't. 🌑",
+            "Explain the feeling this gives you. You can't. 🖤",
+            "Try to skip this before the end. Won't. 🎧",
+            "Describe it to someone. Watch them not understand. 🌌",
+            "Find the word for what this makes you feel 📖",
+        ],
+        "discovery": [
+            "This existed before you found it. Glad you did. 🕯️",
+            "Not everything good gets loud. This proves it. 🌑",
+            "The quiet ones always hit deepest 🖤",
+            "Some music lives in the margins. Worth finding. 🔍",
+            "Hidden in plain sight for whoever was ready 🌌",
+        ],
+    },
+    "default": {
+        "vibe": [
+            "Music that doesn't need an introduction 🎵",
+            "Some sounds work immediately and you don't know why 🎧",
+            "This deserves your best pair of headphones 🎧",
+            "The playlist addition you didn't plan for 🎵",
+            "Real ones recognize quality instantly 💎",
+        ],
+        "reaction": [
+            "First 15 seconds and I was done for 🎧",
+            "This changed the energy of whatever I was doing 🔁",
+            "I stopped to find out who made this 🔍",
+            "This hit like it was made for me specifically 🎵",
+            "Couldn't skip it even when I tried 🔁",
+        ],
+        "challenge": [
+            "One play and pretend you're not coming back 🔁",
+            "Find a reason to take this off your playlist 🔎",
+            "Skip this. See what happens. You won't. ⏭️",
+            "Argue that this doesn't belong in your favorites 💎",
+            "Listen without it improving your mood. Impossible. 😌",
+        ],
+        "discovery": [
+            "Before this belongs to everyone else 🔮",
+            "The early find you'll tell people about 📣",
+            "Some things arrive before their moment. This is that. ⏱️",
+            "You found this. That means something. 📌",
+            "Early listener energy. This grows. 🌱",
+        ],
+    },
 }
+
+# Categorias em rotação para máxima variedade entre os 5 shorts
+HOOK_CATEGORY_ROTATION = ["vibe", "reaction", "challenge", "discovery", "vibe"]
 
 STYLE_HASHTAGS = {
-    "phonk": "#phonk #darkphonk #phonkmusic #drift #phonkvibes #phonkedit",
-    "trap": "#trap #trapmusic #808 #trapbeats #hiphop #banger",
-    "rock": "#rock #rockmusic #guitarmusic #hardrock #alternative",
-    "metal": "#metal #heavymetal #metalhead #metalcore #deathcore",
-    "lofi": "#lofi #lofihiphop #studymusic #chillvibes #lofibeats",
-    "indie": "#indie #indiemusic #alternativemusic #emotional #indievibes",
-    "electronic": "#electronic #edm #synthwave #electronicmusic #rave",
-    "dark": "#dark #darkmusic #gothic #darkambient #darkwave",
-    "default": "#music #newmusic #viralmusic #underground #musiclover",
+    "phonk": "#phonk #darkphonk #phonkmusic #phonkdrift #phonkvibes #phonkedit #phonkcar",
+    "trap": "#trap #trapmusic #808s #trapbeats #undergroundhiphop #trapvibes #newmusic",
+    "rock": "#rock #rockmusic #guitarmusic #hardrock #alternative #alternativerock #newrock",
+    "metal": "#metal #heavymetal #metalhead #metalcore #extrememetal #newmetal #heavymusic",
+    "lofi": "#lofi #lofihiphop #studymusic #chillvibes #lofibeats #relaxingmusic #lofichill",
+    "indie": "#indie #indiemusic #alternativemusic #indiepop #indierock #emotionalmusic #indievibes",
+    "electronic": "#electronic #edm #synthwave #electronicmusic #techno #dancemusic #festivalmusic",
+    "dark": "#dark #darkmusic #gothic #darkambient #darkwave #atmosferic #hauntingmusic",
+    "default": "#music #newmusic #viralmusic #underground #musiclover #musicdiscovery #hiddengems",
 }
 
-UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts"
+UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #shortsvideo"
+
+# Templates de título variados — cada um com estrutura diferente para evitar padrões
+TITLE_TEMPLATES = [
+    "{hook} | {base}",
+    "{base} — {hook}",
+    "{hook} 👇 | {base}",
+    "{base} | {hook}",
+    "🎵 {base} | {hook}",
+]
 
 
 def build_title(base: str, style: str, short_num: int) -> str:
-    hooks = STYLE_HOOKS.get(style, STYLE_HOOKS["default"])
-    hook = hooks[(short_num - 1) % len(hooks)]
+    # Selecionar categoria de hook baseada na posição do short (1-5)
+    category = HOOK_CATEGORY_ROTATION[(short_num - 1) % len(HOOK_CATEGORY_ROTATION)]
 
-    formats = [
-        f"{hook} | {base}",
-        f"{base} — {hook}",
-        f"🔥 {hook} | {base}",
-        f"{hook} 👇 {base}",
-        f"{base} | {hook}",
-    ]
+    hooks_by_style = STYLE_HOOKS_MATRIX.get(style, STYLE_HOOKS_MATRIX["default"])
+    hooks = hooks_by_style.get(category, hooks_by_style["vibe"])
 
-    title = formats[(short_num - 1) % len(formats)]
+    # Índice dentro da categoria também varia por short_num para não repetir
+    hook_idx = (short_num - 1) % len(hooks)
+    hook = hooks[hook_idx]
+
+    # Template varia pelo número do short
+    template = TITLE_TEMPLATES[(short_num - 1) % len(TITLE_TEMPLATES)]
+    title = template.format(hook=hook, base=base)
+
     return title[:100]
 
 
-def build_description(base: str, style: str) -> str:
+def build_description(base: str, style: str, short_num: int) -> str:
     tags = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
+
+    # Variações de CTA para diferentes shorts
+    ctas = [
+        "Subscribe if you want more finds like this.",
+        "Drop a comment if this hit right.",
+        "Save this for later — you'll want it back.",
+        "Follow for daily uploads of underground music.",
+        "Like if this deserved more than it got.",
+    ]
+    cta = ctas[(short_num - 1) % len(ctas)]
+
+    # Variações de chamada pro Spotify
+    spotify_lines = [
+        f"🎧 Full track on Spotify:\n{SPOTIFY_LINK}",
+        f"🎵 Listen everywhere:\n{SPOTIFY_LINK}",
+        f"🎧 Stream it:\n{SPOTIFY_LINK}",
+        f"🔊 Full version on Spotify:\n{SPOTIFY_LINK}",
+        f"📻 On Spotify now:\n{SPOTIFY_LINK}",
+    ]
+    spotify_line = spotify_lines[(short_num - 1) % len(spotify_lines)]
+
     return (
         f"🎵 {base}\n\n"
-        f"Like the vibe? Subscribe for more dark edits, trap, phonk and underground music.\n\n"
-        f"🎧 Spotify:\n{SPOTIFY_LINK}\n\n"
+        f"{cta}\n\n"
+        f"{spotify_line}\n\n"
         f"📲 TikTok:\n{TIKTOK_LINK}\n\n"
-        f"🔔 Subscribe for daily uploads.\n\n"
         f"{tags}\n{UNIVERSAL}"
     )
 
@@ -263,7 +464,7 @@ def get_next_track(state: dict) -> dict | None:
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) == 0]
     if new_tracks:
         chosen = new_tracks[0]
-        log(f"Prioridade para nova: {chosen['name']}")
+        log(f"Prioridade para nova musica: {chosen['name']}")
         chosen["is_new"] = False
         return chosen
 
@@ -276,7 +477,7 @@ def get_next_track(state: dict) -> dict | None:
             state["alpha_index"] = (idx + i + 1) % n
             return t
 
-    log("Rodada completa — resetando todos os shorts.")
+    log("Rodada completa — resetando todos os contadores.")
     for t in tracks:
         t["done"] = 0
     state["alpha_index"] = 0
@@ -291,23 +492,25 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
         dest = f"temp/{Path(filename).stem}_{short_num}.png"
         img = generate_image(prompt, output_path=dest)
         if img and os.path.exists(img):
-            log(f"Imagem IA gerada: {img}")
+            log(f"Imagem IA gerada com sucesso: {img}")
             return img
     except Exception as e:
-        log(f"IA falhou, usando fallback: {e}")
+        log(f"IA falhou, tentando fallback local: {e}")
 
     try:
         bg = get_random_background(style, filename)
         if bg and not str(bg).startswith("__AUTO"):
+            log(f"Usando background local: {bg}")
             return bg
-    except Exception:
-        pass
+    except Exception as e:
+        log(f"Background local falhou: {e}")
 
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
+        log(f"Usando background fallback padrao")
         return fallback
 
-    raise FileNotFoundError("Nenhum background disponivel.")
+    raise FileNotFoundError("Nenhum background disponivel (IA, local e fallback falharam).")
 
 
 def publish(video_path: str, title: str, description: str) -> dict:
@@ -347,15 +550,15 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
 
 def main():
-    log("=" * 50)
-    log("BOT INICIANDO - YouTube Shorts + Facebook Reels")
-    log(f"  YouTube : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
-    log(f"  Facebook: {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
+    log("=" * 55)
+    log("BOT INICIANDO — YouTube Shorts + Facebook Reels")
+    log(f"  YouTube  : {'ATIVO' if ENABLE_YOUTUBE else 'DESABILITADO'}")
+    log(f"  Facebook : {'ATIVO' if ENABLE_FACEBOOK else 'DESABILITADO'}")
     log(f"  Backup   : {'ATIVO' if DRIVE_BACKUP_FOLDER_ID else 'DESABILITADO'}")
-    log("=" * 50)
+    log("=" * 55)
 
     if not DRIVE_FOLDER_ID:
-        raise ValueError("DRIVE_FOLDER_ID nao configurado.")
+        raise ValueError("DRIVE_FOLDER_ID nao configurado nas variaveis de ambiente.")
 
     service = get_drive_service()
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
@@ -363,19 +566,19 @@ def main():
         raise ValueError("Pasta 'inbox' nao encontrada no Drive.")
 
     files = list_audio_files_in_folder(service, inbox_id)
-    log(f"Audios no Drive: {len(files)}")
+    log(f"Audios encontrados no Drive: {len(files)}")
 
     state = load_state()
     sync_tracks(state, files)
     save_state(state)
 
     if not state["tracks"]:
-        log("Sem musicas. Encerrando.")
+        log("Sem musicas para processar. Encerrando.")
         return
 
     track = get_next_track(state)
     if not track:
-        log("Nenhuma faixa disponivel.")
+        log("Nenhuma faixa disponivel para processar.")
         return
 
     name = track["name"]
@@ -384,8 +587,9 @@ def main():
     style = detect_style(name)
     title_base = clean_title(name)
 
-    log(f"Musica : {name}")
-    log(f"Estilo : {style} | Short {short_num}/{SHORTS_PER_TRACK}")
+    log(f"Musica  : {name}")
+    log(f"Estilo  : {style} (todos: {', '.join(styles)})")
+    log(f"Short   : {short_num}/{SHORTS_PER_TRACK}")
 
     os.makedirs("temp", exist_ok=True)
     audio_path = f"temp/{name}"
@@ -404,6 +608,7 @@ def main():
         download_drive_file(service, track["id"], audio_path)
         log("Download concluido.")
 
+        log(f"Gerando background (short {short_num})...")
         bg = resolve_background(style, name, short_num, styles)
 
         log("Gerando video...")
@@ -411,8 +616,8 @@ def main():
         log(f"Video pronto: {video_path}")
 
         title = build_title(title_base, style, short_num)
-        description = build_description(title_base, style)
-        log(f"Titulo: {title}")
+        description = build_description(title_base, style, short_num)
+        log(f"Titulo  : {title}")
 
         results = publish(video_path, title, description)
 
@@ -420,24 +625,24 @@ def main():
             try:
                 log("Salvando backup no Drive...")
                 upload_file_to_drive(service, DRIVE_BACKUP_FOLDER_ID, video_path)
-                log("  Backup salvo!")
+                log("  Backup salvo com sucesso.")
             except Exception as e:
                 log(f"  Backup falhou (nao critico): {e}")
         else:
-            log("  Backup ignorado: DRIVE_BACKUP_FOLDER_ID nao configurado.")
+            log("  Backup desabilitado (DRIVE_BACKUP_FOLDER_ID nao configurado).")
 
         any_ok = any(r.get("ok") for r in results.values())
         all_skipped = all(r.get("skipped") for r in results.values())
 
         if not any_ok and not all_skipped:
-            raise RuntimeError("Nenhuma plataforma recebeu o video.")
+            raise RuntimeError("Nenhuma plataforma recebeu o video com sucesso.")
 
         track["done"] = short_num
         save_state(state)
 
-        log("=" * 50)
+        log("=" * 55)
         log(f"CONCLUIDO — {name} (short {short_num}/{SHORTS_PER_TRACK})")
-        log("=" * 50)
+        log("=" * 55)
 
     finally:
         for path in [audio_path, video_path, bg]:
