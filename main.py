@@ -59,370 +59,524 @@ def human_delay():
 # SISTEMA DE TÍTULOS — ULTRA VARIADO, ANTI-SHADOWBAN
 # ══════════════════════════════════════════════════════════════════════
 
-STYLE_HOOKS_MATRIX = {
-    "phonk": {
-        "vibe": [
-            "Only real ones know this sound 🌑",
-            "The underground called and left this 📲",
-            "Some sounds don't belong in daylight 🌙",
-            "This hit different at 3am 🕒",
-            "Your night just got darker 🖤",
-        ],
-        "reaction": [
-            "I wasn't ready for this one 😳",
-            "Replayed this 47 times already 🔁",
-            "Couldn't stop after the first 10 seconds 🎧",
-            "This broke my headphones (worth it) 🎧",
-            "My playlist deleted itself to make room 💀",
-        ],
-        "challenge": [
-            "Try not to feel this one 😈",
-            "Listen without losing focus. Impossible. 🚫",
-            "Tell me you're not addicted after this 🔁",
-            "One play and you'll understand 🌑",
-            "First listen changes you. Not sorry. 😈",
-        ],
-        "discovery": [
-            "You found this before it blows up 📌",
-            "Save this. You'll want it at midnight. 💾",
-            "Algorithm brought you here for a reason 🌐",
-            "This was hiding. Now it found you. 🕵️",
-            "Underground doesn't cover it 🔒",
-        ],
-    },
-    "trap": {
-        "vibe": [
-            "Your playlist just got expensive 💸",
-            "Only sounds this clean cost this much 💎",
-            "The bass that changed the standard 🔊",
-            "This is what confidence sounds like 👑",
-            "Not everyone has taste. You do. 🖤",
-        ],
-        "reaction": [
-            "The drop hit before I expected it 😮",
-            "I've had this on repeat since 2am 🔁",
-            "My speakers weren't built for this 🔊",
-            "Skipped every other song after finding this 💀",
-            "Couldn't finish it the first time. Too good. 😮",
-        ],
-        "challenge": [
-            "Play this and see who looks up 👀",
-            "Put this on at 3am, no headphones 🔊",
-            "Try to stay seated during the bridge 😤",
-            "Tell me you didn't feel that 808 🥁",
-            "Find a reason to skip this. I'll wait. 🕐",
-        ],
-        "discovery": [
-            "Before this hits 10 million 📈",
-            "The streets know. Now you do. 🏙️",
-            "Quietly destroying playlists everywhere 🔥",
-            "Nobody's talking about this yet 🤫",
-            "Underground certified, overground ready 🚀",
-        ],
-    },
-    "rock": {
-        "vibe": [
-            "This guitar doesn't ask permission 🎸",
-            "Built for stages that don't exist yet ⚡",
-            "Not everyone will get it. That's the point. 🤘",
-            "This is what pure energy sounds like 🔥",
-            "The riff that demands your full attention 🎸",
-        ],
-        "reaction": [
-            "First riff and I forgot what I was doing 🎸",
-            "Headbanged alone in my car 🤘",
-            "This shouldn't be this good 😤",
-            "I paused everything to find this track 🔍",
-            "The bridge destroyed me (in the best way) ⚡",
-        ],
-        "challenge": [
-            "Don't move during the solo. Impossible. 🎸",
-            "Try not to turn this up until it distorts 🔊",
-            "Listen without air-guitaring. Bet you can't. 🤘",
-            "Find one skip on this track. You won't. ⏭️",
-            "Tell me this doesn't deserve louder 📢",
-        ],
-        "discovery": [
-            "This band should be headlining already 🎪",
-            "Rock still has something to say 🎸",
-            "What you've been looking for without knowing ⚡",
-            "The comeback of actual guitar 🎸",
-            "Discovered this at 1am, no regrets 🌙",
-        ],
-    },
-    "metal": {
-        "vibe": [
-            "This isn't music. This is a force of nature. ⚠️",
-            "Built to break things that needed breaking 🔥",
-            "The heaviness you asked the universe for 🌑",
-            "Not for the faint of heart or quiet of room 🔊",
-            "This transcends genre. It's pure weight. ⚡",
-        ],
-        "reaction": [
-            "My neighbors finally moved because of this 😈",
-            "This drop hit me physically 💀",
-            "I needed to sit down after the breakdown 🤯",
-            "Couldn't process this on first listen 🔁",
-            "This changed what I thought was possible ⚡",
-        ],
-        "challenge": [
-            "Full volume, full commitment, full damage 🔊",
-            "Don't look away during the breakdown 😈",
-            "Survive the drop and earn your metal card 🤘",
-            "Max volume or don't even bother 🔊",
-            "Find something heavier. I challenge you. ⚔️",
-        ],
-        "discovery": [
-            "The underground doesn't want you to find this 🔒",
-            "This exists and not enough people know it ⚠️",
-            "Real heads already know. Now you know. 🤘",
-            "Buried in the algorithm for a reason 📉",
-            "Too good to stay hidden much longer 🌑",
-        ],
-    },
-    "lofi": {
-        "vibe": [
-            "This is what 3am sounds like when it's okay 🌙",
-            "Found the soundtrack to your unread thoughts 📖",
-            "Some music holds your hand without you asking 🎧",
-            "Peace you didn't know you needed today ☁️",
-            "The sound of an exhale after a long day 🌙",
-        ],
-        "reaction": [
-            "I paused everything to just exist in this 😮",
-            "First 10 seconds and I slowed down 🌿",
-            "This made the noise in my head quiet 🧠",
-            "Accidentally stayed up 2 hours with this on 🌙",
-            "Forgot I had a to-do list listening to this 📋",
-        ],
-        "challenge": [
-            "Try to listen without getting lost in thought 💭",
-            "One loop and tell me you're not calmer 🧘",
-            "Find a better study companion. I'll wait. 📚",
-            "Try to feel nothing during this. You can't. 🎧",
-            "Listen once and not add it to your playlist 🔁",
-        ],
-        "discovery": [
-            "The lofi gem that got away until now 💎",
-            "This deserved more than it got 🕊️",
-            "Playing this at the café and nobody asks to change it ☕",
-            "Algorithm finally did something right 🙏",
-            "Some music finds you at the right time ⏱️",
-        ],
-    },
-    "indie": {
-        "vibe": [
-            "This band sounds like how nostalgia feels 🌅",
-            "Written for everyone who felt this before words 📝",
-            "Music that makes you miss something you can't name 🌙",
-            "This is the feeling, not just the song 🌿",
-            "Your heart needed this before you did 💙",
-        ],
-        "reaction": [
-            "First verse hit and I stopped scrolling 🛑",
-            "I've replayed the bridge six times already 🔁",
-            "This song said what I couldn't find words for 💬",
-            "Added to my playlist before the song even ended ⚡",
-            "I don't know this band yet but I will 🔍",
-        ],
-        "challenge": [
-            "Try to explain why this one hits different 🤔",
-            "One listen and pretend it didn't stay with you 🎶",
-            "Don't add this to a playlist. I dare you. 📌",
-            "Find the moment you stopped hearing and started feeling 🎧",
-            "Explain the bridge without getting emotional 😤",
-        ],
-        "discovery": [
-            "Before everyone discovers this one 🔮",
-            "Some artists deserve more rooms than they get 🎪",
-            "Hidden because it's real, not because it's bad 💎",
-            "The internet finds everything eventually. Found. 🌐",
-            "Heard this once and wanted to tell everyone 📣",
-        ],
-    },
-    "electronic": {
-        "vibe": [
-            "This drop exists in a different dimension 🌀",
-            "Built for speakers that could handle it 🔊",
-            "Some frequencies were made for stadiums 🏟️",
-            "This is what the future sounds like already 🚀",
-            "Peak energy. No other explanation needed. ⚡",
-        ],
-        "reaction": [
-            "The drop came when I wasn't ready 💀",
-            "This made me pace my apartment at midnight 🌙",
-            "Heard it once in a set and hunted it for weeks 🔍",
-            "This is why I don't sleep before festivals 🎉",
-            "My body moved before my brain processed this 🕺",
-        ],
-        "challenge": [
-            "Stay still during the drop. Not possible. 🕺",
-            "Full volume, dark room, and no regrets 🔊",
-            "Don't feel the bass in your chest. Can't. 🫀",
-            "Find a harder drop anywhere. Go ahead. 🔎",
-            "Listen without wanting to be in a crowd 🏟️",
-        ],
-        "discovery": [
-            "Before this fills every festival stage 🌍",
-            "Producers are taking notes right now 📝",
-            "The ID you were looking for 🔍",
-            "Underground until it isn't. Watch. 👀",
-            "This producer is about to be everywhere 🚀",
-        ],
-    },
-    "dark": {
-        "vibe": [
-            "Some music only makes sense past midnight 🌑",
-            "Beautiful in a way that makes you ache 🖤",
-            "This melody was not made for daylight 🕯️",
-            "The sound of something vast and quiet 🌌",
-            "Darkness with a pulse 🌑",
-        ],
-        "reaction": [
-            "This stopped me completely. Just listened. 🕯️",
-            "I don't know what this made me feel but it was real 😶",
-            "This rewired something I didn't know was wired 🧠",
-            "Listened four times trying to understand it 🔁",
-            "This stayed in my head for three days 💭",
-        ],
-        "challenge": [
-            "Listen alone at night and feel nothing. Can't. 🌑",
-            "Explain the feeling this gives you. You can't. 🖤",
-            "Try to skip this before the end. Won't. 🎧",
-            "Describe it to someone. Watch them not understand. 🌌",
-            "Find the word for what this makes you feel 📖",
-        ],
-        "discovery": [
-            "This existed before you found it. Glad you did. 🕯️",
-            "Not everything good gets loud. This proves it. 🌑",
-            "The quiet ones always hit deepest 🖤",
-            "Some music lives in the margins. Worth finding. 🔍",
-            "Hidden in plain sight for whoever was ready 🌌",
-        ],
-    },
-    "cinematic": {
-        "vibe": [
-            "This sounds like the scene they cut for being too good 🎬",
-            "Built for a movie that hasn't been made yet 🎥",
-            "Some music makes you feel like the main character 🌅",
-            "This expands whatever room you're in 🌌",
-            "The score your life didn't know it needed 🎻",
-        ],
-        "reaction": [
-            "I stopped moving and just let this play 🎬",
-            "This hit harder than any film I've seen this year 🎥",
-            "The build up is almost unfair 🌊",
-            "I needed a moment after this ended 😶",
-            "This unlocked something I hadn't felt in a while 🌅",
-        ],
-        "challenge": [
-            "Listen without closing your eyes. Impossible. 🎬",
-            "Try not to imagine a whole scene in your head 🎥",
-            "Feel nothing during the climax. You won't. 🌊",
-            "One listen and tell me this isn't cinematic 🎻",
-            "Don't get lost in this. Warning. 🌌",
-        ],
-        "discovery": [
-            "The composer nobody talks about yet 🎼",
-            "This score deserves a film worthy of it 🎬",
-            "Found this at 2am and couldn't stop 🌙",
-            "Cinematic music that doesn't need a screen 🎥",
-            "This existed quietly. Now you know. 🌅",
-        ],
-    },
-    "funk": {
-        "vibe": [
-            "Your body already knows what to do 🕺",
-            "Groove that doesn't ask, just takes over 🎵",
-            "This is what the weekend sounds like 🔥",
-            "Pure Brazilian energy, no explanation needed 🇧🇷",
-            "The kind of funk that moves furniture 🕺",
-        ],
-        "reaction": [
-            "I was sitting down. Key word: was. 🕺",
-            "This broke my focus immediately 😤",
-            "Nobody warned me about the bassline 🎸",
-            "Had to replay it twice before I believed it 🔁",
-            "The groove hit and I lost track of time 🕐",
-        ],
-        "challenge": [
-            "Stay still during this bassline. Can't. 🕺",
-            "Don't nod your head. Impossible. 🎵",
-            "One play without dancing. I dare you. 💃",
-            "Try to listen without smiling. Won't happen. 😁",
-            "Find a cleaner groove. I'll wait. 🎸",
-        ],
-        "discovery": [
-            "Brazilian funk before the rest of the world catches on 🇧🇷",
-            "This groove was hiding and now it isn't 🕵️",
-            "The find that changes your playlist forever 📌",
-            "Underground Brazilian sound, overground energy 🚀",
-            "This producer is too good for how quiet it's been 🎼",
-        ],
-    },
-    "pop": {
-        "vibe": [
-            "This is why pop still matters 🎵",
-            "Addictive before the chorus even drops 🔁",
-            "Built to be stuck in your head for days 🧠",
-            "Clean, sharp, and impossible to skip 💫",
-            "The hook that ruins every other song after it 🎵",
-        ],
-        "reaction": [
-            "I didn't expect this to hit that hard 😮",
-            "The chorus came and I replayed from the start 🔁",
-            "This is what 'earworm' actually means 🎧",
-            "Caught myself humming this hours later 🎵",
-            "Skipped it once. Came back immediately. 🔁",
-        ],
-        "challenge": [
-            "Try to get the chorus out of your head 🧠",
-            "One listen and don't hum it for the rest of the day 🎵",
-            "Skip before the hook. You physically cannot. ⏭️",
-            "Find a cleaner chorus this year. Go ahead. 🔎",
-            "Listen once and not add it. Impossible. 📌",
-        ],
-        "discovery": [
-            "Pop music still has surprises left 🎵",
-            "Before this is on every playlist everywhere 📈",
-            "The song that's about to be inescapable 🌍",
-            "Early on this one. Remember that. 📌",
-            "This artist is about to be very famous 🚀",
-        ],
-    },
-    "default": {
-        "vibe": [
-            "Music that doesn't need an introduction 🎵",
-            "Some sounds work immediately and you don't know why 🎧",
-            "This deserves your best pair of headphones 🎧",
-            "The playlist addition you didn't plan for 🎵",
-            "Real ones recognize quality instantly 💎",
-        ],
-        "reaction": [
-            "First 15 seconds and I was done for 🎧",
-            "This changed the energy of whatever I was doing 🔁",
-            "I stopped to find out who made this 🔍",
-            "This hit like it was made for me specifically 🎵",
-            "Couldn't skip it even when I tried 🔁",
-        ],
-        "challenge": [
-            "One play and pretend you're not coming back 🔁",
-            "Find a reason to take this off your playlist 🔎",
-            "Skip this. See what happens. You won't. ⏭️",
-            "Argue that this doesn't belong in your favorites 💎",
-            "Listen without it improving your mood. Impossible. 😌",
-        ],
-        "discovery": [
-            "Before this belongs to everyone else 🔮",
-            "The early find you'll tell people about 📣",
-            "Some things arrive before their moment. This is that. ⏱️",
-            "You found this. That means something. 📌",
-            "Early listener energy. This grows. 🌱",
-        ],
-    },
-}
+# ══════════════════════════════════════════════════════════════════════
+# SISTEMA DE TÍTULOS — NATURAL, VARIADO, ANTI-SHADOWBAN
+# Títulos que soam como pessoa real postando, não como bot
+# ══════════════════════════════════════════════════════════════════════
 
-HOOK_CATEGORY_ROTATION = ["vibe", "reaction", "challenge", "discovery", "vibe"]
+# Cada gênero tem 5 grupos (um por short), cada grupo tem 6 opções
+# Variação real: estrutura, tom e intenção mudam em cada short
+TITLE_BANK = {
+    "phonk": [
+        # Short 1 — descoberta / you found something
+        [
+            "{base} — you found this before it blows up 🌑",
+            "this one's different. {base} 🖤",
+            "{base} | the underground just found you 📲",
+            "save this. {base} 🌙",
+            "the algorithm finally got it right 🌑 | {base}",
+            "{base} — some sounds don't belong in daylight 🕒",
+        ],
+        # Short 2 — reação / o que aconteceu com você
+        [
+            "i wasn't ready for {base} 😳",
+            "{base} — replayed this more times than i'll admit 🔁",
+            "put this on at 3am and lost track of time | {base} 🌙",
+            "{base} | first 10 seconds. done. 🎧",
+            "this one got me | {base} 🖤",
+            "{base} — wasn't expecting to feel this 😮",
+        ],
+        # Short 3 — desafio suave
+        [
+            "try not to feel {base} 😈",
+            "{base} | tell me you're not coming back to this 🔁",
+            "one play and you'll understand | {base} 🌑",
+            "{base} — first listen changes something 😈",
+            "listen once. just once. | {base} 🎧",
+            "{base} | if you know, you know 🖤",
+        ],
+        # Short 4 — contexto / descrição da vibe
+        [
+            "{base} — 3am in an empty parking lot 🌑",
+            "the sound of driving nowhere at midnight | {base} 🚗",
+            "{base} | dark energy, no explanation needed 🖤",
+            "this is what focus sounds like | {base} 😤",
+            "{base} — cold, calculated, different 🌙",
+            "night driving music | {base} 🌑",
+        ],
+        # Short 5 — simples e direto, música fala por si
+        [
+            "{base} 🌑",
+            "{base} | this one speaks for itself 🖤",
+            "just listen. {base} 🎧",
+            "{base} — no words needed 🌙",
+            "🖤 {base}",
+            "{base} | you already know 😈",
+        ],
+    ],
+    "trap": [
+        [
+            "{base} — before this hits everywhere 📈",
+            "the streets know | {base} 🏙️",
+            "{base} | found this and couldn't move on 💎",
+            "nobody's talking about this yet | {base} 🤫",
+            "{base} — this one's different 👑",
+            "underground certified | {base} 🔒",
+        ],
+        [
+            "the bass on {base} hit different 🔊",
+            "{base} | my speakers weren't ready 💀",
+            "skipped everything else after hearing {base} 🔁",
+            "{base} — the drop came early and i wasn't ready 😮",
+            "this 808 | {base} 🥁",
+            "{base} | replayed the drop six times 🔊",
+        ],
+        [
+            "play {base} and see who looks up 👀",
+            "{base} | tell me you didn't feel that 😤",
+            "find a reason to skip this. i'll wait | {base} 🕐",
+            "{base} — one play and you'll understand 💎",
+            "try not to nod to {base} 🔊",
+            "{base} | if you skipped this you're missing out 👑",
+        ],
+        [
+            "{base} — this is what confidence sounds like 👑",
+            "luxury audio | {base} 💸",
+            "{base} | not everyone has taste. you do. 🖤",
+            "clean, expensive, different | {base} 💎",
+            "{base} — the standard just changed 📈",
+            "penthouse vibes | {base} 🏙️",
+        ],
+        [
+            "{base} 💎",
+            "🏙️ {base}",
+            "{base} | speaks for itself 👑",
+            "just run it | {base} 🔊",
+            "{base} — trust me 💸",
+            "👑 {base}",
+        ],
+    ],
+    "rock": [
+        [
+            "{base} — this riff doesn't ask permission 🎸",
+            "rock still has something to say | {base} ⚡",
+            "{base} | found this at 1am, no regrets 🌙",
+            "this band should be headlining | {base} 🎪",
+            "{base} — the comeback of actual guitar 🎸",
+            "what you've been looking for | {base} ⚡",
+        ],
+        [
+            "the first riff on {base} made me stop 🎸",
+            "{base} | headbanged alone in my car 🤘",
+            "this shouldn't be this good | {base} 😤",
+            "{base} — the bridge got me 🎸",
+            "paused everything to find this | {base} 🔍",
+            "{base} | the solo hit different ⚡",
+        ],
+        [
+            "don't move during the solo. impossible | {base} 🎸",
+            "{base} | tell me this doesn't deserve louder 📢",
+            "listen without air guitaring. bet you can't | {base} 🤘",
+            "{base} — find one skip. you won't ⏭️",
+            "full volume. now. | {base} 🔊",
+            "{base} | try not to feel this one ⚡",
+        ],
+        [
+            "{base} — built for stages that don't exist yet ⚡",
+            "pure energy | {base} 🔥",
+            "{base} | this is what real sounds like 🎸",
+            "the energy on this | {base} ⚡",
+            "{base} — raw and real 🎸",
+            "this is rock | {base} 🤘",
+        ],
+        [
+            "{base} 🎸",
+            "⚡ {base}",
+            "{base} | play it loud 🔊",
+            "🤘 {base}",
+            "{base} — full volume ⚡",
+            "just turn it up | {base} 🎸",
+        ],
+    ],
+    "metal": [
+        [
+            "{base} — the underground doesn't want you finding this 🔒",
+            "too heavy for most. not you | {base} 🌑",
+            "{base} | this exists and not enough people know 🤘",
+            "real heads know | {base} ⚠️",
+            "{base} — buried in the algorithm for a reason 📉",
+            "this band is too good for how quiet it's been | {base} 🌑",
+        ],
+        [
+            "the breakdown on {base} hit physically 💀",
+            "{base} | my neighbors moved because of this 😈",
+            "couldn't process this on first listen | {base} 🔁",
+            "{base} — needed to sit after the drop 🤯",
+            "this changed what i thought was possible | {base} ⚡",
+            "{base} | wasn't ready 💀",
+        ],
+        [
+            "max volume or don't bother | {base} 🔊",
+            "{base} | find something heavier. i challenge you ⚔️",
+            "survive the breakdown | {base} 🤘",
+            "{base} — full commitment, full damage 🔊",
+            "don't look away during this | {base} 😈",
+            "{base} | this isn't for everyone. maybe for you ⚠️",
+        ],
+        [
+            "{base} — this isn't music. it's a force. ⚠️",
+            "pure weight | {base} 🌑",
+            "{base} | the heaviness you asked the universe for 🔥",
+            "not for the quiet of room | {base} 🔊",
+            "{base} — it transcends genre ⚡",
+            "ancient and brutal | {base} 🌑",
+        ],
+        [
+            "{base} ⚠️",
+            "🌑 {base}",
+            "{base} | if you know you know 🤘",
+            "just experience it | {base} ⚔️",
+            "{base} — no words 💀",
+            "⚡ {base}",
+        ],
+    ],
+    "lofi": [
+        [
+            "{base} — some music finds you at the right time ⏱️",
+            "this lofi gem deserved more | {base} 💎",
+            "{base} | algorithm finally did something right 🙏",
+            "the one playing at the café | {base} ☕",
+            "{base} — this deserved more than it got 🕊️",
+            "found this late. better than never | {base} 🌙",
+        ],
+        [
+            "paused everything to exist in {base} 😮",
+            "{base} | first 10 seconds and i slowed down 🌿",
+            "this made the noise in my head quiet | {base} 🧠",
+            "{base} — accidentally stayed up with this on 🌙",
+            "forgot i had a to-do list | {base} 📋",
+            "{base} | this one pulled me out of it 🎧",
+        ],
+        [
+            "try to listen without getting lost | {base} 💭",
+            "{base} | one loop and tell me you're not calmer 🧘",
+            "find a better study companion. i'll wait | {base} 📚",
+            "{base} — try to feel nothing. you can't 🎧",
+            "listen once and not save it | {base} 🔁",
+            "{base} | just put it on and breathe ☁️",
+        ],
+        [
+            "{base} — this is what 3am sounds like when it's okay 🌙",
+            "the soundtrack to your unread thoughts | {base} 📖",
+            "{base} | peace you didn't know you needed ☁️",
+            "the sound of an exhale after a long day | {base} 🌙",
+            "{base} — quiet and real 🌿",
+            "this holds your hand without asking | {base} 🎧",
+        ],
+        [
+            "{base} 🌙",
+            "☁️ {base}",
+            "{base} | late night feels 🎧",
+            "just {base} 🌿",
+            "{base} — cozy season 🌙",
+            "🎧 {base}",
+        ],
+    ],
+    "indie": [
+        [
+            "{base} — before everyone discovers this one 🔮",
+            "some artists deserve more rooms | {base} 🎪",
+            "{base} | heard this once and told everyone 📣",
+            "the internet finds everything eventually | {base} 🌐",
+            "{base} — hidden because it's real 💎",
+            "early on this one | {base} 📌",
+        ],
+        [
+            "first verse on {base} and i stopped scrolling 🛑",
+            "{base} | replayed the bridge six times 🔁",
+            "this said what i couldn't find words for | {base} 💬",
+            "{base} — added before it ended ⚡",
+            "i don't know this band yet but i will | {base} 🔍",
+            "{base} | wasn't expecting to feel something 😮",
+        ],
+        [
+            "try to explain why {base} hits like this 🤔",
+            "{base} | pretend it didn't stay with you 🎶",
+            "don't add this to a playlist. i dare you | {base} 📌",
+            "{base} — the bridge. that's it. that's the post 😤",
+            "find the moment you stopped hearing | {base} 🎧",
+            "{base} | one listen. just one 🌅",
+        ],
+        [
+            "{base} — sounds like how nostalgia feels 🌅",
+            "music that makes you miss something you can't name | {base} 🌙",
+            "{base} | the feeling, not just the song 🌿",
+            "your heart needed this | {base} 💙",
+            "{base} — written for everyone who felt this before words 📝",
+            "this is the feeling | {base} 🌅",
+        ],
+        [
+            "{base} 🌅",
+            "🌿 {base}",
+            "{base} | just feel it 💙",
+            "🎶 {base}",
+            "{base} — still thinking about it 🌙",
+            "just {base} 🌅",
+        ],
+    ],
+    "electronic": [
+        [
+            "{base} — before this fills every festival stage 🌍",
+            "producers are taking notes | {base} 📝",
+            "{base} | the ID you were looking for 🔍",
+            "underground until it isn't. watch | {base} 👀",
+            "{base} — this producer is about to be everywhere 🚀",
+            "early on {base} | remember this 📌",
+        ],
+        [
+            "the drop on {base} came when i wasn't ready 💀",
+            "{base} | paced my apartment at midnight after this 🌙",
+            "heard this once in a set and hunted it for weeks | {base} 🔍",
+            "{base} — this is why i don't sleep before festivals 🎉",
+            "my body moved before my brain did | {base} 🕺",
+            "{base} | the drop hit different 🔊",
+        ],
+        [
+            "stay still during the drop. not possible | {base} 🕺",
+            "{base} | find a harder drop. go ahead 🔎",
+            "full volume, dark room | {base} 🔊",
+            "{base} — don't feel the bass in your chest. can't 🫀",
+            "listen without wanting to be in a crowd | {base} 🏟️",
+            "{base} | try not to move. impossible 🕺",
+        ],
+        [
+            "{base} — this drop exists in a different dimension 🌀",
+            "built for speakers that could handle it | {base} 🔊",
+            "{base} | peak energy, no explanation needed ⚡",
+            "some frequencies were made for stadiums | {base} 🏟️",
+            "{base} — the future sounds like this already 🚀",
+            "this is what the drop feels like | {base} ⚡",
+        ],
+        [
+            "{base} ⚡",
+            "🌀 {base}",
+            "{base} | the drop 🔊",
+            "🚀 {base}",
+            "{base} — just run it ⚡",
+            "turn it up | {base} 🔊",
+        ],
+    ],
+    "dark": [
+        [
+            "{base} — this existed before you found it 🕯️",
+            "not everything good gets loud | {base} 🌑",
+            "{base} | the quiet ones hit deepest 🖤",
+            "hidden in plain sight for whoever was ready | {base} 🌌",
+            "{base} — some music lives in the margins 🔍",
+            "this one found you for a reason | {base} 🕯️",
+        ],
+        [
+            "{base} stopped me completely 🕯️",
+            "i don't know what this made me feel but it was real | {base} 😶",
+            "{base} — stayed in my head for three days 💭",
+            "listened four times trying to understand | {base} 🔁",
+            "{base} | this rewired something 🧠",
+            "just sat with {base} for a while 🌑",
+        ],
+        [
+            "listen alone at night | {base} 🌑",
+            "{base} | explain the feeling. you can't 🖤",
+            "try to skip this before the end. won't | {base} 🎧",
+            "{base} — find the word for what this makes you feel 📖",
+            "describe it to someone. watch them not get it | {base} 🌌",
+            "{base} | just be in it 🕯️",
+        ],
+        [
+            "{base} — some music only makes sense past midnight 🌑",
+            "beautiful in a way that makes you ache | {base} 🖤",
+            "{base} | this melody wasn't made for daylight 🕯️",
+            "darkness with a pulse | {base} 🌑",
+            "{base} — the sound of something vast and quiet 🌌",
+            "this isn't for everyone | {base} 🖤",
+        ],
+        [
+            "{base} 🖤",
+            "🌑 {base}",
+            "{base} | midnight 🕯️",
+            "just {base} 🌌",
+            "{base} — you'll understand 🖤",
+            "🕯️ {base}",
+        ],
+    ],
+    "cinematic": [
+        [
+            "{base} — this score deserves a film worthy of it 🎬",
+            "cinematic music that doesn't need a screen | {base} 🎥",
+            "{base} | found this at 2am and couldn't stop 🌙",
+            "the composer nobody talks about yet | {base} 🎼",
+            "{base} — this existed quietly. now you know 🌅",
+            "early on {base} | watch what happens 📌",
+        ],
+        [
+            "stopped moving and let {base} play 🎬",
+            "{base} | the buildup is almost unfair 🌊",
+            "this hit harder than any film this year | {base} 🎥",
+            "{base} — needed a moment after this ended 😶",
+            "this unlocked something | {base} 🌅",
+            "{base} | wasn't ready for that climax 🎻",
+        ],
+        [
+            "listen without closing your eyes. impossible | {base} 🎬",
+            "{base} | try not to imagine a whole scene 🎥",
+            "feel nothing during the climax. you won't | {base} 🌊",
+            "{base} — don't get lost in this. warning 🌌",
+            "tell me this isn't cinematic | {base} 🎻",
+            "{base} | one listen. seriously 🎬",
+        ],
+        [
+            "{base} — sounds like the scene they cut for being too good 🎬",
+            "built for a movie that hasn't been made yet | {base} 🎥",
+            "{base} | makes you feel like the main character 🌅",
+            "the score your life didn't know it needed | {base} 🎻",
+            "{base} — this expands whatever room you're in 🌌",
+            "epic from the first second | {base} 🎬",
+        ],
+        [
+            "{base} 🎬",
+            "🎻 {base}",
+            "{base} | just experience it 🌌",
+            "🌅 {base}",
+            "{base} — no words 🎥",
+            "just {base} 🎬",
+        ],
+    ],
+    "funk": [
+        [
+            "{base} — brazilian funk before the world catches on 🇧🇷",
+            "this groove was hiding | {base} 🕵️",
+            "{base} | the find that changes your playlist 📌",
+            "underground sound, overground energy | {base} 🚀",
+            "{base} — too good for how quiet it's been 🎼",
+            "early on {base} | trust me 📌",
+        ],
+        [
+            "i was sitting down. key word: was | {base} 🕺",
+            "{base} | nobody warned me about the bassline 🎸",
+            "the groove hit and i lost track of time | {base} 🕐",
+            "{base} — replayed it twice before i believed it 🔁",
+            "this broke my focus immediately | {base} 😤",
+            "{base} | wasn't expecting this 🕺",
+        ],
+        [
+            "stay still during this bassline. can't | {base} 🕺",
+            "{base} | don't nod your head. impossible 🎵",
+            "one play without dancing. i dare you | {base} 💃",
+            "{base} — find a cleaner groove. i'll wait 🎸",
+            "try to listen without smiling | {base} 😁",
+            "{base} | just try 🕺",
+        ],
+        [
+            "{base} — your body already knows what to do 🕺",
+            "groove that just takes over | {base} 🎵",
+            "{base} | this is what the weekend sounds like 🔥",
+            "pure energy, no explanation | {base} 🇧🇷",
+            "{base} — the kind that moves furniture 🕺",
+            "this feels alive | {base} 🔥",
+        ],
+        [
+            "{base} 🕺",
+            "🔥 {base}",
+            "{base} | just move 🎵",
+            "💃 {base}",
+            "{base} — you'll understand 🕺",
+            "🇧🇷 {base}",
+        ],
+    ],
+    "pop": [
+        [
+            "{base} — before this is on every playlist 📈",
+            "pop music still has surprises | {base} 🎵",
+            "{base} | early on this one. remember that 📌",
+            "the song that's about to be inescapable | {base} 🌍",
+            "{base} — this artist is about to be famous 🚀",
+            "caught this before it blew up | {base} 📌",
+        ],
+        [
+            "didn't expect {base} to hit that hard 😮",
+            "{base} | the chorus came and i replayed from the start 🔁",
+            "caught myself humming {base} hours later 🎵",
+            "{base} — skipped it once. came back immediately 🔁",
+            "this is what earworm actually means | {base} 🎧",
+            "{base} | addictive from second one 🔁",
+        ],
+        [
+            "try to get {base} out of your head 🧠",
+            "{base} | skip before the hook. you can't ⏭️",
+            "find a cleaner chorus this year | {base} 🔎",
+            "{base} — don't hum this for the rest of the day. impossible 🎵",
+            "listen once and not add it | {base} 📌",
+            "{base} | try to forget this 🧠",
+        ],
+        [
+            "{base} — addictive before the chorus even drops 🔁",
+            "built to stay in your head | {base} 🧠",
+            "{base} | clean and impossible to skip 💫",
+            "the hook that ruins everything after | {base} 🎵",
+            "{base} — this is why pop still matters 🎵",
+            "genuinely good pop | {base} 💫",
+        ],
+        [
+            "{base} 🎵",
+            "💫 {base}",
+            "{base} | trust 🔁",
+            "🎵 {base}",
+            "{base} — you'll see 📈",
+            "just {base} 💫",
+        ],
+    ],
+    "default": [
+        [
+            "{base} — found this before it blows up 🔮",
+            "early on this one | {base} 📌",
+            "{base} | some things arrive before their moment 🌱",
+            "the early find you'll tell people about | {base} 📣",
+            "{base} — this grows 🌱",
+            "you found this. that means something | {base} 📌",
+        ],
+        [
+            "first 15 seconds on {base} and i was done 🎧",
+            "{base} | couldn't skip it even when i tried 🔁",
+            "this hit like it was made for me | {base} 🎵",
+            "{base} — stopped to find out who made this 🔍",
+            "changed the energy of my entire day | {base} 🔁",
+            "{base} | wasn't expecting this 🎧",
+        ],
+        [
+            "one play and pretend you're not coming back | {base} 🔁",
+            "{base} | find a reason to take this off your playlist 🔎",
+            "skip this. see what happens | {base} ⏭️",
+            "{base} — listen without it improving your mood. impossible 😌",
+            "argue this doesn't belong in your favorites | {base} 💎",
+            "{base} | just try to skip it 🔁",
+        ],
+        [
+            "{base} — real ones recognize quality immediately 💎",
+            "this deserves your best headphones | {base} 🎧",
+            "{base} | the playlist addition you didn't plan for 🎵",
+            "some sounds work immediately | {base} 🎧",
+            "{base} — doesn't need an introduction 🎵",
+            "magnetic from the start | {base} 💎",
+        ],
+        [
+            "{base} 🎵",
+            "🎧 {base}",
+            "{base} | just listen 💎",
+            "🎶 {base}",
+            "{base} — trust me 🎵",
+            "just {base} 🎧",
+        ],
+    ],
+}
 
 STYLE_HASHTAGS = {
     "phonk":      "#phonk #darkphonk #phonkmusic #phonkdrift #phonkvibes #phonkedit #phonkcar",
@@ -441,23 +595,18 @@ STYLE_HASHTAGS = {
 
 UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #shortsvideo"
 
-TITLE_TEMPLATES = [
-    "{hook} | {base}",
-    "{base} — {hook}",
-    "{hook} 👇 | {base}",
-    "{base} | {hook}",
-    "🎵 {base} | {hook}",
-]
-
 
 def build_title(base: str, style: str, short_num: int) -> str:
-    category = HOOK_CATEGORY_ROTATION[(short_num - 1) % len(HOOK_CATEGORY_ROTATION)]
-    hooks_by_style = STYLE_HOOKS_MATRIX.get(style, STYLE_HOOKS_MATRIX["default"])
-    hooks = hooks_by_style.get(category, hooks_by_style["vibe"])
-    hook_idx = (short_num - 1) % len(hooks)
-    hook = hooks[hook_idx]
-    template = TITLE_TEMPLATES[(short_num - 1) % len(TITLE_TEMPLATES)]
-    return template.format(hook=hook, base=base)[:100]
+    bank = TITLE_BANK.get(style, TITLE_BANK["default"])
+    # Grupo pelo número do short (0-4)
+    group_idx = (short_num - 1) % len(bank)
+    group = bank[group_idx]
+    # Opção dentro do grupo pelo hash do nome da música (consistência)
+    import hashlib
+    seed = int(hashlib.md5(f"{base}|{short_num}".encode()).hexdigest(), 16) % len(group)
+    template = group[seed]
+    title = template.format(base=base)
+    return title[:100]
 
 
 def build_description(base: str, style: str, short_num: int) -> str:
