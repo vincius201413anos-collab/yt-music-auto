@@ -143,9 +143,9 @@
     {
       "id": "1r4eFMm1CO4yV5VRMqRBSmBNCQpE-tokS",
       "name": "American Dream.mp3",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "indie"
     },
     {
       "id": "1xmPvrTJaVpwQ6Wl9JK7-5cARkLn_plV3",
