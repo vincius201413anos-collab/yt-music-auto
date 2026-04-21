@@ -13,7 +13,8 @@ from drive_service import (
     download_drive_file,
     upload_file_to_drive,
 )
-from background_selector import detect_style, detect_styles, get_random_background
+from background_selector import get_random_background
+from genre_detector import detect_genre, detect_genre_multi
 from video_generator import create_short
 from youtube_service import upload_video
 from facebook_service import upload_to_facebook
@@ -58,7 +59,6 @@ def human_delay():
 # SISTEMA DE TÍTULOS — ULTRA VARIADO, ANTI-SHADOWBAN
 # ══════════════════════════════════════════════════════════════════════
 
-# Cada gênero tem múltiplas CATEGORIAS de hook para máxima variedade
 STYLE_HOOKS_MATRIX = {
     "phonk": {
         "vibe": [
@@ -300,6 +300,96 @@ STYLE_HOOKS_MATRIX = {
             "Hidden in plain sight for whoever was ready 🌌",
         ],
     },
+    "cinematic": {
+        "vibe": [
+            "This sounds like the scene they cut for being too good 🎬",
+            "Built for a movie that hasn't been made yet 🎥",
+            "Some music makes you feel like the main character 🌅",
+            "This expands whatever room you're in 🌌",
+            "The score your life didn't know it needed 🎻",
+        ],
+        "reaction": [
+            "I stopped moving and just let this play 🎬",
+            "This hit harder than any film I've seen this year 🎥",
+            "The build up is almost unfair 🌊",
+            "I needed a moment after this ended 😶",
+            "This unlocked something I hadn't felt in a while 🌅",
+        ],
+        "challenge": [
+            "Listen without closing your eyes. Impossible. 🎬",
+            "Try not to imagine a whole scene in your head 🎥",
+            "Feel nothing during the climax. You won't. 🌊",
+            "One listen and tell me this isn't cinematic 🎻",
+            "Don't get lost in this. Warning. 🌌",
+        ],
+        "discovery": [
+            "The composer nobody talks about yet 🎼",
+            "This score deserves a film worthy of it 🎬",
+            "Found this at 2am and couldn't stop 🌙",
+            "Cinematic music that doesn't need a screen 🎥",
+            "This existed quietly. Now you know. 🌅",
+        ],
+    },
+    "funk": {
+        "vibe": [
+            "Your body already knows what to do 🕺",
+            "Groove that doesn't ask, just takes over 🎵",
+            "This is what the weekend sounds like 🔥",
+            "Pure Brazilian energy, no explanation needed 🇧🇷",
+            "The kind of funk that moves furniture 🕺",
+        ],
+        "reaction": [
+            "I was sitting down. Key word: was. 🕺",
+            "This broke my focus immediately 😤",
+            "Nobody warned me about the bassline 🎸",
+            "Had to replay it twice before I believed it 🔁",
+            "The groove hit and I lost track of time 🕐",
+        ],
+        "challenge": [
+            "Stay still during this bassline. Can't. 🕺",
+            "Don't nod your head. Impossible. 🎵",
+            "One play without dancing. I dare you. 💃",
+            "Try to listen without smiling. Won't happen. 😁",
+            "Find a cleaner groove. I'll wait. 🎸",
+        ],
+        "discovery": [
+            "Brazilian funk before the rest of the world catches on 🇧🇷",
+            "This groove was hiding and now it isn't 🕵️",
+            "The find that changes your playlist forever 📌",
+            "Underground Brazilian sound, overground energy 🚀",
+            "This producer is too good for how quiet it's been 🎼",
+        ],
+    },
+    "pop": {
+        "vibe": [
+            "This is why pop still matters 🎵",
+            "Addictive before the chorus even drops 🔁",
+            "Built to be stuck in your head for days 🧠",
+            "Clean, sharp, and impossible to skip 💫",
+            "The hook that ruins every other song after it 🎵",
+        ],
+        "reaction": [
+            "I didn't expect this to hit that hard 😮",
+            "The chorus came and I replayed from the start 🔁",
+            "This is what 'earworm' actually means 🎧",
+            "Caught myself humming this hours later 🎵",
+            "Skipped it once. Came back immediately. 🔁",
+        ],
+        "challenge": [
+            "Try to get the chorus out of your head 🧠",
+            "One listen and don't hum it for the rest of the day 🎵",
+            "Skip before the hook. You physically cannot. ⏭️",
+            "Find a cleaner chorus this year. Go ahead. 🔎",
+            "Listen once and not add it. Impossible. 📌",
+        ],
+        "discovery": [
+            "Pop music still has surprises left 🎵",
+            "Before this is on every playlist everywhere 📈",
+            "The song that's about to be inescapable 🌍",
+            "Early on this one. Remember that. 📌",
+            "This artist is about to be very famous 🚀",
+        ],
+    },
     "default": {
         "vibe": [
             "Music that doesn't need an introduction 🎵",
@@ -332,24 +422,25 @@ STYLE_HOOKS_MATRIX = {
     },
 }
 
-# Categorias em rotação para máxima variedade entre os 5 shorts
 HOOK_CATEGORY_ROTATION = ["vibe", "reaction", "challenge", "discovery", "vibe"]
 
 STYLE_HASHTAGS = {
-    "phonk": "#phonk #darkphonk #phonkmusic #phonkdrift #phonkvibes #phonkedit #phonkcar",
-    "trap": "#trap #trapmusic #808s #trapbeats #undergroundhiphop #trapvibes #newmusic",
-    "rock": "#rock #rockmusic #guitarmusic #hardrock #alternative #alternativerock #newrock",
-    "metal": "#metal #heavymetal #metalhead #metalcore #extrememetal #newmetal #heavymusic",
-    "lofi": "#lofi #lofihiphop #studymusic #chillvibes #lofibeats #relaxingmusic #lofichill",
-    "indie": "#indie #indiemusic #alternativemusic #indiepop #indierock #emotionalmusic #indievibes",
+    "phonk":      "#phonk #darkphonk #phonkmusic #phonkdrift #phonkvibes #phonkedit #phonkcar",
+    "trap":       "#trap #trapmusic #808s #trapbeats #undergroundhiphop #trapvibes #newmusic",
+    "rock":       "#rock #rockmusic #guitarmusic #hardrock #alternative #alternativerock #newrock",
+    "metal":      "#metal #heavymetal #metalhead #metalcore #extrememetal #newmetal #heavymusic",
+    "lofi":       "#lofi #lofihiphop #studymusic #chillvibes #lofibeats #relaxingmusic #lofichill",
+    "indie":      "#indie #indiemusic #alternativemusic #indiepop #indierock #emotionalmusic #indievibes",
     "electronic": "#electronic #edm #synthwave #electronicmusic #techno #dancemusic #festivalmusic",
-    "dark": "#dark #darkmusic #gothic #darkambient #darkwave #atmosferic #hauntingmusic",
-    "default": "#music #newmusic #viralmusic #underground #musiclover #musicdiscovery #hiddengems",
+    "cinematic":  "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #epicorchestral #dramatic",
+    "funk":       "#funk #funkmusic #groove #brazilianmusic #soulmusic #funkychill #groovemusic",
+    "dark":       "#dark #darkmusic #gothic #darkambient #darkwave #atmospheric #hauntingmusic",
+    "pop":        "#pop #popmusic #popvibes #newmusic #chart #top40 #hitmusic",
+    "default":    "#music #newmusic #viralmusic #underground #musiclover #musicdiscovery #hiddengems",
 }
 
 UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #shortsvideo"
 
-# Templates de título variados — cada um com estrutura diferente para evitar padrões
 TITLE_TEMPLATES = [
     "{hook} | {base}",
     "{base} — {hook}",
@@ -360,27 +451,17 @@ TITLE_TEMPLATES = [
 
 
 def build_title(base: str, style: str, short_num: int) -> str:
-    # Selecionar categoria de hook baseada na posição do short (1-5)
     category = HOOK_CATEGORY_ROTATION[(short_num - 1) % len(HOOK_CATEGORY_ROTATION)]
-
     hooks_by_style = STYLE_HOOKS_MATRIX.get(style, STYLE_HOOKS_MATRIX["default"])
     hooks = hooks_by_style.get(category, hooks_by_style["vibe"])
-
-    # Índice dentro da categoria também varia por short_num para não repetir
     hook_idx = (short_num - 1) % len(hooks)
     hook = hooks[hook_idx]
-
-    # Template varia pelo número do short
     template = TITLE_TEMPLATES[(short_num - 1) % len(TITLE_TEMPLATES)]
-    title = template.format(hook=hook, base=base)
-
-    return title[:100]
+    return template.format(hook=hook, base=base)[:100]
 
 
 def build_description(base: str, style: str, short_num: int) -> str:
     tags = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
-
-    # Variações de CTA para diferentes shorts
     ctas = [
         "Subscribe if you want more finds like this.",
         "Drop a comment if this hit right.",
@@ -389,8 +470,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
         "Like if this deserved more than it got.",
     ]
     cta = ctas[(short_num - 1) % len(ctas)]
-
-    # Variações de chamada pro Spotify
     spotify_lines = [
         f"🎧 Full track on Spotify:\n{SPOTIFY_LINK}",
         f"🎵 Listen everywhere:\n{SPOTIFY_LINK}",
@@ -399,7 +478,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
         f"📻 On Spotify now:\n{SPOTIFY_LINK}",
     ]
     spotify_line = spotify_lines[(short_num - 1) % len(spotify_lines)]
-
     return (
         f"🎵 {base}\n\n"
         f"{cta}\n\n"
@@ -408,6 +486,10 @@ def build_description(base: str, style: str, short_num: int) -> str:
         f"{tags}\n{UNIVERSAL}"
     )
 
+
+# ══════════════════════════════════════════════════════════════════════
+# ESTADO
+# ══════════════════════════════════════════════════════════════════════
 
 def load_state() -> dict:
     if not STATE_FILE.exists():
@@ -424,6 +506,7 @@ def load_state() -> dict:
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
+        t.setdefault("genre", None)  # cache do gênero detectado
 
     return state
 
@@ -444,6 +527,7 @@ def sync_tracks(state: dict, files: list):
                 "name": f["name"],
                 "done": 0,
                 "is_new": True,
+                "genre": None,
             })
         else:
             existing[f["name"]]["id"] = f["id"]
@@ -484,6 +568,10 @@ def get_next_track(state: dict) -> dict | None:
     return tracks[0]
 
 
+# ══════════════════════════════════════════════════════════════════════
+# BACKGROUND
+# ══════════════════════════════════════════════════════════════════════
+
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
     os.makedirs("temp", exist_ok=True)
 
@@ -507,11 +595,15 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
 
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
-        log(f"Usando background fallback padrao")
+        log("Usando background fallback padrao")
         return fallback
 
     raise FileNotFoundError("Nenhum background disponivel (IA, local e fallback falharam).")
 
+
+# ══════════════════════════════════════════════════════════════════════
+# PUBLICAÇÃO
+# ══════════════════════════════════════════════════════════════════════
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
@@ -549,6 +641,10 @@ def publish(video_path: str, title: str, description: str) -> dict:
     return results
 
 
+# ══════════════════════════════════════════════════════════════════════
+# MAIN
+# ══════════════════════════════════════════════════════════════════════
+
 def main():
     log("=" * 55)
     log("BOT INICIANDO — YouTube Shorts + Facebook Reels")
@@ -583,30 +679,44 @@ def main():
 
     name = track["name"]
     short_num = track.get("done", 0) + 1
-    styles = detect_styles(name)
-    style = detect_style(name)
     title_base = clean_title(name)
 
     log(f"Musica  : {name}")
-    log(f"Estilo  : {style} (todos: {', '.join(styles)})")
     log(f"Short   : {short_num}/{SHORTS_PER_TRACK}")
 
     os.makedirs("temp", exist_ok=True)
     audio_path = f"temp/{name}"
 
-    date = datetime.utcnow().strftime("%Y-%m-%d")
-    output_dir = Path("output") / date / style
-    output_dir.mkdir(parents=True, exist_ok=True)
-    video_path = str(
-        output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
-    )
-
     bg = None
+    style = "default"
+    styles = ["default"]
 
     try:
         log("Baixando audio do Drive...")
         download_drive_file(service, track["id"], audio_path)
         log("Download concluido.")
+
+        # ── DETECÇÃO DE GÊNERO ACÚSTICA ──────────────────────────────
+        # Usa cache do state.json se já detectou antes (evita re-análise)
+        cached_genre = track.get("genre")
+        if cached_genre:
+            style = cached_genre
+            styles = detect_genre_multi(audio_path)
+            log(f"Genero (cache): {style}")
+        else:
+            log("Detectando genero por analise acustica...")
+            style = detect_genre(audio_path)
+            styles = detect_genre_multi(audio_path)
+            track["genre"] = style  # salva no cache
+            save_state(state)
+            log(f"Genero detectado: {style} | Secundarios: {', '.join(styles[1:] or ['nenhum'])}")
+
+        date = datetime.utcnow().strftime("%Y-%m-%d")
+        output_dir = Path("output") / date / style
+        output_dir.mkdir(parents=True, exist_ok=True)
+        video_path = str(
+            output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
+        )
 
         log(f"Gerando background (short {short_num})...")
         bg = resolve_background(style, name, short_num, styles)
@@ -645,10 +755,10 @@ def main():
         log("=" * 55)
 
     finally:
-        for path in [audio_path, video_path, bg]:
+        for path in [audio_path, bg]:
             try:
                 if path and isinstance(path, str) and os.path.exists(path):
-                    if path.startswith("temp/") or path.startswith("output/"):
+                    if path.startswith("temp/"):
                         os.remove(path)
                         log(f"Temporario removido: {path}")
             except Exception:
