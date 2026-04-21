@@ -1,7 +1,5 @@
 name: Music Bot — YouTube + Facebook Reels
 on:
-  schedule:
-    - cron: "0 12 * * *"
   workflow_dispatch:
 jobs:
   run-bot:
@@ -32,7 +30,8 @@ jobs:
           FB_PAGE_ID:             ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_ACCESS_TOKEN:   ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           ENABLE_YOUTUBE:         "true"
-          ENABLE_FACEBOOK:        "true"
+          ENABLE_FACEBOOK:        "false"
+          DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
         run: python main.py
       - name: Salvar state.json no repositório
         if: always()
