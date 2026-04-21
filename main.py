@@ -30,7 +30,8 @@ SPOTIFY_LINK = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
 TIKTOK_LINK = "https://www.tiktok.com/@darkmrkedit"
 
 ENABLE_YOUTUBE = os.getenv("ENABLE_YOUTUBE", "true").lower() == "true"
-ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "true").lower() == "true"
+# Facebook desligado por padrão até configurar as chaves
+ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 
 
 def log(msg: str):
@@ -56,19 +57,11 @@ def human_delay():
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SISTEMA DE TÍTULOS — ULTRA VARIADO, ANTI-SHADOWBAN
-# ══════════════════════════════════════════════════════════════════════
-
-# ══════════════════════════════════════════════════════════════════════
 # SISTEMA DE TÍTULOS — NATURAL, VARIADO, ANTI-SHADOWBAN
-# Títulos que soam como pessoa real postando, não como bot
 # ══════════════════════════════════════════════════════════════════════
 
-# Cada gênero tem 5 grupos (um por short), cada grupo tem 6 opções
-# Variação real: estrutura, tom e intenção mudam em cada short
 TITLE_BANK = {
     "phonk": [
-        # Short 1 — descoberta / you found something
         [
             "{base} — you found this before it blows up 🌑",
             "this one's different. {base} 🖤",
@@ -77,7 +70,6 @@ TITLE_BANK = {
             "the algorithm finally got it right 🌑 | {base}",
             "{base} — some sounds don't belong in daylight 🕒",
         ],
-        # Short 2 — reação / o que aconteceu com você
         [
             "i wasn't ready for {base} 😳",
             "{base} — replayed this more times than i'll admit 🔁",
@@ -86,7 +78,6 @@ TITLE_BANK = {
             "this one got me | {base} 🖤",
             "{base} — wasn't expecting to feel this 😮",
         ],
-        # Short 3 — desafio suave
         [
             "try not to feel {base} 😈",
             "{base} | tell me you're not coming back to this 🔁",
@@ -95,7 +86,6 @@ TITLE_BANK = {
             "listen once. just once. | {base} 🎧",
             "{base} | if you know, you know 🖤",
         ],
-        # Short 4 — contexto / descrição da vibe
         [
             "{base} — 3am in an empty parking lot 🌑",
             "the sound of driving nowhere at midnight | {base} 🚗",
@@ -104,7 +94,6 @@ TITLE_BANK = {
             "{base} — cold, calculated, different 🌙",
             "night driving music | {base} 🌑",
         ],
-        # Short 5 — simples e direto, música fala por si
         [
             "{base} 🌑",
             "{base} | this one speaks for itself 🖤",
@@ -598,10 +587,9 @@ UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #shortsvi
 
 def build_title(base: str, style: str, short_num: int) -> str:
     bank = TITLE_BANK.get(style, TITLE_BANK["default"])
-    # Grupo pelo número do short (0-4)
     group_idx = (short_num - 1) % len(bank)
     group = bank[group_idx]
-    # Opção dentro do grupo pelo hash do nome da música (consistência)
+
     import hashlib
     seed = int(hashlib.md5(f"{base}|{short_num}".encode()).hexdigest(), 16) % len(group)
     template = group[seed]
@@ -655,7 +643,7 @@ def load_state() -> dict:
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
-        t.setdefault("genre", None)  # cache do gênero detectado
+        t.setdefault("genre", None)
 
     return state
 
@@ -839,14 +827,13 @@ def main():
     bg = None
     style = "default"
     styles = ["default"]
+    thumbnail_path = None
 
     try:
         log("Baixando audio do Drive...")
         download_drive_file(service, track["id"], audio_path)
         log("Download concluido.")
 
-        # ── DETECÇÃO DE GÊNERO ACÚSTICA ──────────────────────────────
-        # Usa cache do state.json se já detectou antes (evita re-análise)
         cached_genre = track.get("genre")
         if cached_genre:
             style = cached_genre
@@ -856,14 +843,14 @@ def main():
             log("Detectando genero por analise acustica...")
             style = detect_genre(audio_path)
             styles = detect_genre_multi(audio_path)
-            track["genre"] = style  # salva no cache
+            track["genre"] = style
             save_state(state)
             log(f"Genero detectado: {style} | Secundarios: {', '.join(styles[1:] or ['nenhum'])}")
 
         date = datetime.utcnow().strftime("%Y-%m-%d")
         output_dir = Path("output") / date / style
         output_dir.mkdir(parents=True, exist_ok=True)
-        video_path = str(
+        planned_video_path = str(
             output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
         )
 
@@ -871,8 +858,26 @@ def main():
         bg = resolve_background(style, name, short_num, styles)
 
         log("Gerando video...")
-        video_path = create_short(audio_path, bg, video_path, style, song_name=title_base)
+        render_result = create_short(
+            audio_path,
+            bg,
+            planned_video_path,
+            style,
+            song_name=title_base,
+        )
+
+        # Compatibilidade: create_short pode retornar string antiga
+        # ou dict novo com output_path/thumbnail_path
+        if isinstance(render_result, dict):
+            video_path = render_result["output_path"]
+            thumbnail_path = render_result.get("thumbnail_path")
+        else:
+            video_path = render_result
+            thumbnail_path = None
+
         log(f"Video pronto: {video_path}")
+        if thumbnail_path:
+            log(f"Thumbnail pronta: {thumbnail_path}")
 
         title = build_title(title_base, style, short_num)
         description = build_description(title_base, style, short_num)
