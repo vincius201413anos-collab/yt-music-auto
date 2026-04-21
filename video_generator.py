@@ -1,9 +1,11 @@
 """
 video_generator.py — Gerador de Shorts profissional.
 Versão otimizada para GitHub Actions.
-Melhorias de retenção: hook text overlay nos primeiros 3s,
-progress bar, zoom orgânico, flash sincronizado, color grade premium,
-logo overlay discreto em todos os vídeos.
+
+Melhorias v2:
+- HOOK AGRESSIVO: flash branco instantâneo no frame 0 (0.05s) antes do fade
+- LOOP PERFEITO: fade out suave + fade in do próximo ciclo alinhado
+- beat sync, color grade premium, progress bar, logo overlay
 """
 
 import os
@@ -11,7 +13,6 @@ import re
 import random
 import subprocess
 from pathlib import Path
-
 from edit_profiles import get_profile
 from audio_analysis import (
     full_analysis,
@@ -23,8 +24,8 @@ from audio_analysis import (
 )
 
 # ── Parâmetros globais ────────────────────────────────────────────────────────
-MIN_DURATION = 45
-MAX_DURATION = 59
+MIN_DURATION = 20
+MAX_DURATION = 28
 VIDEO_FADE_IN = 0.3
 VIDEO_FADE_OUT = 0.6
 AUDIO_FADE_IN = 0.3
@@ -32,9 +33,18 @@ AUDIO_FADE_OUT = 0.8
 MAX_SHAKE_X = 7
 MAX_SHAKE_Y = 7
 
+# ── HOOK FLASH ────────────────────────────────────────────────────────────────
+# Flash branco agressivo nos primeiros frames (0.05s) — chama atenção imediata
+HOOK_FLASH_DURATION = 0.05   # duração do flash branco inicial
+HOOK_FLASH_BRIGHTNESS = 1.0  # brilho máximo no flash (1.0 = branco puro)
+
+# ── LOOP PERFEITO ─────────────────────────────────────────────────────────────
+# O fade out começa cedo o suficiente para o vídeo terminar no mesmo "clima"
+# que começou — dá sensação de loop infinito no algoritmo
+LOOP_FADE_OUT_DURATION = 1.2  # fade out mais longo = transição mais suave
+
 # Fonte padrão no Ubuntu (GitHub Actions)
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"
-# Fallback
 FONT_PATH_FALLBACK = "/usr/share/fonts/truetype/liberation/LiberationSans-Bold.ttf"
 
 # Config de render otimizada
@@ -46,11 +56,10 @@ FFMPEG_AUDIO_BITRATE = "160k"
 
 # Logo overlay
 LOGO_PATH = "assets/logo_darkmark.png"
-LOGO_RELATIVE_WIDTH = 0.11   # 11% da largura do vídeo
+LOGO_RELATIVE_WIDTH = 0.11
 LOGO_MARGIN_X = 24
-LOGO_MARGIN_Y = 120          # sobe um pouco por causa da progress bar inferior
+LOGO_MARGIN_Y = 120
 LOGO_OPACITY = 0.90
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # HELPERS
@@ -79,7 +88,6 @@ def pick_window(audio_dur: float) -> tuple[float, float]:
     )
     if audio_dur <= dur:
         return 0.0, float(audio_dur)
-
     min_start = int(audio_dur * 0.10)
     max_start = min(int(audio_dur * 0.30), int(audio_dur - dur))
     start = random.randint(min_start, max(min_start, max_start))
@@ -87,24 +95,19 @@ def pick_window(audio_dur: float) -> tuple[float, float]:
 
 
 def get_font() -> str:
-    """Retorna fonte disponível no sistema."""
     if os.path.exists(FONT_PATH):
         return FONT_PATH
     if os.path.exists(FONT_PATH_FALLBACK):
         return FONT_PATH_FALLBACK
-
     result = subprocess.run(
         ["find", "/usr/share/fonts", "-name", "*Bold*", "-name", "*.ttf"],
-        capture_output=True,
-        text=True,
-        check=False,
+        capture_output=True, text=True, check=False,
     )
     fonts = [f for f in result.stdout.strip().split("\n") if f]
     return fonts[0] if fonts else FONT_PATH
 
 
 def escape_text(text: str) -> str:
-    """Escapa texto para uso no filtro drawtext do FFmpeg."""
     text = text.replace("\\", "\\\\")
     text = text.replace("'", "\\'")
     text = text.replace(":", "\\:")
@@ -117,12 +120,7 @@ def logo_exists() -> bool:
 
 
 def build_logo_overlay_filter() -> str:
-    """
-    Overlay do logo no canto inferior direito.
-    O input [1:v] será o logo e [base] será o vídeo já processado.
-    """
     logo_width_expr = f"min(iw,{int(1080 * LOGO_RELATIVE_WIDTH)})"
-
     return (
         f"[1:v]"
         f"scale={logo_width_expr}:-1,"
@@ -135,7 +133,6 @@ def build_logo_overlay_filter() -> str:
         f"format=auto"
         f"[vout]"
     )
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # AUDIO FILTER
@@ -150,14 +147,12 @@ def build_audio_filter(duration: float) -> str:
         "loudnorm=I=-16:TP=-1.5:LRA=11"
     )
 
-
 # ══════════════════════════════════════════════════════════════════════════════
 # OVERLAY FILTERS — RETENÇÃO
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
     clean = escape_text(song_name)
-
     title_filter = (
         f"drawtext=fontfile='{font}'"
         f":text='{clean}'"
@@ -169,7 +164,6 @@ def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
         f":y=h*0.12"
         f":alpha='if(lt(t,0.3),t/0.3,if(lt(t,3.0),1.0,if(lt(t,3.8),(3.8-t)/0.8,0)))'"
     )
-
     style_label = escape_text(f"#{style.upper()} #SHORTS")
     style_filter = (
         f"drawtext=fontfile='{font}'"
@@ -181,7 +175,6 @@ def build_hook_text_filter(song_name: str, style: str, font: str) -> str:
         f":y=h*0.12+72"
         f":alpha='if(lt(t,0.5),0,if(lt(t,0.9),(t-0.5)/0.4,if(lt(t,3.0),1.0,if(lt(t,3.8),(3.8-t)/0.8,0))))'"
     )
-
     return f"{title_filter},{style_filter}"
 
 
@@ -208,6 +201,43 @@ def build_watermark_filter(font: str) -> str:
         f":alpha='if(lt(t,3),0,if(lt(t,3.6),(t-3)/0.6,0.55))'"
     )
 
+# ══════════════════════════════════════════════════════════════════════════════
+# HOOK FLASH — NOVO
+# Flash branco agressivo no frame 0 para prender atenção imediatamente
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_hook_flash_filter(duration: float) -> str:
+    """
+    Flash branco nos primeiros HOOK_FLASH_DURATION segundos.
+    Depois fade in normal. Resultado: impacto instantâneo no primeiro frame.
+    
+    Expressão: brightness máxima nos primeiros 0.05s → cai para 0 em 0.3s
+    """
+    fd = HOOK_FLASH_DURATION
+    fade_end = fd + VIDEO_FADE_IN
+    return (
+        f"eq=brightness='"
+        f"if(lt(t,{fd}),{HOOK_FLASH_BRIGHTNESS},"
+        f"if(lt(t,{fade_end:.2f}),{HOOK_FLASH_BRIGHTNESS}*(1-(t-{fd})/{VIDEO_FADE_IN:.2f}),"
+        f"0))'"
+    )
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LOOP PERFEITO — NOVO
+# Fade out longo + brightness que retorna para 0 no final = sensação de loop
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_loop_fade_filter(duration: float) -> str:
+    """
+    Fade out mais longo e suave que começa antes do fim.
+    O vídeo termina escurecido igual ao primeiro frame pós-flash,
+    criando a ilusão de loop perfeito quando o algoritmo re-exibe.
+    """
+    fade_out_start = max(0.0, duration - LOOP_FADE_OUT_DURATION)
+    return (
+        f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
+        f"fade=t=out:st={fade_out_start:.3f}:d={LOOP_FADE_OUT_DURATION}"
+    )
 
 # ══════════════════════════════════════════════════════════════════════════════
 # VIDEO FILTERS
@@ -230,14 +260,6 @@ def _vignette_filter(strength: float) -> str:
     return f"vignette=angle={angle}:mode=forward"
 
 
-def _fade_filter(duration: float) -> str:
-    fade_out = max(0.0, duration - VIDEO_FADE_OUT)
-    return (
-        f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
-        f"fade=t=out:st={fade_out:.3f}:d={VIDEO_FADE_OUT}"
-    )
-
-
 def build_image_filter(
     profile: dict,
     analysis: dict,
@@ -247,6 +269,7 @@ def build_image_filter(
 ) -> str:
     fps = profile["fps"]
     font = get_font()
+
     flash_expr = build_flash_expression(
         analysis,
         profile["brightness"],
@@ -255,17 +278,14 @@ def build_image_filter(
         profile["drop_flash"],
     )
     zoom_expr = build_zoom_expression(
-        analysis,
-        duration,
-        fps,
-        profile["max_zoom"],
-        profile["zoom_speed"],
-        profile["pulse_strength"],
+        analysis, duration, fps,
+        profile["max_zoom"], profile["zoom_speed"], profile["pulse_strength"],
     )
 
     color = _color_grade(profile, flash_expr)
     vig = _vignette_filter(profile.get("vignette", 0.4))
-    fades = _fade_filter(duration)
+    fades = build_loop_fade_filter(duration)           # ← loop perfeito
+    hook_flash = build_hook_flash_filter(duration)     # ← hook agressivo
     hook = build_hook_text_filter(song_name, style, font)
     pbar = build_progress_bar_filter(duration)
     wtmk = build_watermark_filter(font)
@@ -280,6 +300,7 @@ def build_image_filter(
             f"y='ih/2-(ih/zoom/2)':"
             f"d=1:s=1080x1920"
         ),
+        hook_flash,   # flash branco no frame 0
         color,
     ]
     if vig:
@@ -291,7 +312,6 @@ def build_image_filter(
         pbar,
         wtmk,
     ]
-
     return ",".join(parts)
 
 
@@ -312,7 +332,6 @@ def build_video_filter(
         profile["bass_flash"],
         profile["drop_flash"],
     )
-
     sx = min(profile.get("shake_x", 3), MAX_SHAKE_X)
     sy = min(profile.get("shake_y", 3), MAX_SHAKE_Y)
     shake_x_expr, shake_y_expr = build_shake_expression(analysis, sx, sy)
@@ -322,7 +341,8 @@ def build_video_filter(
 
     color = _color_grade(profile, flash_expr)
     vig = _vignette_filter(profile.get("vignette", 0.4))
-    fades = _fade_filter(duration)
+    fades = build_loop_fade_filter(duration)           # ← loop perfeito
+    hook_flash = build_hook_flash_filter(duration)     # ← hook agressivo
     hook = build_hook_text_filter(song_name, style, font)
     pbar = build_progress_bar_filter(duration)
     wtmk = build_watermark_filter(font)
@@ -334,6 +354,7 @@ def build_video_filter(
             f"x='max(0,min(iw-1080,iw/2-540+({shake_x_expr})*{shake_gate}))':"
             f"y='max(0,min(ih-1920,ih/2-960+({shake_y_expr})*{shake_gate}))'"
         ),
+        hook_flash,   # flash branco no frame 0
         color,
     ]
     if vig:
@@ -345,9 +366,7 @@ def build_video_filter(
         pbar,
         wtmk,
     ]
-
     return ",".join(parts)
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # MAIN — create_short
@@ -373,7 +392,7 @@ def create_short(
     audio_dur = get_duration(audio_path)
     start, dur = pick_window(audio_dur)
 
-    print("  Analisando áudio…")
+    print(" Analisando áudio…")
     analysis_full = full_analysis(audio_path)
     analysis = crop_analysis(analysis_full, start, dur)
     save_debug({**analysis_full, "short_start": start, "short_duration": dur})
@@ -383,12 +402,10 @@ def create_short(
     ext = Path(background_path).suffix.lower() if background_path else ""
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
-
     use_logo = logo_exists()
 
     if is_image:
         base_vf = build_image_filter(profile, analysis, dur, song_name, style)
-
         if use_logo:
             filter_complex = (
                 f"[0:v]{base_vf}[base];"
@@ -431,7 +448,6 @@ def create_short(
         bg_dur = get_duration(background_path)
         bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
         base_vf = build_video_filter(profile, analysis, dur, song_name, style)
-
         if use_logo:
             filter_complex = (
                 f"[0:v]{base_vf}[base];"
@@ -475,13 +491,14 @@ def create_short(
         hook = build_hook_text_filter(song_name, style, font)
         pbar = build_progress_bar_filter(dur)
         wtmk = build_watermark_filter(font)
-        fade_out = max(0.0, dur - VIDEO_FADE_OUT)
+        hook_flash = build_hook_flash_filter(dur)
+        fade_out = max(0.0, dur - LOOP_FADE_OUT_DURATION)
         base_vf = (
+            f"{hook_flash},"
             f"fade=t=in:st=0:d={VIDEO_FADE_IN},"
-            f"fade=t=out:st={fade_out:.3f}:d={VIDEO_FADE_OUT},"
+            f"fade=t=out:st={fade_out:.3f}:d={LOOP_FADE_OUT_DURATION},"
             f"{hook},{pbar},{wtmk}"
         )
-
         if use_logo:
             filter_complex = (
                 f"[0:v]{base_vf}[base];"
@@ -522,7 +539,7 @@ def create_short(
                 output_name,
             ]
 
-    print("  FFmpeg command pronta. Iniciando render...")
+    print(" FFmpeg command pronta. Iniciando render...")
     subprocess.run(cmd, check=True)
-    print("  Render concluído.")
+    print(" Render concluído.")
     return output_name
