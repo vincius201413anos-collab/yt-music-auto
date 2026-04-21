@@ -1,43 +1,60 @@
 name: Music Bot — YouTube + Facebook Reels
+
 on:
   workflow_dispatch:
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     permissions:
       contents: write
+
     steps:
       - name: Checkout do repositório
         uses: actions/checkout@v4
+
       - name: Configurar Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+
       - name: Instalar dependências
         run: |
           pip install -r requirements.txt
+
       - name: Instalar FFmpeg
         run: |
           sudo apt-get update -y
           sudo apt-get install -y ffmpeg
+
       - name: Rodar o bot
         env:
-          ANTHROPIC_API_KEY:      ${{ secrets.ANTHROPIC_API_KEY }}
-          REPLICATE_API_TOKEN:    ${{ secrets.REPLICATE_API_TOKEN }}
-          DRIVE_FOLDER_ID:        ${{ secrets.DRIVE_FOLDER_ID }}
-          GOOGLE_CREDENTIALS:     ${{ secrets.GOOGLE_CREDENTIALS }}
-          YOUTUBE_CREDENTIALS:    ${{ secrets.YOUTUBE_CREDENTIALS }}
-          FB_PAGE_ID:             ${{ secrets.FB_PAGE_ID }}
-          FB_PAGE_ACCESS_TOKEN:   ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          ENABLE_YOUTUBE:         "true"
-          ENABLE_FACEBOOK:        "false"
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          ENABLE_YOUTUBE: "true"
+          ENABLE_FACEBOOK: "false"
           DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
         run: python main.py
-      - name: Salvar state.json no repositório
+
+      - name: Commitar mudanças válidas do repositório
         if: always()
         run: |
-          git config user.name  "github-actions[bot]"
+          git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add state.json || true
-          git diff --cached --quiet || git commit -m "chore: atualiza state.json [skip ci]"
+
+          git pull --rebase origin main || true
+          git add .
+
+          # Garante que arquivos ignorados/temporários não entrem no commit
+          git reset state.json 2>/dev/null || true
+          git reset output/ 2>/dev/null || true
+          git reset temp/ 2>/dev/null || true
+
+          git diff --cached --quiet || git commit -m "chore: update bot files [skip ci]"
           git push || true
