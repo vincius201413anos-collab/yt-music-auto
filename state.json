@@ -101,9 +101,9 @@
     {
       "id": "1wxrZPCgPUHOpbKp5Kx1cucRKx7o-XrtK",
       "name": "_CRAWLER PHONK.mp3",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "12ETSZavXUZ6vT_aYkRlooXcDyimBIJwg",
