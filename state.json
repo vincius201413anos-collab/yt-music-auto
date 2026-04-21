@@ -60,8 +60,8 @@
       "id": "19nG5rbV5ieKZ9XE3JVReYGdiuzSSH8CK",
       "name": "#20 FREQUENCY 666.mp3",
       "done": 0,
-      "is_new": true,
-      "genre": null
+      "is_new": false,
+      "genre": "default"
     },
     {
       "id": "167_6IgAR_rhqhR3SoCc14uZvJwkBn0m_",
