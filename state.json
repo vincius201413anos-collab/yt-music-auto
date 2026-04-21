@@ -80,9 +80,9 @@
     {
       "id": "1QYBPgNaz7FBpMez_3hjaHkumE8T8MVa6",
       "name": "4AM Study Session (1).mp3",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "lofi"
     },
     {
       "id": "1pe9FoH6hOOkQHoZsP5yfwp-OaaIIyHFI",
