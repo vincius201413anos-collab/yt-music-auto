@@ -23,7 +23,7 @@ def get_drive_service():
 def get_oauth_drive_service():
     """
     OAuth do usuário — usa as mesmas credenciais do YouTube.
-    Tem acesso ao Meu Drive pessoal, resolve o erro 403 de quota da Service Account.
+    Tem acesso ao Drive pessoal e Shared Drive, resolve o erro 403 de quota da Service Account.
     """
     raw = os.getenv("YOUTUBE_CREDENTIALS")
     if not raw:
@@ -52,7 +52,6 @@ def find_folder_id(service, parent_folder_id: str, folder_name: str) -> str | No
         files = results.get("files", [])
         return files[0]["id"] if files else None
     except Exception:
-        # Fallback sem supportsAllDrives (OAuth pessoal não precisa)
         results = service.files().list(
             q=query,
             fields="files(id, name)",
@@ -94,17 +93,41 @@ def download_drive_file(service, file_id: str, output_path: str) -> str:
 
 
 def upload_file_to_drive(service, folder_id: str, file_path: str) -> dict:
+    """
+    Faz upload para o Drive.
+    Tenta primeiro com o service recebido (Service Account + supportsAllDrives).
+    Se falhar por quota, tenta automaticamente via OAuth do usuário.
+    """
     file_metadata = {
         "name": os.path.basename(file_path),
         "parents": [folder_id],
     }
     media = MediaFileUpload(file_path, resumable=True)
-    uploaded = service.files().create(
-        body=file_metadata,
-        media_body=media,
-        fields="id,name",
-    ).execute()
-    return uploaded
+
+    try:
+        # ← CORRIGIDO: supportsAllDrives=True permite upload em Shared Drive
+        uploaded = service.files().create(
+            body=file_metadata,
+            media_body=media,
+            fields="id,name",
+            supportsAllDrives=True,
+        ).execute()
+        return uploaded
+
+    except Exception as e:
+        # Se falhou (ex: quota da Service Account), tenta com OAuth do usuário
+        if "storageQuota" in str(e) or "quota" in str(e).lower() or "403" in str(e):
+            print("[drive_service] Service Account sem quota — tentando OAuth do usuario...")
+            oauth_service = get_oauth_drive_service()
+            media2 = MediaFileUpload(file_path, resumable=True)
+            uploaded = oauth_service.files().create(
+                body=file_metadata,
+                media_body=media2,
+                fields="id,name",
+                supportsAllDrives=True,
+            ).execute()
+            return uploaded
+        raise
 
 
 def delete_drive_file(service, file_id: str):
