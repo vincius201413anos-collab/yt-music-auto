@@ -108,9 +108,9 @@
     {
       "id": "12ETSZavXUZ6vT_aYkRlooXcDyimBIJwg",
       "name": "_Drain You Dry (1).mp3",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "default"
     },
     {
       "id": "1sNnHscRHKBX64i_C5Edan6d7QJ7GwHNd",
