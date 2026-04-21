@@ -74,8 +74,8 @@
       "id": "1bco_4tERCxuFFu9xg5MMhFFaflJqI4qM",
       "name": "16 Lines of Pain.mp3",
       "done": 0,
-      "is_new": true,
-      "genre": null
+      "is_new": false,
+      "genre": "default"
     },
     {
       "id": "1QYBPgNaz7FBpMez_3hjaHkumE8T8MVa6",
