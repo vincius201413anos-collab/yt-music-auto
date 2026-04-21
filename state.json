@@ -45,9 +45,9 @@
     {
       "id": "1IlQDoZsX2lN8USlUqQmvZGSGjT5_a3RQ",
       "name": "#19 CONCRETE MYTHOLOGY.mp3",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "default"
     },
     {
       "id": "1YHbL-9jl1U4Y1vuprCXRUxp0ktpdoqeZ",
