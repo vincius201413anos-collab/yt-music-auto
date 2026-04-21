@@ -23,8 +23,8 @@ from audio_analysis import (
 )
 
 # ── Parâmetros globais ────────────────────────────────────────────────────────
-MIN_DURATION = 20
-MAX_DURATION = 28
+MIN_DURATION = 45
+MAX_DURATION = 59
 VIDEO_FADE_IN = 0.3
 VIDEO_FADE_OUT = 0.6
 AUDIO_FADE_IN = 0.3
