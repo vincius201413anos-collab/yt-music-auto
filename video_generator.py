@@ -1,16 +1,15 @@
 """
-video_generator.py — Elite Music Shorts Generator v2
-
-Upgrades:
-- Python logging profissional (arquivo + console)
-- find_best_window() via audio scoring (libros a)
-- Thumbnail automática (FFmpeg + overlays)
-- YouTube Data API v3 upload (opcional, requer token)
-- Retry automático em falha de render
-- Validação do output (duração, resolução, tamanho)
+video_generator.py — Elite Music Shorts Generator v3.0
+=======================================================
+NOVIDADES v3:
+- Color grade ESPECÍFICO por gênero (phonk ≠ lofi ≠ metal)
+- Efeitos visuais por gênero (grain, vignette, color shift)
+- Thumbnail automática com grade do gênero
+- Validação de output (resolução, duração, tamanho)
 - BPM-aware profile selection
-- Batch processing via generate_batch()
-- Métricas de render (tempo, tamanho, qualidade estimada)
+- Logging profissional
+- Retry automático em falha de render
+- Batch processing
 """
 
 from __future__ import annotations
@@ -37,21 +36,17 @@ from audio_analysis import (
 )
 
 # ══════════════════════════════════════════════════════════════════════════════
-# LOGGING SETUP
+# LOGGING
 # ══════════════════════════════════════════════════════════════════════════════
 
 def setup_logging(log_dir: str = "logs", level: int = logging.INFO) -> None:
-    """Configura logging para arquivo e console."""
     Path(log_dir).mkdir(parents=True, exist_ok=True)
     log_file = Path(log_dir) / "generator.log"
-
     fmt = "[%(asctime)s] %(levelname)-8s %(name)s — %(message)s"
-    datefmt = "%Y-%m-%d %H:%M:%S"
-
     logging.basicConfig(
         level=level,
         format=fmt,
-        datefmt=datefmt,
+        datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[
             logging.FileHandler(log_file, encoding="utf-8"),
             logging.StreamHandler(sys.stdout),
@@ -83,31 +78,140 @@ FONT_PATHS = [
     "/usr/share/fonts/truetype/freefont/FreeSansBold.ttf",
 ]
 
-FFMPEG_VIDEO_CODEC  = "libx264"
-FFMPEG_CRF          = "19"
-FFMPEG_PRESET       = "medium"
-FFMPEG_AUDIO_CODEC  = "aac"
+FFMPEG_VIDEO_CODEC   = "libx264"
+FFMPEG_CRF           = "19"
+FFMPEG_PRESET        = "medium"
+FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
 
-LOGO_PATH            = "assets/logo_darkmark.png"
-LOGO_RELATIVE_WIDTH  = 0.10
-LOGO_MARGIN_X        = 22
-LOGO_MARGIN_Y        = 110
-LOGO_OPACITY         = 0.88
+LOGO_PATH           = "assets/logo_darkmark.png"
+LOGO_RELATIVE_WIDTH = 0.10
+LOGO_MARGIN_X       = 22
+LOGO_MARGIN_Y       = 110
+LOGO_OPACITY        = 0.88
 
-# Thumbnail
-THUMB_DIR            = "thumbnails"
-THUMB_WIDTH          = 1080
-THUMB_HEIGHT         = 1920
-THUMB_TIMESTAMP      = 3.0   # segundos do vídeo para capturar frame
+THUMB_DIR       = "thumbnails"
+THUMB_TIMESTAMP = 3.0
 
-# Render retries
-MAX_RETRIES          = 2
-RETRY_DELAY_S        = 3
+MAX_RETRIES     = 2
+RETRY_DELAY_S   = 3
 
-# Output validation
-MIN_FILE_SIZE_MB     = 0.5
-MAX_FILE_SIZE_MB     = 200.0
+MIN_FILE_SIZE_MB = 0.5
+MAX_FILE_SIZE_MB = 200.0
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# COLOR GRADE POR GÊNERO
+# Cada gênero tem um filtro FFmpeg específico que reforça o DNA visual
+# ══════════════════════════════════════════════════════════════════════════════
+
+GENRE_COLOR_GRADE = {
+    # PHONK — vermelho sangue, contraste extremo, sombras densas, grain pesado
+    "phonk": (
+        "colorbalance=rs=0.18:gs=-0.05:bs=-0.12,"        # push para vermelho-laranja
+        "eq=contrast=1.25:brightness=-0.03:saturation=1.35,"  # contraste brutal
+        "unsharp=5:5:1.4:5:5:0,"                          # sharpening agressivo
+        "noise=alls=14:allf=t+u"                           # grain pesado para textura urbana
+    ),
+
+    # LOFI — warm vintage, grain suave, saturation levemente baixa, tons de filme
+    "lofi": (
+        "colorbalance=rs=0.08:gs=0.02:bs=-0.10,"          # warm amber shift
+        "eq=contrast=0.96:brightness=0.018:saturation=0.88,"  # suave, vintage
+        "unsharp=3:3:0.4:3:3:0,"                          # sharpening mínimo
+        "noise=alls=6:allf=t"                              # grain analógico suave
+    ),
+
+    # TRAP — azul frio e gold, contraste premium, cores limpas de editorial
+    "trap": (
+        "colorbalance=rs=-0.04:gs=0.02:bs=0.12,"          # push azul-teal frio
+        "eq=contrast=1.18:brightness=0.008:saturation=1.22,"  # limpo e premium
+        "unsharp=5:5:0.9:5:5:0"                           # sharp limpo sem ruído
+    ),
+
+    # DARK — dessaturado com acento roxo, sombras densíssimas, quase manga
+    "dark": (
+        "colorbalance=rs=-0.06:gs=-0.08:bs=0.14,"         # push roxo-azul frio
+        "eq=contrast=1.32:brightness=-0.05:saturation=0.78,"  # dessaturado dramático
+        "unsharp=5:5:1.0:5:5:0,"                          # definição manga
+        "vignette=angle=PI/3.5:mode=forward"               # vinheta pesada
+    ),
+
+    # ELECTRONIC — neon, saturação extrema, cores complementares vivas
+    "electronic": (
+        "colorbalance=rs=-0.08:gs=0.05:bs=0.18,"          # push cyan/azul neon
+        "eq=contrast=1.15:brightness=0.012:saturation=1.55,"  # saturação rave
+        "unsharp=5:5:0.7:5:5:0"                           # sharp limpo neon
+    ),
+
+    # ROCK — amber quente de palco, contraste dramático, textura raw
+    "rock": (
+        "colorbalance=rs=0.12:gs=0.04:bs=-0.08,"          # amber warm stage
+        "eq=contrast=1.20:brightness=0.005:saturation=1.18,"  # drama de show
+        "unsharp=5:5:1.0:5:5:0,"                          # sharp rock
+        "noise=alls=8:allf=t"                              # grain de live show
+    ),
+
+    # METAL — frio e escuro, azul-cinza, máximo contraste, imponente
+    "metal": (
+        "colorbalance=rs=-0.10:gs=-0.06:bs=0.08,"         # desaturado frio
+        "eq=contrast=1.38:brightness=-0.04:saturation=0.85,"  # brutal contrast
+        "unsharp=5:5:1.2:5:5:0,"                          # ultra sharp
+        "vignette=angle=PI/3.2:mode=forward"               # vinheta épica
+    ),
+
+    # INDIE — golden hour natural, cores honestas, levemente overexposed
+    "indie": (
+        "colorbalance=rs=0.06:gs=0.04:bs=-0.06,"          # golden warm natural
+        "eq=contrast=0.98:brightness=0.022:saturation=0.95,"  # natural honest
+        "unsharp=3:3:0.3:3:3:0,"                          # minimal sharp
+        "noise=alls=5:allf=t"                              # grain film natural
+    ),
+
+    # CINEMATIC — teal-orange grade clássico de cinema, profundidade
+    "cinematic": (
+        "colorbalance=rs=0.10:gs=-0.02:bs=-0.12,"         # orange shift em highlights
+        "colorbalance=rs=-0.08:gs=0.03:bs=0.15:shadows=enable:highlights=disable,"  # teal em sombras
+        "eq=contrast=1.12:brightness=0.005:saturation=1.08,"  # cinematic depth
+        "unsharp=5:5:0.8:5:5:0"                           # anamorphic sharp
+    ),
+
+    # FUNK — quente, vibrante, saturado, vivo como groove soa
+    "funk": (
+        "colorbalance=rs=0.14:gs=0.06:bs=-0.10,"          # warm vibrant orange
+        "eq=contrast=1.10:brightness=0.015:saturation=1.42,"  # groove vivid
+        "unsharp=3:3:0.5:3:3:0"                           # natural sharp
+    ),
+
+    # POP — brilhante, saturado, clean, pop visual
+    "pop": (
+        "colorbalance=rs=0.04:gs=0.04:bs=0.06,"           # slight vivid lift
+        "eq=contrast=1.08:brightness=0.020:saturation=1.35,"  # pop bright clean
+        "unsharp=3:3:0.6:3:3:0"                           # clean sharp
+    ),
+
+    # DEFAULT — grade genérico sólido
+    "default": (
+        "eq=contrast=1.10:brightness=0.010:saturation=1.10,"
+        "unsharp=5:5:0.7:5:5:0"
+    ),
+}
+
+# Vinheta base por gênero (alguns gêneros não têm vinheta na grade mas adicionamos aqui)
+GENRE_VIGNETTE = {
+    "phonk":      0.55,   # forte — cria atmosfera de noite
+    "dark":       0.0,    # já tem vinheta no color grade
+    "metal":      0.0,    # já tem vinheta no color grade
+    "lofi":       0.30,   # suave — intimidade
+    "trap":       0.20,   # sutil premium
+    "electronic": 0.15,   # quase nenhuma — espaço aberto de festival
+    "rock":       0.35,   # leve — grit de show
+    "indie":      0.25,   # natural
+    "cinematic":  0.40,   # cinemático clássico
+    "funk":       0.15,   # aberto e vivo
+    "pop":        0.10,   # mínima
+    "default":    0.35,
+}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -126,7 +230,6 @@ def get_duration(path: str) -> float:
 
 
 def get_video_info(path: str) -> dict:
-    """Retorna {width, height, duration, fps, size_mb}."""
     cmd = [
         "ffprobe", "-v", "error",
         "-select_streams", "v:0",
@@ -137,9 +240,8 @@ def get_video_info(path: str) -> dict:
     out = subprocess.run(cmd, capture_output=True, text=True, check=True)
     data = json.loads(out.stdout)
 
-    stream = data.get("streams", [{}])[0]
-    fmt    = data.get("format", {})
-
+    stream  = data.get("streams", [{}])[0]
+    fmt     = data.get("format", {})
     fps_str = stream.get("r_frame_rate", "30/1")
     try:
         num, den = fps_str.split("/")
@@ -157,13 +259,9 @@ def get_video_info(path: str) -> dict:
 
 
 def pick_window(audio_dur: float) -> tuple[float, float]:
-    dur = random.randint(
-        MIN_DURATION,
-        min(MAX_DURATION, max(MIN_DURATION, int(audio_dur))),
-    )
+    dur = random.randint(MIN_DURATION, min(MAX_DURATION, max(MIN_DURATION, int(audio_dur))))
     if audio_dur <= dur:
         return 0.0, float(audio_dur)
-
     min_start = int(audio_dur * 0.08)
     max_start = min(int(audio_dur * 0.25), int(audio_dur - dur))
     start = random.randint(min_start, max(min_start, max_start))
@@ -174,17 +272,12 @@ def get_font() -> str:
     for p in FONT_PATHS:
         if os.path.exists(p):
             return p
-
     result = subprocess.run(
         ["find", "/usr/share/fonts", "-name", "*Bold*", "-name", "*.ttf"],
         capture_output=True, text=True, check=False,
     )
     fonts = [f for f in result.stdout.strip().split("\n") if f]
-    if fonts:
-        return fonts[0]
-
-    logger.warning("Nenhuma fonte Bold encontrada — usando default.")
-    return FONT_PATHS[0]
+    return fonts[0] if fonts else FONT_PATHS[0]
 
 
 def escape_text(text: str) -> str:
@@ -223,7 +316,7 @@ def build_audio_filter(duration: float) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLOR / BRIGHTNESS
+# COLOR GRADE — usando DNA do gênero
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_hook_flash_expr() -> str:
@@ -244,14 +337,23 @@ def build_combined_brightness(profile: dict, analysis: dict) -> str:
     return f"({beat_expr})+({hook_expr})"
 
 
-def build_color_grade(profile: dict, brightness_expr: str) -> str:
-    return (
+def build_color_grade(profile: dict, brightness_expr: str, style: str = "default") -> str:
+    """
+    Aplica color grade BASE do profile + color grade ESPECÍFICO do gênero.
+    O profile define timing de flashes e zoom.
+    O gênero define a paleta e textura visual.
+    """
+    genre_grade = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
+
+    base_grade = (
         "eq=contrast=1.04:brightness=0.0:saturation=1.04,"
         f"eq=contrast={profile['contrast']}"
         f":brightness='{brightness_expr}'"
         f":saturation={profile['saturation']},"
         f"unsharp=5:5:{profile['sharpen']}:5:5:0"
     )
+
+    return f"{base_grade},{genre_grade}"
 
 
 def build_vignette(strength: float) -> str:
@@ -341,12 +443,8 @@ def build_logo_overlay_filter() -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_elite_zoom(
-    analysis: dict,
-    duration: float,
-    fps: int,
-    max_zoom: float,
-    zoom_speed: float,
-    pulse_strength: float,
+    analysis: dict, duration: float, fps: int,
+    max_zoom: float, zoom_speed: float, pulse_strength: float,
 ) -> str:
     beats     = analysis.get("beats", [])
     bass_hits = analysis.get("bass_hits", [])
@@ -360,18 +458,12 @@ def build_elite_zoom(
 
     beat_pulse = "0"
     if beats:
-        parts = [
-            f"0.004*between(on,{max(0,int(b*fps)-1)},{int(b*fps)+4})"
-            for b in beats[:60]
-        ]
+        parts = [f"0.004*between(on,{max(0,int(b*fps)-1)},{int(b*fps)+4})" for b in beats[:60]]
         beat_pulse = f"({'+'.join(parts)})"
 
     bass_pulse = "0"
     if bass_hits:
-        parts = [
-            f"0.010*between(on,{max(0,int(b*fps)-1)},{int(b*fps)+6})"
-            for b in bass_hits[:50]
-        ]
+        parts = [f"0.010*between(on,{max(0,int(b*fps)-1)},{int(b*fps)+6})" for b in bass_hits[:50]]
         bass_pulse = f"({'+'.join(parts)})"
 
     drop_expr = "0"
@@ -399,10 +491,7 @@ def build_elite_shake(analysis: dict, sx: int, sy: int):
     shake_y = f"(cos(t*2.5)*{sy*0.68}+cos(t*4.7)*{sy*0.32})"
 
     if bass_hits:
-        boosts = [
-            f"1.6*between(t,{max(0,t-0.03):.3f},{t+0.18:.3f})"
-            for t in bass_hits[:50]
-        ]
+        boosts = [f"1.6*between(t,{max(0,t-0.03):.3f},{t+0.18:.3f})" for t in bass_hits[:50]]
         boost = f"(1+{'+'.join(boosts)})"
         shake_x = f"({shake_x})*{boost}"
         shake_y = f"({shake_y})*{boost}"
@@ -420,7 +509,7 @@ def build_elite_shake(analysis: dict, sx: int, sy: int):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FILTER BUILDERS
+# FILTER BUILDERS — agora recebem style para color grade correto
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_image_filter(
@@ -434,8 +523,9 @@ def build_image_filter(
         analysis, duration, fps,
         profile["max_zoom"], profile["zoom_speed"], profile["pulse_strength"],
     )
-    color = build_color_grade(profile, brightness_expr)
-    vig   = build_vignette(profile.get("vignette", 0.4))
+    color = build_color_grade(profile, brightness_expr, style)   # ← style passado
+    vig_strength = GENRE_VIGNETTE.get(style, GENRE_VIGNETTE["default"])
+    vig   = build_vignette(vig_strength)
     fades = build_fade_filter(duration)
     hook  = build_hook_text(song_name, style, font)
     pbar  = build_progress_bar(duration)
@@ -469,8 +559,9 @@ def build_video_filter(
     sx = min(profile.get("shake_x", 4), MAX_SHAKE_X)
     sy = min(profile.get("shake_y", 4), MAX_SHAKE_Y)
     shake_x_expr, shake_y_expr = build_elite_shake(analysis, sx, sy)
-    color = build_color_grade(profile, brightness_expr)
-    vig   = build_vignette(profile.get("vignette", 0.4))
+    color = build_color_grade(profile, brightness_expr, style)   # ← style passado
+    vig_strength = GENRE_VIGNETTE.get(style, GENRE_VIGNETTE["default"])
+    vig   = build_vignette(vig_strength)
     fades = build_fade_filter(duration)
     hook  = build_hook_text(song_name, style, font)
     pbar  = build_progress_bar(duration)
@@ -496,13 +587,9 @@ def build_video_filter(
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _build_cmd(
-    inputs: list,
-    vf_or_complex: str,
-    is_complex: bool,
-    use_logo: bool,
-    audio_filter: str,
-    dur: float,
-    output_name: str,
+    inputs: list, vf_or_complex: str,
+    is_complex: bool, use_logo: bool,
+    audio_filter: str, dur: float, output_name: str,
 ) -> list:
     cmd = ["ffmpeg", "-y"] + inputs + ["-t", str(dur)]
 
@@ -532,46 +619,28 @@ def _build_cmd(
 # ══════════════════════════════════════════════════════════════════════════════
 
 def validate_output(output_path: str, expected_duration: float) -> dict:
-    """
-    Valida o vídeo gerado.
-    Retorna dict com 'ok' (bool) e 'issues' (list).
-    """
-    issues = []
-
     if not os.path.exists(output_path):
         return {"ok": False, "issues": ["Arquivo não encontrado."]}
-
     try:
         info = get_video_info(output_path)
     except Exception as e:
         return {"ok": False, "issues": [f"ffprobe falhou: {e}"]}
 
-    # Resolução
+    issues = []
     if info["width"] != 1080 or info["height"] != 1920:
-        issues.append(f"Resolução incorreta: {info['width']}x{info['height']} (esperado 1080x1920)")
-
-    # Duração (tolerância ±2s)
+        issues.append(f"Resolução: {info['width']}x{info['height']} (esperado 1080x1920)")
     if abs(info["duration"] - expected_duration) > 2.0:
-        issues.append(
-            f"Duração incorreta: {info['duration']:.1f}s (esperado ~{expected_duration:.1f}s)"
-        )
-
-    # Tamanho
+        issues.append(f"Duração: {info['duration']:.1f}s (esperado ~{expected_duration:.1f}s)")
     if info["size_mb"] < MIN_FILE_SIZE_MB:
-        issues.append(f"Arquivo muito pequeno: {info['size_mb']}MB")
+        issues.append(f"Arquivo pequeno: {info['size_mb']}MB")
     if info["size_mb"] > MAX_FILE_SIZE_MB:
-        issues.append(f"Arquivo muito grande: {info['size_mb']}MB")
+        issues.append(f"Arquivo grande: {info['size_mb']}MB")
 
-    result = {
-        "ok": len(issues) == 0,
-        "issues": issues,
-        "info": info,
-    }
-    return result
+    return {"ok": len(issues) == 0, "issues": issues, "info": info}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# THUMBNAIL GENERATOR
+# THUMBNAIL GENERATOR — com color grade do gênero
 # ══════════════════════════════════════════════════════════════════════════════
 
 def generate_thumbnail(
@@ -581,10 +650,6 @@ def generate_thumbnail(
     output_dir: str = THUMB_DIR,
     timestamp: float = THUMB_TIMESTAMP,
 ) -> Optional[str]:
-    """
-    Gera thumbnail do Short: frame capturado + overlay de título.
-    Retorna o caminho da thumbnail ou None em caso de erro.
-    """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     stem  = Path(video_path).stem
     out   = str(Path(output_dir) / f"{stem}_thumb.jpg")
@@ -592,20 +657,20 @@ def generate_thumbnail(
     clean = escape_text(song_name)
     tag   = escape_text(f"#{style.upper()}")
 
+    # Aplica color grade específico do gênero também na thumbnail
+    genre_grade = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
+
     vf = (
-        # Grade escura para destacar o texto
+        f"{genre_grade},"
         "eq=contrast=1.12:brightness=-0.02:saturation=1.22,"
         "vignette=angle=0.6:mode=forward,"
-        # Faixa semi-transparente no rodapé
         "drawbox=x=0:y=ih*0.75:w=iw:h=ih*0.25:color=black@0.55:t=fill,"
-        # Título centralizado
         f"drawtext=fontfile='{font}'"
         f":text='{clean}'"
         f":fontsize=72:fontcolor=white"
         f":borderw=4:bordercolor=black@0.9"
         f":shadowx=4:shadowy=4:shadowcolor=black@0.7"
         f":x=(w-text_w)/2:y=h*0.78,"
-        # Tag de estilo
         f"drawtext=fontfile='{font}'"
         f":text='{tag}'"
         f":fontsize=38:fontcolor=white@0.85"
@@ -628,85 +693,7 @@ def generate_thumbnail(
         logger.info(f"  ► Thumbnail gerada: {out}")
         return out
     except subprocess.CalledProcessError as e:
-        logger.warning(f"  ⚠ Falha ao gerar thumbnail: {e.stderr.decode()[-300:]}")
-        return None
-
-
-# ══════════════════════════════════════════════════════════════════════════════
-# YOUTUBE UPLOAD (opcional)
-# ══════════════════════════════════════════════════════════════════════════════
-
-def upload_to_youtube(
-    video_path: str,
-    title: str,
-    description: str = "",
-    tags: Optional[list[str]] = None,
-    category_id: str = "10",          # Music
-    privacy: str = "private",         # private | unlisted | public
-    credentials_file: str = "client_secrets.json",
-) -> Optional[str]:
-    """
-    Faz upload para o YouTube via googleapiclient.
-    Requer: pip install google-api-python-client google-auth-oauthlib
-    Retorna o video_id ou None em caso de erro.
-    """
-    try:
-        from google.oauth2.credentials import Credentials
-        from googleapiclient.discovery import build
-        from googleapiclient.http import MediaFileUpload
-    except ImportError:
-        logger.error(
-            "google-api-python-client não instalado. "
-            "Execute: pip install google-api-python-client google-auth-oauthlib"
-        )
-        return None
-
-    token_file = "token.json"
-    if not os.path.exists(token_file):
-        logger.error(f"Token OAuth não encontrado: {token_file}")
-        return None
-
-    try:
-        creds = Credentials.from_authorized_user_file(token_file)
-        youtube = build("youtube", "v3", credentials=creds)
-
-        body = {
-            "snippet": {
-                "title": title[:100],
-                "description": description[:5000],
-                "tags": (tags or [])[:500],
-                "categoryId": category_id,
-            },
-            "status": {"privacyStatus": privacy},
-        }
-
-        media = MediaFileUpload(
-            video_path,
-            mimetype="video/mp4",
-            resumable=True,
-            chunksize=10 * 1024 * 1024,   # 10MB chunks
-        )
-
-        logger.info(f"  ► Iniciando upload para YouTube: '{title}'…")
-        request = youtube.videos().insert(
-            part="snippet,status",
-            body=body,
-            media_body=media,
-        )
-
-        response = None
-        while response is None:
-            status, response = request.next_chunk()
-            if status:
-                pct = int(status.progress() * 100)
-                logger.info(f"     Upload: {pct}%")
-
-        video_id = response.get("id")
-        logger.info(f"  ► Upload concluído! https://youtu.be/{video_id}")
-        return video_id
-
-    except Exception as e:
-        logger.error(f"  ✗ Erro no upload: {e}")
+        logger.warning(f"  ⚠ Thumbnail falhou: {e.stderr.decode()[-300:] if e.stderr else ''}")
         return None
 
 
@@ -725,13 +712,6 @@ def create_short(
     upload: bool = False,
     upload_privacy: str = "private",
 ) -> dict:
-    """
-    Gera um YouTube Short.
-
-    Retorna dict com:
-        output_path, thumbnail_path, video_id (se upload=True),
-        duration, bpm, drop_time, render_time_s, validation
-    """
     t_start = time.time()
     result: dict = {"output_path": None, "thumbnail_path": None, "video_id": None}
 
@@ -741,14 +721,14 @@ def create_short(
 
     song_name = clean_song_name(audio_path, song_name)
     logger.info(f"▶ Gerando Short: '{song_name}' | estilo={style}")
+    logger.info(f"  ► Color grade: {style}")
 
-    # ── Análise de áudio ───────────────────────────────────────────────────────
+    # ── Análise de áudio ──────────────────────────────────────────────────────
     logger.info("  ► Analisando áudio…")
     analysis_full = full_analysis(audio_path)
-    bpm      = analysis_full.get("bpm")
+    bpm       = analysis_full.get("bpm")
     audio_dur = get_duration(audio_path)
 
-    # Selecionar janela
     if use_smart_window:
         dur = random.randint(MIN_DURATION, min(MAX_DURATION, int(audio_dur)))
         start, dur = find_best_window(audio_path, dur)
@@ -759,10 +739,9 @@ def create_short(
     analysis = crop_analysis(analysis_full, start, dur)
     save_debug({**analysis_full, "short_start": start, "short_duration": dur})
 
-    # Profile (BPM-aware)
-    profile       = get_profile_for_bpm(bpm, style)
-    audio_filter  = build_audio_filter(dur)
-    use_logo      = logo_exists()
+    profile      = get_profile_for_bpm(bpm, style)
+    audio_filter = build_audio_filter(dur)
+    use_logo     = logo_exists()
 
     # ── Background ────────────────────────────────────────────────────────────
     ext      = Path(background_path).suffix.lower() if background_path else ""
@@ -772,61 +751,40 @@ def create_short(
     if is_image:
         base_vf = build_image_filter(profile, analysis, dur, song_name, style)
         if use_logo:
-            fc = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = [
-                "-loop", "1", "-i", background_path,
-                "-i", LOGO_PATH,
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-loop", "1", "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
         else:
-            inputs = [
-                "-loop", "1", "-i", background_path,
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+            inputs = ["-loop", "1", "-i", background_path, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
     elif is_video:
         bg_dur   = get_duration(background_path)
         bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
         base_vf  = build_video_filter(profile, analysis, dur, song_name, style)
         if use_logo:
-            fc = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = [
-                "-ss", str(bg_start), "-i", background_path,
-                "-i", LOGO_PATH,
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-ss", str(bg_start), "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
         else:
-            inputs = [
-                "-ss", str(bg_start), "-i", background_path,
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+            inputs = ["-ss", str(bg_start), "-i", background_path, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
     else:
-        # Fundo preto
         font    = get_font()
         hook    = build_hook_text(song_name, style, font)
         pbar    = build_progress_bar(dur)
         wtmk    = build_watermark(font)
         fade    = build_fade_filter(dur)
-        base_vf = f"{fade},{hook},{pbar},{wtmk}"
+        genre_g = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
+        base_vf = f"{genre_g},{fade},{hook},{pbar},{wtmk}"
         if use_logo:
-            fc = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = [
-                "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",
-                "-i", LOGO_PATH,
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
         else:
-            inputs = [
-                "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",
-                "-ss", str(start), "-i", audio_path,
-            ]
-            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
     # ── Render com retry ──────────────────────────────────────────────────────
     logger.info("  ► Iniciando render…")
@@ -838,8 +796,7 @@ def create_short(
         except subprocess.CalledProcessError as e:
             err = e.stderr.decode()[-500:] if e.stderr else ""
             if attempt <= MAX_RETRIES:
-                logger.warning(f"  ⚠ Render falhou (tentativa {attempt}/{MAX_RETRIES+1}): {err}")
-                logger.info(f"  Aguardando {RETRY_DELAY_S}s antes de nova tentativa…")
+                logger.warning(f"  ⚠ Render falhou (tentativa {attempt}): {err}")
                 time.sleep(RETRY_DELAY_S)
             else:
                 logger.error(f"  ✗ Render falhou após {MAX_RETRIES+1} tentativas.\n{err}")
@@ -850,43 +807,29 @@ def create_short(
     if validation["ok"]:
         info = validation["info"]
         logger.info(
-            f"  ► Validação OK — {info['width']}x{info['height']} | "
+            f"  ► OK — {info['width']}x{info['height']} | "
             f"{info['duration']:.1f}s | {info['size_mb']}MB | {info['fps']} fps"
         )
     else:
         for issue in validation["issues"]:
             logger.warning(f"  ⚠ {issue}")
 
-    result["output_path"] = output_name
-    result["validation"]  = validation
-    result["duration"]    = dur
-    result["bpm"]         = bpm
-    result["drop_time"]   = analysis.get("drop_time")
+    result.update({
+        "output_path": output_name,
+        "validation":  validation,
+        "duration":    dur,
+        "bpm":         bpm,
+        "drop_time":   analysis.get("drop_time"),
+    })
 
     # ── Thumbnail ─────────────────────────────────────────────────────────────
     if auto_thumbnail:
         thumb = generate_thumbnail(output_name, song_name, style)
         result["thumbnail_path"] = thumb
 
-    # ── Upload (opcional) ─────────────────────────────────────────────────────
-    if upload:
-        tags = [style, "shorts", "music", song_name.lower()]
-        vid_id = upload_to_youtube(
-            output_name,
-            title=f"{song_name} 🔥 #{style.upper()} #SHORTS",
-            description=f"#{style} #shorts #music\n\nFollow for more!",
-            tags=tags,
-            privacy=upload_privacy,
-        )
-        result["video_id"] = vid_id
-
-    # ── Métricas ──────────────────────────────────────────────────────────────
     elapsed = round(time.time() - t_start, 1)
     result["render_time_s"] = elapsed
-    logger.info(
-        f"✅ Finalizado em {elapsed}s | "
-        f"BPM={bpm:.0f}" if bpm else f"✅ Finalizado em {elapsed}s"
-    )
+    logger.info(f"✅ Finalizado em {elapsed}s" + (f" | BPM={bpm:.0f}" if bpm else ""))
     return result
 
 
@@ -901,14 +844,6 @@ def generate_batch(
     upload: bool = False,
     upload_privacy: str = "private",
 ) -> list[dict]:
-    """
-    Processa múltiplos vídeos em sequência.
-
-    Cada task deve ter:
-        audio_path, background_path, style, song_name (opcional)
-
-    Retorna lista de resultados.
-    """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     results = []
 
@@ -936,17 +871,16 @@ def generate_batch(
                 upload=upload,
                 upload_privacy=upload_privacy,
             )
-            r["task"] = task
+            r["task"]   = task
             r["status"] = "ok"
             results.append(r)
         except Exception as e:
-            logger.error(f"  ✗ Falha no task {i}: {e}")
+            logger.error(f"  ✗ Falha task {i}: {e}")
             results.append({"task": task, "status": "error", "error": str(e)})
 
     ok    = sum(1 for r in results if r.get("status") == "ok")
     fails = len(results) - ok
-    logger.info(f"\n{'='*60}")
-    logger.info(f"Batch finalizado: {ok} ok, {fails} erros.")
+    logger.info(f"\nBatch: {ok} ok, {fails} erros.")
     return results
 
 
@@ -957,31 +891,27 @@ def generate_batch(
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator")
-    parser.add_argument("audio",       help="Caminho do áudio (.mp3/.wav)")
-    parser.add_argument("background",  help="Imagem ou vídeo de fundo")
-    parser.add_argument("output",      help="Nome do arquivo de saída (.mp4)")
-    parser.add_argument(
-        "--style", default="trap",
-        choices=list_profiles(),
-        help="Estilo de edição (default: trap)",
-    )
-    parser.add_argument("--name",      default="", help="Nome da música (opcional)")
-    parser.add_argument("--no-thumb",  action="store_true", help="Desativa geração de thumbnail")
-    parser.add_argument("--upload",    action="store_true", help="Faz upload para o YouTube")
-    parser.add_argument("--privacy",   default="private", choices=["private", "unlisted", "public"])
-    parser.add_argument("--no-smart",  action="store_true", help="Usa janela aleatória (sem scoring)")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v3")
+    parser.add_argument("audio")
+    parser.add_argument("background")
+    parser.add_argument("output")
+    parser.add_argument("--style",    default="trap", choices=list_profiles())
+    parser.add_argument("--name",     default="")
+    parser.add_argument("--no-thumb", action="store_true")
+    parser.add_argument("--upload",   action="store_true")
+    parser.add_argument("--privacy",  default="private", choices=["private", "unlisted", "public"])
+    parser.add_argument("--no-smart", action="store_true")
 
     args = parser.parse_args()
 
     create_short(
-        audio_path      = args.audio,
-        background_path = args.background,
-        output_name     = args.output,
-        style           = args.style,
-        song_name       = args.name,
+        audio_path       = args.audio,
+        background_path  = args.background,
+        output_name      = args.output,
+        style            = args.style,
+        song_name        = args.name,
         use_smart_window = not args.no_smart,
-        auto_thumbnail  = not args.no_thumb,
-        upload          = args.upload,
-        upload_privacy  = args.privacy,
+        auto_thumbnail   = not args.no_thumb,
+        upload           = args.upload,
+        upload_privacy   = args.privacy,
     )
