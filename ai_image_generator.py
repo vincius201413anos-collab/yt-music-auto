@@ -1,7 +1,7 @@
 """
 ai_image_generator.py — Geração de imagem IA cinematográfica por gênero.
-Foco: qualidade visual premium, variedade real, anti-repetição, anti-shadowban.
-Inspirado em: anime key visual, lofi aesthetic, cyberpunk illustration, dark fantasy art.
+VERSÃO 2.0 — Cores ultra-vibrantes, prompts únicos por música, anti-repetição máxima.
+Inspirado em: anime key visual premium, lofi aesthetic, cyberpunk illustration, dark fantasy art.
 """
 
 import os
@@ -36,397 +36,338 @@ def get_anthropic_model() -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PALETAS DE COR POR GÊNERO
+# PALETAS DE COR POR GÊNERO — Ultra-vibrantes, alto contraste
 # ══════════════════════════════════════════════════════════════════════
 
 GENRE_COLOR_PALETTES = {
     "lofi": [
-        "warm amber and deep navy, soft orange lamp glow, cool moonlight blue",
-        "dusty rose and muted teal, vintage film grain colors, warm candlelight",
-        "golden hour orange bleeding into night purple, nostalgic warm tones",
-        "soft coral and slate blue, cozy interior warmth against cold window night",
-        "burnt sienna and midnight blue, lo-fi grainy warmth",
+        "warm amber and deep navy, glowing orange desk lamp, cool moonlit blue from window, rich golden shadows",
+        "vivid dusty rose and saturated teal, vintage film warmth, deep candlelight honey-orange",
+        "intense golden hour orange bleeding into deep violet night, nostalgic warm saturation",
+        "rich coral and deep slate blue, cozy interior warmth, electric blue moonlight on glass",
+        "burnt sienna and midnight indigo, lo-fi warm grain with glowing amber accents",
+        "deep burgundy lamp light and cool cerulean moonlight, high-contrast cozy atmosphere",
+        "rich ochre yellow and deep purple shadow, warm vintage warmth with cool night contrast",
     ],
     "phonk": [
-        "deep red neon and pitch black, single harsh light source, high contrast",
-        "cold purple-blue and charcoal, wet concrete reflections, urban night",
-        "orange sodium vapor and deep shadow, industrial noir palette",
-        "crimson slash of light on black, nothing wasted, pure contrast",
-        "magenta neon bleed on dark street, color as violence",
+        "deep crimson neon slicing pitch black, single brutal harsh light, extreme contrast, blood red reflections on wet concrete",
+        "cold electric purple-violet and absolute charcoal, neon-wet concrete reflections, hypercontrast urban",
+        "burning orange sodium vapor and total shadow, industrial noir, deep blacks with neon orange glow",
+        "magenta slash of violent neon on pure black, color as aggression, single saturated streak",
+        "electric red and blue split light, both harsh and cold, noir shadow everywhere else",
+        "vivid white-blue LED and deep rust shadow, empty parking structure, contrast maxed",
+        "neon pink over jet black, aggressive saturation, single color rules everything",
     ],
     "trap": [
-        "ice blue moonlight and gold accent, luxury cold palette",
-        "deep black with champagne gold highlights, penthouse night",
-        "purple twilight and silver chrome, elevated urban cool",
-        "navy and rose gold, modern luxury at altitude",
-        "white marble and midnight blue, clean expensive contrast",
+        "ice crystal blue moonlight and deep gold, luxury cold palette, rich shadows with warm gold edges",
+        "deep velvet black with champagne gold highlights, penthouse at night, premium contrast",
+        "electric purple twilight and silver chrome, elevated urban with rich glow",
+        "deep navy and luminous rose gold, modern luxury at altitude, vivid warmth against cold blue",
+        "white marble luminous and midnight blue deep, clean expensive high-contrast",
+        "rich teal and burnished copper gold, premium editorial night",
+        "electric indigo and bright silver, cold luxury with vivid depth",
     ],
     "dark": [
-        "desaturated grey with single red accent, manga horror palette",
-        "deep violet and silver moonlight, gothic beauty",
-        "black and blood crimson, stark and violent contrast",
-        "ash grey and glowing purple, supernatural atmosphere",
-        "pitch black with barely-there blue light, silence made visual",
+        "desaturated silver-grey with single vivid blood crimson accent, stark manga horror contrast",
+        "deep jewel violet and cold silver moonlight, gothic beauty, rich purple shadows",
+        "jet black and saturated blood red, zero compromise contrast, violence made visual",
+        "ash grey with glowing electric purple supernatural energy, ethereal darkness",
+        "pitch black with vivid cyan-blue cold light, silence made luminous",
+        "deep navy black with vivid violet energy glow, supernatural atmosphere",
+        "rich dark teal and sharp crimson, dark fantasy palette with vivid accent",
     ],
     "electronic": [
-        "electric cyan and deep magenta, rave light sculpture",
-        "holographic rainbow on black, future nightclub",
-        "UV purple and neon green, warehouse rave palette",
-        "laser white and chromatic aberration, techno cathedral",
-        "strobing blue and orange, festival stage energy",
+        "electric cyan and deep magenta, rave light sculpture, vivid complementary clash",
+        "holographic rainbow spectrum on deep black, neon-lit future nightclub",
+        "UV electric purple and vivid neon green, warehouse rave, vivid as possible",
+        "laser white and chromatic aberration rainbow edges, techno cathedral light",
+        "strobing electric blue and deep sunset orange, festival stage high energy",
+        "vivid teal and hot pink, cyberpunk complementary contrast, maximum saturation",
+        "electric lime and deep violet, rave aesthetic, neon against darkness",
     ],
     "rock": [
-        "amber stage light and deep shadow, live show drama",
-        "red and white harsh spotlights, concert energy",
-        "industrial grey with warm backlight, raw venue",
-        "orange ember tones and dark smoke, rock atmosphere",
-        "cool blue and burning orange split light, dramatic duality",
+        "deep amber stage fire and pitch shadow, live show drama, warm against cold",
+        "vivid red and cold white harsh spotlights split, concert energy, maximum contrast",
+        "industrial warm grey with vivid amber backlight, raw venue glow",
+        "rich orange ember tones and deep smoke grey, rock atmosphere with depth",
+        "cool electric blue and burning orange split light, dramatic duality maxed",
+        "hot white spotlight and deep navy shadow, performance drama",
+        "vivid amber and deep purple, rock show warm against night",
     ],
     "metal": [
-        "volcanic orange and ash black, apocalyptic",
-        "deep crimson and charcoal, brutal contrast",
-        "cold silver lightning and black storm, power palette",
-        "ember glow and total darkness, hellscape",
-        "ice blue moonlight on black stone, ancient evil",
+        "volcanic orange fire and ash black, apocalyptic, vivid destruction",
+        "deep crimson and pure charcoal, brutal contrast, nothing wasted",
+        "cold lightning white-blue and black storm, power palette, raw electricity",
+        "deep amber ember glow and total darkness, vivid hellscape warmth",
+        "ice crystal blue moonlight on black stone, ancient evil, cold beauty",
+        "vivid electric red and deep shadow grey, intense metal energy",
+        "burning orange and cold silver, war palette, vivid and brutal",
     ],
     "indie": [
-        "golden hour warmth, long soft shadows, natural magic",
-        "overcast diffused light, muted earth tones, honest beauty",
-        "late afternoon amber, dust in sunbeams, nostalgic",
-        "dusk gradient from salmon to deep purple, magic hour",
-        "soft morning grey with single warm light, quiet poetry",
+        "rich golden hour warmth, long soft shadows, natural magic, vivid amber",
+        "overcast but rich diffused light, vivid earth tones, honest saturated beauty",
+        "late afternoon deep amber, vivid dust in sunbeams, nostalgic warmth",
+        "dusk gradient from vivid salmon pink to deep indigo purple, magic hour",
+        "soft morning with warm golden light shaft, quiet but vivid poetry",
+        "rich green and golden light, nature saturated, late afternoon glow",
+        "vivid honey warm and deep burgundy cool, indie atmospheric contrast",
     ],
     "cinematic": [
-        "teal and orange cinematic grade, film color science",
-        "desaturated with golden highlights, epic scope palette",
-        "cold exterior and warm interior, dramatic contrast",
-        "deep shadows and luminous highlights, chiaroscuro",
-        "fog-diffused grey with single brilliant light source",
+        "vivid teal and rich orange cinematic grade, film color science maximized",
+        "desaturated environment with vivid golden highlights, epic scope palette",
+        "cold exterior blue and warm interior amber, dramatic contrast, cinematic split",
+        "deep rich shadows and luminous golden highlights, chiaroscuro maximized",
+        "fog-diffused atmosphere with single brilliant warm light source against grey",
+        "vivid amber and deep blue, classic cinematic split-tone, maximum depth",
+        "electric purple atmosphere and golden beam, epic cinematic drama",
     ],
     "funk": [
-        "warm orange and deep red, soulful heat palette",
-        "electric yellow and purple, groove energy",
-        "sunset coral and teal, vibrant and alive",
-        "gold and deep brown, rich warm richness",
-        "neon magenta and warm amber, night energy",
+        "warm deep orange and rich red, soulful heat, vivid and alive",
+        "electric yellow and deep purple, groove energy, vivid complementary",
+        "sunset vivid coral and deep teal, vibrant alive saturated warmth",
+        "deep gold and rich dark brown, soulful warmth, textured richness",
+        "neon magenta and warm amber, night energy, vivid as a celebration",
+        "vivid orange and electric blue, high energy contrast, groove visual",
+        "rich red-orange and deep navy, warm groove against cool night",
     ],
     "default": [
-        "neon purple and deep black, atmospheric and moody",
-        "cold blue and warm gold, cinematic contrast",
-        "deep teal and rose, editorial beauty",
-        "steel grey and electric blue, urban poetry",
-        "midnight navy and silver, quiet power",
+        "vivid neon purple and deep black, atmospheric and moody, maximum saturation",
+        "cold electric blue and warm gold, cinematic contrast, vivid split",
+        "deep rich teal and vivid rose, editorial beauty, saturated and sharp",
+        "steel grey and vivid electric blue, urban poetry, cold and vivid",
+        "midnight navy and luminous silver, quiet power, deep contrast",
+        "vivid amber and deep indigo, warm cold contrast, cinematic drama",
+        "electric cyan and deep burgundy, complementary vivid drama",
     ],
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# COMPOSIÇÕES VISUAIS POR GÊNERO
-# (variam entre close, meio corpo, plano americano — nunca só full body)
+# COMPOSIÇÕES VISUAIS POR GÊNERO — Cinematográficas, variadas
 # ══════════════════════════════════════════════════════════════════════
 
 GENRE_COMPOSITIONS = {
     "lofi": [
-        # Close emocional — rosto + ambiente atrás
-        "close portrait shot, face softly lit by warm desk lamp, headphones around neck, cozy bedroom visible in background with fairy lights and rain-streaked window, intimate and calm",
-        # Meio corpo com ambiente rico
-        "medium shot from side, girl sitting at wooden desk with headphones on, face turned toward window showing moonlit city, warm lamp on left, books and plants around her, ambient lofi atmosphere",
-        # Plano americano — personagem + cenário juntos
-        "three-quarter shot, girl cross-legged on bed surrounded by vinyl records and soft pillows, moon visible through tall window, string lights above, warm golden hour interior mood",
-        # Quase full mas ambiente domina
-        "wide intimate shot, small figure of girl by large window at night, city lights spread below, warm room behind her, shot from inside looking at her silhouette against the city",
-        # Close dramático com profundidade
-        "close-up face shot, girl looking up with dreamy half-closed eyes, soft bokeh of fairy lights in background, warm amber from one side, cool blue window light from other",
-        # Perspectiva de cima
-        "overhead close shot, girl lying on bed looking up at viewer, headphones on, polaroids and sketchbooks around her, warm lamp casting long shadows",
-        # Perfil com janela
-        "side profile close shot, girl's face in perfect profile looking out rain-streaked window, city a soft blur of amber lights behind glass, single warm lamp rim lighting her features",
-        # Personagem de costas olhando cidade
-        "shot from behind at medium distance, girl at open window overlooking night city, headphones on, cozy room behind her, city lights spread to horizon, atmospheric depth",
+        "close portrait, face softly lit by warm glowing desk lamp, headphones around neck, cozy bedroom with fairy lights and rain-streaked window behind her, intimate and emotionally warm",
+        "medium shot from side, girl at wooden desk with headphones on, face turned toward rain-streaked window with moonlit city visible, warm lamp light, books and plants around",
+        "three-quarter shot, girl cross-legged on bed surrounded by vinyl records and soft pillows, full moon visible through tall window, string lights creating golden bokeh above",
+        "wide intimate shot, small figure of girl by large window at night, city lights spread below, warm room behind, inside looking at her silhouette against glowing city",
+        "close-up face shot, girl with dreamy half-closed eyes looking upward, soft bokeh fairy lights behind, warm amber from desk lamp, cool blue moonlight from window side",
+        "overhead close shot, girl lying on bed looking up at viewer, headphones on, polaroids and sketchbooks around her, warm lamp casting long shadows across everything",
+        "side profile close shot, girl's face in profile looking at rain-streaked window, city blurred amber lights behind glass, single warm lamp rim-lighting her features perfectly",
+        "rear medium shot, girl at open window overlooking night city, headphones on, cozy room behind her, entire city lights spread to horizon, atmospheric depth of field",
     ],
     "phonk": [
-        # Rosto frio e direto
-        "extreme close portrait, cold expressionless face, single red neon slash of light across eyes, everything else near-black, high contrast manga-influenced style",
-        # Meio corpo com rua atrás
-        "medium shot, girl leaning on car in empty parking structure, arms crossed, red neon reflection in wet concrete below, single harsh light from above, cold urban night",
-        # Olhos apenas em sombra parcial
-        "tight face shot with hood partially covering top half of face, only eyes and below visible, purple neon from out of frame casting color, street visible behind in deep shadow",
-        # De costas na rua vazia
-        "rear medium shot, girl walking away down empty lit highway at 3am, just her silhouette and the road stretching to vanishing point, one distant red light ahead",
-        # Reflexo no carro
-        "close shot of girl's face reflected in car window, distorted slightly by glass, city inverted in reflection, cold and detached mood, neon colors smeared",
-        # Crouching street level
-        "low angle medium shot, girl crouching on concrete barrier, looking directly into camera from above, cold empty parking deck below, harsh sodium light from side",
-        # Silhueta no túnel
-        "silhouette wide shot, girl standing at tunnel entrance, backlit by distant headlights, her form dark against the approaching light, fog around feet",
-        # Close with dramatic shadow
-        "close portrait, half her face in total shadow, half lit by intense orange streetlight, expressionless, city a soft blur behind, cinematic and cold",
+        "extreme close portrait, cold expressionless face, single blood-red neon slash of light cutting across eyes, everything else near-black, high contrast manga aesthetic",
+        "medium shot, girl leaning on car in empty parking structure, arms crossed, red neon reflection in wet concrete below, single harsh fluorescent above, cold urban 3am",
+        "tight face shot with hood partially covering, only eyes and below visible, purple neon from out-of-frame casting violet, dark empty street behind in deep shadow",
+        "rear medium shot, girl walking away down empty lit highway at 3am, just silhouette and road stretching to vanishing point, single red light ahead in distance",
+        "close shot of girl's face reflected in car window, distorted slightly by glass, city inverted in reflection, cold and detached, neon colors bleeding across surface",
+        "low angle medium shot, girl crouching on concrete barrier, looking into camera from above, empty parking deck below, harsh sodium light from side, commanding",
+        "silhouette wide shot, girl standing at tunnel entrance, backlit by distant headlights, form dark against approaching light, mist curling around feet",
+        "close portrait, half face in total shadow, half lit by intense orange streetlight, expressionless, city soft blur behind, cinematic maximum contrast",
     ],
     "dark": [
-        # Manga close — olhos vermelhos em preto e branco
-        "tight manga-style close portrait, black and white with only eyes glowing deep red, black hair falling over face, dark and haunting, high quality manga art style",
-        # Meio corpo gótico
-        "medium shot, gothic girl in dark environment, dramatic lighting from single candle below her face, stone walls behind, rich shadows, painterly dark fantasy style",
-        # Personagem cercada de correntes/sombras
-        "medium close shot, girl surrounded by floating dark chains or shadow tendrils, purple energy glow as only light source, dark atmospheric background",
-        # Close com olhos brilhantes únicos
-        "extreme close face shot, glowing purple eyes against dark background, black hair framing face, minimal light, maximum impact, anime illustration quality",
-        # Cena de cemitério / ruína
-        "wide atmospheric shot showing small figure in moonlit ruins or cemetery, silver moonlight from above, mist at ground level, dramatic gothic composition",
-        # Reflexo na água negra
-        "medium shot, girl at edge of dark reflective water, her perfect reflection below, moonlight from directly above, surrounding darkness, mirror symmetry",
-        # De baixo para cima — imponente
-        "low angle close shot looking up at girl's face, dramatic underlighting in deep purple, her expression serene and overwhelming, background: dark storm sky",
-        # Close olho único em destaque
-        "extreme close crop of single eye, iris glowing crimson or violet, surrounded by black hair, tear or light reflection in pupil, absolute minimalism and impact",
+        "tight manga-style close portrait, black and white with only eyes glowing deep crimson, black hair falling over face, dark and haunting, high-quality manga art style",
+        "medium shot, gothic girl in dark stone environment, dramatic single candle from below casting upward shadows, rich darkness everywhere, painterly dark fantasy illustration",
+        "medium close shot, girl surrounded by floating dark chains and shadow tendrils, violet energy glow as only light source, rich atmospheric darkness surrounding her",
+        "extreme close face shot, glowing purple irises against absolute dark background, black hair framing face, minimal light, maximum emotional impact, premium anime quality",
+        "wide atmospheric shot, small figure in moonlit ruins, silver moonlight from directly above, dense mist at ground level, dramatic gothic composition scale",
+        "medium shot, girl at edge of dark perfectly reflective water, her mirror reflection below, moonlight directly above, surrounding total darkness, mirror symmetry",
+        "low angle close shot looking up at girl's face, dramatic rich purple underlighting, expression serene and overwhelming, background deep storm sky with lightning",
+        "extreme close crop of single eye, iris glowing crimson, surrounded by falling black hair, light reflection in pupil, absolute minimalism and emotional impact",
     ],
     "electronic": [
-        # No festival olhando crowd
-        "rear shot from stage level, girl looking out over sea of phone lights and crowd, laser beams cutting through fog above, arms slightly raised, festival euphoria",
-        # Close com luzes de laser atrás
-        "close portrait, face lit by rapidly colored stage lights, ecstatic expression with eyes closed, laser beams and fog visible behind, concert energy",
-        # Silhueta no LED wall
-        "silhouette medium shot, girl's form against massive LED wall with abstract visuals, only her outline defined, color explosion surrounding the dark shape",
-        # Meio corpo em dancefloor
-        "medium shot, girl in motion on dancefloor, UV light making outfit glow, crowd a colorful blur behind, caught mid-movement, kinetic energy",
-        # Close cyberpunk com elementos holográficos
-        "close portrait, cyberpunk aesthetic, holographic light elements reflecting on face, glowing eyes, futuristic club environment visible behind in depth",
-        # De cima no festival noturno
-        "aerial-feeling wide shot showing figure at center of outdoor festival, LED stage bright core, crowd as ocean around, stars above, the sacred scale",
-        # Túnel de luz
-        "medium shot, girl walking through corridor of synchronized strobe lights, motion in the lights while she is sharp, tunnel of color",
-        # DJ booth close
-        "close medium shot, girl at DJ booth, one hand raised, face lit from below by decks, crowd hands visible at edge of frame, in command",
+        "rear shot from stage level, girl looking over sea of phone lights and crowd, laser beams cutting fog above, arms slightly raised, festival scale and euphoria",
+        "close portrait, face lit by rapidly changing colored stage lights, ecstatic expression eyes closed, laser beams and smoke visible behind, concert energy radiating",
+        "silhouette medium shot, girl's form against massive LED wall with abstract vivid visuals, only outline defined, color explosion surrounding the dark shape",
+        "medium shot, girl in motion on dancefloor, UV light making everything glow vivid, crowd a blur of color, caught mid-movement, pure kinetic energy",
+        "close portrait, cyberpunk aesthetic, holographic light elements reflecting on face, glowing electric eyes, futuristic club visible behind in vivid depth of field",
+        "aerial-feeling wide shot, figure at center of outdoor festival, LED stage bright core, crowd ocean around her, stars above, sacred scale and color",
+        "medium shot, girl walking through corridor of synchronized strobe lights, motion blur in lights while she is sharp, tunnel of vivid color surrounding her",
+        "close medium shot, girl at DJ booth, one hand raised, face lit from below by vivid deck lights, crowd hands at edge of frame, commanding the room",
     ],
     "rock": [
-        # Close performance — olhos fechados perdida na música
-        "close performance shot, girl with eyes closed at microphone, face illuminated by single white spotlight, everything else shadows, pure commitment",
-        # Meio corpo com guitarra
-        "medium shot, girl with electric guitar, fingers on frets, stage lights behind creating dramatic backlight halo, smoke at floor level",
-        # Silhueta no palco contra parede de luz
-        "wide silhouette shot, girl's form against wall of concert lights, arms open, crowd at feet as suggestion, massive scale of performance",
-        # Close agressivo olhando câmera
-        "tight close portrait, intense direct stare into camera, stage lighting harsh from side, sweat, raw and real performance energy",
-        # Jump frozen mid-air
-        "medium shot catching frozen jump off drum riser, mid-air, stage lights below and behind, crowd movement blur",
-        # Backstage íntimo
-        "intimate medium shot, girl backstage before show, mirror with lights frame, guitar in hand, quiet moment before chaos",
-        # Outdoor show dramático
-        "wide atmospheric shot, outdoor stage against stormy sky, lightning in distance, crowd silhouettes, the scale of it all",
-        # Meio corpo guitarrista
-        "three-quarter shot, guitar solo moment, head thrown back slightly, face caught between pain and joy, spotlight from above",
+        "close performance shot, girl with eyes closed at microphone, face lit by single white spotlight, everything else deep shadow, pure commitment and raw emotion",
+        "medium shot, girl with electric guitar, fingers on frets, vivid stage lights creating dramatic halo backlight, smoke at floor level, rock goddess framing",
+        "wide silhouette shot, girl against wall of concert lights, arms open, crowd at feet as suggestion, massive scale of performance, backlit and powerful",
+        "tight close portrait, intense direct stare into camera, stage lighting harsh from side, sweat visible, raw and real performance energy, fearless",
+        "medium shot catching frozen mid-jump off drum riser, mid-air, stage lights below and behind creating halo, crowd blur surrounding",
+        "intimate medium shot, girl backstage before show, lights framing mirror, guitar in hand, quiet moment of power before chaos begins",
+        "wide atmospheric shot, outdoor stage against dramatic storm sky, lightning in distance, crowd silhouettes, the epic scale of it all",
+        "three-quarter shot, guitar solo moment, head thrown back slightly, face between pain and transcendence, spotlight directly above",
     ],
     "metal": [
-        # Close ritual imponente
-        "close portrait, girl looking up at sky or camera, dramatic underlighting, storm or fire behind, absolute power expression",
-        # Figura pequena contra cenário épico
-        "wide atmospheric shot, small figure on cliff or ruins against massive storm sky with lightning, scale creates awe",
-        # Meio corpo com elementos de fogo/cinzas
-        "medium shot, girl surrounded by floating embers and ash, fire glow from below, face serene amid chaos, dark warrior energy",
-        # Close olhos — poderoso
-        "extreme close shot of face, intense unflinching stare, metal band or dark crown at edge of frame, volcanic or storm light",
-        # Catedral dark fantasy
-        "medium shot in dark cathedral or ancient ruins, candle light creating long shadows, figure commanding the space, gothic scale",
-        # Silhueta com trovão
-        "silhouette wide shot, figure atop high point, multiple lightning strikes behind and around, storm framing the power",
-        # De baixo dramático
-        "extreme low angle medium shot, looking up at standing figure, fire or storm above, she fills the frame with force",
-        # Warrior descending
-        "dramatic medium shot from below, girl descending dark stone steps, cloak or dark fabric in motion, ancient stronghold behind",
+        "close portrait, girl looking up at sky, dramatic rich underlighting from fire, storm behind with lightning, absolute power expression, metal goddess energy",
+        "wide atmospheric shot, small figure on cliff against massive storm sky with multiple lightning strikes, scale creates overwhelming awe",
+        "medium shot, girl surrounded by floating embers and ash, deep fire glow from below, face serene amid chaos, dark warrior energy and beauty",
+        "extreme close shot of face, intense unflinching stare forward, volcanic or storm light, cold and commanding, primal force",
+        "medium shot in dark gothic cathedral, candle light casting long dramatic shadows, figure commanding the ancient space with presence",
+        "silhouette wide shot, figure atop high point, multiple lightning strikes behind and around simultaneously, storm framing the power",
+        "extreme low angle medium shot looking up at standing figure, fire or storm above, she fills the frame with overwhelming force",
+        "dramatic medium shot from below, girl descending dark stone steps, cloak or dark fabric in motion, ancient stronghold behind her",
     ],
     "trap": [
-        # Penthouse view
-        "medium shot at penthouse window, girl looking at camera with city grid behind through floor-to-ceiling glass, night luxury, cool and composed",
-        # Close premium — ice cold expression
-        "close portrait, cold composed expression, city blurred behind large window at night, gold and navy color palette, premium editorial aesthetic",
-        # Reflexo no vidro
-        "medium shot, girl's reflection in dark glass overlaid with city lights, double image effect, cool and expensive visual",
-        # Vista de cima da cidade
-        "wide elevated shot, small figure at rooftop railing, entire city grid below at night, scale of wealth and altitude",
-        # Close de perfil — aristocrático
-        "side profile close portrait, perfect jaw and neck line, city light from window grazing cheekbone, blue-black night palette, fashion editorial",
-        # Chuva no carro
+        "medium shot at penthouse window, girl looking at camera with entire city grid behind through floor-to-ceiling glass, night luxury, cold and composed",
+        "close portrait, cold composed expression, city blurred behind large window at night, gold and navy palette, premium editorial fashion aesthetic",
+        "medium shot, girl's reflection in dark glass overlaid with city lights, double image effect, cool and expensive, luxury visual",
+        "wide elevated shot, small figure at rooftop railing, entire city grid below at night, scale of wealth and altitude, freedom",
+        "side profile close portrait, perfect jaw and neck line, city light from window grazing cheekbone, blue-black night palette, fashion editorial power",
         "intimate medium shot, girl in backseat of luxury car at night, rain on windows, city lights blurred through water on glass, private world",
-        # Espelho de banheiro
-        "close medium shot, girl at bathroom mirror, reflection shows the room behind, warm bathroom light surrounded by cool night visible through window",
-        # Telhado com heliporto
-        "wide nighttime shot, girl standing on empty rooftop helipad, city sprawl in all directions below, wind implied, freedom at altitude",
+        "close medium shot at mirror, warm bathroom light surrounded by cool night through window, reflection showing the room, composed",
+        "wide nighttime shot, girl standing on empty rooftop helipad, city sprawl in all directions below, wind implied, altitude and freedom",
     ],
     "indie": [
-        # Golden hour field
-        "medium close shot, girl in golden hour light, sun low and warm, natural environment soft behind, eyes catching light, genuine unposed beauty",
-        # Janela de café
-        "close shot, girl at café window looking out at rainy street, warm interior behind, cold wet outside, cup of something warm nearby, melancholy comfort",
-        # Rooftop garden at dusk
-        "medium shot, girl on rooftop garden at dusk, city soft behind, wildflowers in broken concrete around her, sky transitioning from orange to blue",
-        # Driving shot
-        "intimate medium shot from passenger seat, girl at wheel or beside, window showing moving scenery, late afternoon light, road trip feeling",
-        # Film photo aesthetic
-        "close portrait with film photography aesthetic, slight overexposure, warm grain, genuine expression, natural outdoor light, honest and real",
-        # Empty train
-        "medium shot on empty train car, girl looking out window at passing landscape, orange seat, afternoon light through glass, solitude as peace",
-        # Field at golden hour
-        "wide medium shot, figure alone in field of tall grass or sunflowers, late afternoon sun turning everything gold, arms slightly out, presence",
-        # Abandoned greenhouse
-        "atmospheric medium shot, girl among overgrown plants in abandoned greenhouse, afternoon light through broken glass, green and gold, life reclaiming",
+        "medium close shot, girl in rich golden hour light, sun low and warm, natural environment soft behind, eyes catching light, genuine unposed beauty",
+        "close shot, girl at café window looking at rainy street, warm interior behind, cold wet outside, warm cup in hands, melancholy comfort",
+        "medium shot, girl on rooftop garden at dusk, city soft behind, wildflowers in broken concrete, sky transitioning vivid orange to deep blue",
+        "intimate medium shot from passenger seat, girl at wheel, window showing moving scenery, late afternoon golden light, road trip feeling",
+        "close portrait with film photography aesthetic, slight beautiful overexposure, warm grain, genuine expression, honest natural light",
+        "medium shot on empty train car, girl looking out window at passing landscape, afternoon light through glass, solitude as peace",
+        "wide medium shot, figure alone in field of tall grass at golden hour, late afternoon sun turning everything vivid gold, arms slightly out",
+        "atmospheric medium shot, girl among overgrown plants in abandoned greenhouse, afternoon light through broken glass, life reclaiming beauty",
     ],
     "cinematic": [
-        # Epic landscape tiny figure
-        "wide cinematic shot, tiny figure against vast dramatic landscape — cliff, ocean, storm sky, the scale creating emotion",
-        # Close with epic depth of field
-        "close portrait with extreme cinematic depth of field, face sharp, epic environment suggested softly behind, anamorphic lens quality",
-        # Fog composition
-        "medium atmospheric shot, figure walking through deep fog, single light source ahead, the unknown as subject, film noir quality",
-        # Rain scene
-        "close medium shot in rain, girl facing rain rather than sheltering from it, city or dramatic landscape behind, acceptance as power",
-        # Silhouette against impossible sky
-        "wide silhouette shot, figure against sky with impossible lighting — double sunset, storm break, eclipse — the sky as painting",
-        # Long corridor
-        "perspective medium shot, figure at end of long corridor of light, architectural drama, single vanishing point, approaching or leaving",
-        # Reflection shot
-        "split composition, upper half figure, lower half perfect reflection in water or glass, abstract and beautiful",
-        # Through window from outside
-        "exterior medium shot looking through window at interior, warm light inside framing figure, cold night outside, separation and intimacy",
+        "wide cinematic shot, small figure against vast dramatic landscape — cliff, ocean, storm sky — the scale creating pure emotion",
+        "close portrait with extreme cinematic depth of field, face sharp, epic environment behind suggested softly, anamorphic lens quality",
+        "medium atmospheric shot, figure walking through deep fog, single light source ahead creating a path, film noir mystery and depth",
+        "close medium shot in rain, girl facing the rain rather than sheltering, city or dramatic landscape behind, acceptance as power",
+        "wide silhouette against impossible sky — storm break, sunset fire, double horizon — the sky itself a painting",
+        "perspective medium shot, figure at end of long corridor of light, architectural drama, single vanishing point, cinematic precision",
+        "split composition, upper half figure, lower half perfect mirror reflection in water, abstract and cinematically beautiful",
+        "exterior medium shot through window, warm light inside framing figure against cold night outside, separation and intimacy",
     ],
     "funk": [
-        # Vibrant street
-        "medium close shot, girl in vibrant lit street environment, warm orange and yellow neon, expressive joyful energy, night street life around her",
-        # Dance floor
-        "medium shot on dancefloor, caught mid-movement, warm colored stage lights, crowd energy around but she is the subject",
-        # Close portrait with warmth
-        "close portrait, warm orange-gold lighting from side, natural expressive face, groove and soul in the expression, rich background",
-        # Street music scene
-        "medium atmospheric shot, outdoor music scene, warm night air, string lights above, authentic community energy",
-        # Performance close
-        "close performance shot, singing or dancing, warm spotlight, genuine joy, expressive and alive",
-        # Rooftop at sunset
-        "medium shot, sunset rooftop, city warm below, girl bathed in last golden light, free and vibrant",
-        # Night market
+        "medium close shot, girl in vibrant warm-lit street environment, deep orange and yellow neon, expressive joyful energy, night street life",
+        "medium shot on dancefloor, caught mid-movement, warm colored stage lights, crowd energy around but she is the magnetic subject",
+        "close portrait, warm deep orange-gold lighting from side, natural expressive face, groove and soul in expression, rich saturated background",
+        "medium atmospheric shot, outdoor music scene, warm night air, string lights above, authentic community and joy",
+        "close performance shot, singing or dancing, warm spotlight, genuine joy radiating, expressive and totally alive",
+        "medium shot, sunset rooftop, city warm below, girl bathed in last vivid golden light, free and vibrant",
         "atmospheric medium shot, night market behind, colored vendor lights, warm bustling energy, she is calm center of motion",
-        # Close with golden bokeh
-        "close portrait, golden bokeh lights filling background from bokeh of city or venue lights, face warm and luminous",
+        "close portrait, golden bokeh lights filling background, face warm and luminous, groove feeling in every detail",
     ],
     "default": [
-        "close portrait with dramatic single light source, expressive face, atmospheric background in soft focus, cinematic quality",
-        "medium shot with strong environmental storytelling, character and place equally important, moody and intentional",
-        "wide atmospheric shot placing small figure against significant environment, scale creates emotional resonance",
-        "tight medium shot, editorial composition, strong color palette, character commanding the frame",
-        "close portrait, beautiful lighting, rich detailed background in deep focus, premium illustration quality",
-        "silhouette medium shot against dramatic sky or light source, form and mood over detail",
-        "three-quarter medium shot with interesting environment, depth and story in every corner",
+        "close portrait with dramatic single light source, expressive face, atmospheric background in soft focus, cinematic premium quality",
+        "medium shot with strong environmental storytelling, character and place equally important, moody and deeply intentional",
+        "wide atmospheric shot, small figure against significant environment, scale creates emotional resonance and depth",
+        "tight medium shot, editorial composition, strong vivid color palette, character commanding the frame",
+        "close portrait, beautiful dramatic lighting, rich detailed background in deep focus, premium illustration quality",
+        "silhouette medium shot against dramatic sky or light source, form and mood over detail, powerful",
+        "three-quarter medium shot with interesting environment, depth and story in every corner of the frame",
         "close atmospheric shot, character partially in shadow, mystery and depth, invitation to look closer",
     ],
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# PERSONAGENS — VARIADAS, ADULTAS, ANIME
+# PERSONAGENS — Variadas, adultas, anime premium
 # ══════════════════════════════════════════════════════════════════════
 
 CHARACTERS = {
     "lofi": [
-        "young adult woman, long dark hair with messy bun, soft tired eyes with warmth in them, natural face, oversized university sweater, headphones around neck",
-        "young adult woman, auburn wavy hair loose, freckles on nose, half-lidded dreamy eyes, cozy oversized knit, genuine and unposed",
-        "young adult woman, short bob dark hair, round glasses slightly askew, soft melancholy expression, vintage band tee and cardigan",
-        "young adult woman, long straight black hair parted center, peaceful closed-eye expression, big soft hoodie, headphones on",
-        "young adult woman, silver-dyed short hair, nose piercing, tired but content expression, large cream sweater",
-        "young adult woman, natural afro loosely contained, warm brown eyes, genuine soft smile, plaid oversized shirt",
-        "young adult woman, twin braids in teal, fair skin with freckles, dreamy upward gaze, knit cardigan with patches",
-        "young adult woman, honey-blonde messy hair, half-awake expression, large mug held in both hands, soft comfort aesthetic",
+        "young adult woman, long dark hair with messy bun and loose strands, soft tired eyes with warmth, natural face with subtle beauty, oversized university sweater, headphones around neck",
+        "young adult woman, auburn wavy hair loose and flowing, freckles on nose, half-lidded dreamy eyes, cozy oversized knit sweater, genuine and unposed warmth",
+        "young adult woman, short dark bob, round glasses slightly askew, soft melancholy expression with hidden depth, vintage band tee and open cardigan",
+        "young adult woman, long straight black hair parted center, peaceful closed-eye expression, big soft hoodie, large headphones on head, serene",
+        "young adult woman, silver-dyed short hair with natural texture, small nose piercing, tired but content expression, large cream sweater",
+        "young adult woman, natural afro loosely contained with pins, warm brown eyes full of soul, genuine soft smile, plaid oversized shirt",
+        "young adult woman, twin braids dyed teal at tips, fair skin with freckles, dreamy upward gaze, knit cardigan with small patches",
+        "young adult woman, honey-blonde messy hair, half-awake expression of comfort, large mug held in both hands, soft aesthetic warmth",
     ],
     "phonk": [
-        "young adult woman, straight jet-black hair, sharp bangs, cold empty expression, dark hoodie, face partially shadowed",
-        "young adult woman, dark hair in high ponytail, sharp angular features, expressionless commanding gaze, dark jacket",
-        "young adult woman, black undercut with long top, pierced brow, controlled neutral expression, dark techwear",
-        "young adult woman, long dark hair with one dyed streak, half-lidded unfazed eyes, oversized dark parka",
-        "young adult woman, platinum short hair with dark roots, cool ice-grey eyes, blank intimidating expression, dark fitted jacket",
-        "young adult woman, black braids, sharp cheekbones, slow confident smirk, dark hood partially up",
-        "young adult woman, dark hair in space buns, face shadowed by hood, glimpse of intense eyes visible",
-        "young adult woman, natural dark curls, deep brown eyes with quiet menace, dark bomber jacket, arms crossed",
+        "young adult woman, straight jet-black hair, sharp bangs perfectly cut, cold empty expression, dark oversized hoodie, face partially in shadow",
+        "young adult woman, dark hair in tight high ponytail, sharp angular features, expressionless commanding gaze, dark fitted jacket, controlled",
+        "young adult woman, black undercut with long flowing top, pierced brow, controlled neutral expression, dark fitted techwear jacket",
+        "young adult woman, long dark hair with one dyed white streak, half-lidded unfazed eyes, oversized dark parka with hood down",
+        "young adult woman, platinum short hair with dark roots showing, cool ice-grey eyes, blank intimidating expression, dark fitted jacket",
+        "young adult woman, long black braids, sharp defined cheekbones, slow confident smirk, dark hood partially pulled up",
+        "young adult woman, dark hair in space buns, face partially shadowed by hood, glimpse of intense piercing eyes visible",
+        "young adult woman, natural dark curls, deep brown eyes with quiet menace, dark bomber jacket, arms crossed, immovable",
     ],
     "dark": [
-        "young adult woman, long straight black hair, glowing red eyes, pale skin, black gothic outfit, haunting expressionless stare",
-        "young adult woman, black hair with white streak, violet glowing eyes, dark clothing, ethereal and unsettling",
-        "young adult woman, black hair partially covering one eye, deep crimson iris visible, pale skin with ink collar tattoo",
-        "young adult woman, silver-white hair, hollow sad violet eyes, dark layered clothing, ghost-like translucent quality",
-        "young adult woman, ink-black hair, glowing purple irises, fangs at lip edge, dark beauty, gothic anime style",
-        "young adult woman, dark teal hair, one red eye one dark eye, expressionless, chains or shadow elements near",
-        "young adult woman, very long black hair spreading like ink, pale near-white skin, red eyes, horror beauty",
-        "young adult woman, short dark purple hair, glowing eyes like burning embers, pale and luminous skin",
+        "young adult woman, long straight black hair, glowing crimson eyes, pale porcelain skin, dark gothic outfit, haunting expressionless stare",
+        "young adult woman, black hair with silver-white streak, violet glowing eyes, dark layered clothing, ethereal and unsettling beauty",
+        "young adult woman, black hair partially covering one eye, deep crimson iris visible, pale skin with dark ink collar marking",
+        "young adult woman, silver-white hair, hollow sad violet eyes, dark layered clothing, ghost-like luminous quality",
+        "young adult woman, ink-black hair, glowing purple irises, fangs at lip edge, dark beauty, premium gothic anime style",
+        "young adult woman, dark teal hair, one red eye one dark eye heterochromia, expressionless, shadow elements surrounding",
+        "young adult woman, very long black hair spreading like ink around her, pale near-white skin, crimson eyes, horror beauty",
+        "young adult woman, short dark purple hair, eyes like burning violet embers, pale luminous skin, supernatural presence",
     ],
     "electronic": [
-        "young adult woman, midnight blue hair with electric teal streaks, glowing violet eyes, cyberpunk makeup, futuristic fitted outfit",
-        "young adult woman, neon pink pixie cut, ecstatic expression, holographic bodysuit, festival ready",
-        "young adult woman, silver hair with rainbow prism streaks in light, futuristic features, high-tech fashion",
-        "young adult woman, black hair with LED accent lights woven in, sharp cat-eye makeup, cyberpunk aesthetic",
-        "young adult woman, bleached white hair, rave-painted face under UV, reflective outfit elements",
-        "young adult woman, neon green twin high pigtails, glowing bionic eyes, hacker-punk aesthetic",
-        "young adult woman, natural dark hair under laser light creating color, ecstatic eyes-open expression",
-        "young adult woman, platinum undercut with long flowing top, chromatic eyes, festival electronic fashion",
+        "young adult woman, midnight blue hair with electric teal streaks, glowing violet eyes, cyberpunk graphic makeup, futuristic fitted outfit",
+        "young adult woman, neon pink pixie cut, ecstatic open expression, holographic bodysuit elements, festival ready energy",
+        "young adult woman, silver hair with rainbow prism when light hits, futuristic sharp features, high-tech fashion forward",
+        "young adult woman, black hair with glowing LED accent strips woven in, sharp cat-eye makeup, cyberpunk aesthetic",
+        "young adult woman, bleached white hair, UV festival paint on face, reflective outfit elements catching light",
+        "young adult woman, neon green twin high pigtails, glowing bionic teal eyes, hacker-punk aesthetic outfit",
+        "young adult woman, natural dark hair under laser light creating vivid color halo, ecstatic open-eyed expression",
+        "young adult woman, platinum undercut with long flowing top section, chromatic iridescent eyes, festival electronic fashion",
     ],
     "rock": [
-        "young adult woman, fiery orange-red pixie cut with shaved sides, blazing amber eyes, leather jacket covered in pins",
-        "young adult woman, long auburn waves, intense green eyes, sleeveless band shirt, silver rings on every finger",
-        "young adult woman, wild dark curly hair, fierce open smile, ripped fishnet, leather jacket",
-        "young adult woman, bleached blonde with dark roots, sharp eyeliner, vintage band tee, aggressive energy",
-        "young adult woman, short choppy black hair, intense stare, guitar strap visible, stage-worn outfit",
-        "young adult woman, long straight dark hair, dramatic winged liner, skinny jeans and leather, performance mode",
-        "young adult woman, copper red loose curls, genuine fierce expression, band shirt knotted, boots",
-        "young adult woman, shaved sides with long top, silver earrings, muscle shirt, raw rock energy",
+        "young adult woman, fiery orange-red pixie cut with shaved sides, blazing amber eyes, leather jacket covered in band pins",
+        "young adult woman, long auburn waves wild and free, intense green eyes, sleeveless band shirt, silver rings on every finger",
+        "young adult woman, wild dark curly hair, fierce open smile, ripped fishnet layers, leather jacket, raw energy",
+        "young adult woman, bleached blonde with dark roots, sharp dramatic eyeliner, vintage band tee, aggressive confident energy",
+        "young adult woman, short choppy black hair, intense forward stare, guitar strap visible, stage-worn outfit with history",
+        "young adult woman, long straight dark hair, dramatic winged liner, skinny jeans and leather, full performance mode",
+        "young adult woman, copper red loose curls, genuine fierce expression, band shirt knotted at waist, boots",
+        "young adult woman, shaved sides with long textured top, silver hoop earrings, muscle shirt, raw rock energy",
     ],
     "metal": [
-        "young adult woman, long straight black hair with blood-red underlayer, red heterochromia eye, dark gothic armor-influenced outfit",
-        "young adult woman, ice-white long hair, pale cool skin, stoic commanding expression, dark warrior outfit",
-        "young adult woman, dark hair with geometric patterns, golden eyes, jeweled accessories, dark warrior queen",
-        "young adult woman, wild dark hair, amber warrior eyes, battle-paint aesthetic makeup, dark powerful outfit",
-        "young adult woman, long flowing dark hair, glowing purple eyes, dark cloak, ethereal metal goddess",
-        "young adult woman, black hair with electric silver highlights, cold grey eyes, armored dark outfit",
-        "young adult woman, ink-black hair in warrior braid, fierce sharp features, dark elaborate outfit",
-        "young adult woman, long silver hair, glowing red eyes, pale skin, dark cathedral dress aesthetic",
+        "young adult woman, long straight black hair with blood-red underlayer showing, red heterochromia eye, dark gothic armor-influenced outfit",
+        "young adult woman, ice-white long flowing hair, pale cool skin, stoic commanding expression, dark warrior outfit",
+        "young adult woman, dark hair with geometric patterns, golden eyes, jeweled dark accessories, dark warrior queen energy",
+        "young adult woman, wild dark hair, amber warrior eyes, battle-paint aesthetic makeup, dark powerful commanding outfit",
+        "young adult woman, long flowing dark hair, glowing purple eyes, dark cloak catching wind, ethereal metal goddess",
+        "young adult woman, black hair with electric silver highlights, cold grey eyes, armored dark outfit elements",
+        "young adult woman, ink-black hair in warrior braid, fierce sharp features, dark elaborate dramatic outfit",
+        "young adult woman, long silver flowing hair, glowing red eyes, pale luminous skin, dark cathedral dress aesthetic",
     ],
     "trap": [
-        "young adult woman, sleek black hair in sharp high ponytail, cool composed expression, luxury fashion outfit",
-        "young adult woman, long honey-blonde waves, sea-blue eyes, premium streetwear, effortless expensive look",
-        "young adult woman, short silver buzz cut, dark skin, sharp avant-garde features, high fashion luxury",
-        "young adult woman, black hair with galaxy highlights, flawless dark skin, premium fitted outfit, regal",
-        "young adult woman, long rose-gold hair, warm skin, composed elegant expression, tailored luxury fashion",
-        "young adult woman, natural black hair slicked back, brown skin, strong jaw, premium monochrome outfit",
-        "young adult woman, straight black blunt bob, neutral expression, designer tracksuit, luxury minimal",
-        "young adult woman, long wavy dark hair, deep eyes, fitted designer coat, premium street aesthetic",
+        "young adult woman, sleek black hair in sharp high ponytail, cool composed expression, luxury fashion outfit, premium",
+        "young adult woman, long honey-blonde waves perfectly styled, sea-blue eyes, premium streetwear, effortlessly expensive look",
+        "young adult woman, short silver buzz cut, deep dark skin, sharp avant-garde features, high fashion luxury editorial",
+        "young adult woman, black hair with galaxy deep-blue highlights, flawless dark skin, premium fitted outfit, regal presence",
+        "young adult woman, long rose-gold hair perfectly styled, warm skin, composed elegant expression, tailored luxury fashion",
+        "young adult woman, natural black hair slicked back cleanly, brown skin, strong jaw, premium monochrome outfit",
+        "young adult woman, straight black blunt bob, neutral composed expression, designer tracksuit, luxury minimal aesthetic",
+        "young adult woman, long wavy dark hair, deep expressive eyes, fitted designer coat, premium street aesthetic",
     ],
     "indie": [
-        "young adult woman, long honey-blonde waves, warm sea-blue eyes, vintage slip dress and worn denim jacket",
-        "young adult woman, short messy auburn hair, genuine freckled face, wide-leg vintage trousers, knit crop",
-        "young adult woman, natural curly dark hair, warm brown skin, sundress with oversized cardigan",
-        "young adult woman, long caramel waves, honey eyes, natural authentic expression, linen wide pants and simple tee",
-        "young adult woman, copper-red curls, light skin with golden freckles, layered vintage finds",
-        "young adult woman, short brown bedhead hair, genuine unposed expression, soft flannel and jeans",
-        "young adult woman, long dark hair with natural highlights, bare face beauty, flowing vintage dress",
-        "young adult woman, twin braids in natural brown, expressive dark eyes, embroidered jacket, authentic style",
+        "young adult woman, long honey-blonde waves natural and free, warm sea-blue eyes, vintage slip dress and worn denim jacket",
+        "young adult woman, short messy auburn hair, genuine freckled face, warm expression, wide-leg vintage trousers, knit crop",
+        "young adult woman, natural curly dark hair, warm brown skin, sundress with oversized open cardigan, genuine beauty",
+        "young adult woman, long caramel waves natural, honey-warm eyes, authentic unposed expression, linen wide pants and simple tee",
+        "young adult woman, copper-red curls natural and wild, light skin with golden freckles, layered vintage finds",
+        "young adult woman, short brown bedhead hair, genuinely unposed expression, soft flannel and worn jeans, real",
+        "young adult woman, long dark hair with natural light highlights, bare face natural beauty, flowing vintage dress",
+        "young adult woman, twin braids in natural brown, expressive dark eyes full of story, embroidered jacket, authentic style",
     ],
     "cinematic": [
-        "young adult woman, long dark hair in wind, strong composed features, dramatic coat, cinematic presence",
-        "young adult woman, short silver hair, cool grey eyes, structured jacket, editorial cinematic look",
-        "young adult woman, long flowing auburn hair, green eyes catching light, dramatic cinematic outfit",
+        "young adult woman, long dark hair in wind, strong composed features, dramatic cinematic coat, commanding cinematic presence",
+        "young adult woman, short silver hair, cool grey eyes, structured tailored jacket, editorial cinematic look",
+        "young adult woman, long flowing auburn hair, green eyes catching dramatic light, cinematic outfit with movement",
         "young adult woman, black hair partially obscuring face, mysterious expression, cinematic dark fashion",
-        "young adult woman, blonde hair catching dramatic light, strong jawline, film-quality presence",
-        "young adult woman, long braids in motion, warm skin, powerful stance, cinematic warrior-poet energy",
-        "young adult woman, dark hair in elegant updo, sharp features, tailored cinematic outfit",
-        "young adult woman, natural hair catching wind, brown skin luminous, cinematic wide-angle presence",
+        "young adult woman, blonde hair catching dramatic golden light, strong jawline, film-quality presence and beauty",
+        "young adult woman, long braids in motion, warm luminous skin, powerful stance, cinematic warrior-poet energy",
+        "young adult woman, dark hair in elegant updo, sharp features, tailored cinematic outfit, composed power",
+        "young adult woman, natural hair catching wind, brown skin luminous and glowing, cinematic wide-angle presence",
     ],
     "funk": [
-        "young adult woman, voluminous natural afro with gold pins, deep rich skin, luminous warm expression, vibrant outfit",
-        "young adult woman, long box braids with gold thread, warm brown skin, knowing smile, colorful fitted outfit",
-        "young adult woman, wild curly natural hair, expressive dark eyes, bright confident energy, fun fashion",
-        "young adult woman, short natural twists, warm smile, groove energy in every feature, colorful retro outfit",
-        "young adult woman, long flowing hair in warm ombre, medium brown skin, joyful expression, vibrant clothes",
-        "young adult woman, big natural curls, freckles, wide genuine smile, colorful expressive style",
-        "young adult woman, high puff natural hair, deep skin, eyes full of warmth, retro-funk inspired look",
-        "young adult woman, braided crown, warm skin tone, elegant groove, vintage-inspired colorful outfit",
+        "young adult woman, voluminous natural afro with gold pins, deep rich skin, luminous warm expression, vibrant colorful outfit",
+        "young adult woman, long box braids with gold thread woven in, warm brown skin, knowing smile, colorful fitted outfit",
+        "young adult woman, wild curly natural hair full of life, expressive dark eyes, bright confident energy, fun colorful fashion",
+        "young adult woman, short natural twists, warm genuine smile, groove energy in every feature, colorful retro outfit",
+        "young adult woman, long flowing hair in warm ombre, medium brown skin, joyful expression, vibrant colorful clothes",
+        "young adult woman, big natural curls, freckles across nose, wide genuine smile, colorful expressive style",
+        "young adult woman, high natural puff hair, deep warm skin, eyes full of warmth and joy, retro-funk inspired look",
+        "young adult woman, braided crown style, warm skin tone, elegant groove, vintage-inspired colorful outfit",
     ],
     "default": [
-        "young adult woman, long dark hair, expressive eyes, confident composed expression, stylish dark outfit",
-        "young adult woman, medium brown hair, genuine warm eyes, editorial fashion, magnetic presence",
+        "young adult woman, long dark hair, expressive deep eyes, confident composed expression, stylish dark outfit",
+        "young adult woman, medium brown hair, genuine warm eyes, editorial fashion, magnetic commanding presence",
         "young adult woman, short textured hair, strong features, cool confident expression, modern style",
-        "young adult woman, flowing hair in wind, mixed features, striking look, atmospheric fashion",
+        "young adult woman, flowing hair in wind, striking mixed features, dramatic look, atmospheric fashion",
         "young adult woman, natural hair, brown skin, commanding presence, modern editorial aesthetic",
         "young adult woman, blonde highlights, grey eyes, quiet intensity, sophisticated minimal style",
         "young adult woman, dark hair with face-framing pieces, sharp features, cool urban fashion",
@@ -435,15 +376,18 @@ CHARACTERS = {
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# QUALIDADE E NEGATIVE PROMPT
+# QUALITY TAGS — Ultra-premium, cores ultra-vibrantes
 # ══════════════════════════════════════════════════════════════════════
 
 QUALITY_TAGS = (
-    "masterpiece, best quality, highly detailed anime illustration, "
-    "professional anime key visual, smooth cel shading, clean lineart, "
-    "vibrant colors, cinematic composition, sharp focus on subject, "
-    "rich background detail, atmospheric depth, studio-level quality, "
-    "trending on pixiv, 9:16 vertical format, single character"
+    "masterpiece, best quality, ultra-detailed anime illustration, "
+    "professional anime key visual, perfect cel shading, clean sharp lineart, "
+    "ultra-vibrant saturated colors, maximum color depth, rich vivid hues, "
+    "deep blacks and luminous highlights, cinematic composition, razor-sharp focus, "
+    "richly detailed background with atmospheric depth, volumetric lighting, "
+    "dynamic light and shadow interplay, studio-level production quality, "
+    "trending on pixiv, ArtStation quality, 9:16 vertical format, single character, "
+    "scroll-stopping visual impact, premium anime visual novel quality"
 )
 
 NEGATIVE_PROMPT = (
@@ -453,11 +397,11 @@ NEGATIVE_PROMPT = (
     "distorted face, wrong proportions, malformed body parts, "
     "child appearance, young teen face, childlike proportions, "
     "explicit nudity, fetish content, inappropriate content, "
-    "blurry, muddy colors, flat boring lighting, "
-    "generic gradient background, plain studio void, "
+    "blurry, muddy colors, flat boring lighting, desaturated washed-out colors, "
+    "generic gradient background, plain studio void, empty background, "
     "airbrushed plastic skin, uncanny valley, "
     "Western cartoon, Pixar style, chibi, super deformed, "
-    "sketch only, unfinished lineart, low quality"
+    "sketch only, unfinished lineart, low quality, oversaturated to point of noise"
 )
 
 
@@ -466,7 +410,7 @@ NEGATIVE_PROMPT = (
 # ══════════════════════════════════════════════════════════════════════
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|v4"
+    key = f"{filename}|{short_num}|v5"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
@@ -482,7 +426,7 @@ def _clean_song_name(filename: str) -> str:
     return name or "Untitled"
 
 
-def _compact(text: str, max_chars: int = 1400) -> str:
+def _compact(text: str, max_chars: int = 1600) -> str:
     return re.sub(r"\s+", " ", text).strip()[:max_chars]
 
 
@@ -529,44 +473,50 @@ def _claude_prompt(
 
     system = (
         "You are an elite anime art director creating scroll-stopping YouTube Shorts thumbnails. "
-        "Your prompts generate cinematic, emotionally resonant anime illustrations "
+        "Your prompts generate PREMIUM cinematic, emotionally resonant anime illustrations "
         "inspired by the best of pixiv, lofi aesthetic art, cyberpunk manga, and dark fantasy illustration. "
-        "\n\nCRITICAL RULES:"
+        "\n\nCRITICAL VISUAL RULES — NEVER SKIP THESE:"
         "\n- ONE adult anime woman (18+), never children"
-        "\n- Composition can be: close portrait, medium shot, three-quarter, or wide — choose what serves the mood best"
-        "\n- NO full body requirement — faces and partial figures are often MORE powerful"
+        "\n- ULTRA-VIBRANT, RICH, SATURATED COLORS — never flat or washed out"
+        "\n- Deep rich blacks with luminous vivid highlights — maximum contrast"
+        "\n- Dynamic volumetric lighting that creates atmosphere and depth"
+        "\n- Composition: close portrait, medium shot, three-quarter, or wide — choose what serves the mood"
+        "\n- DETAILED BACKGROUND — never empty, always tells a story"
+        "\n- The color palette must be vivid and intentional, not generic"
         "\n- 9:16 vertical format"
-        "\n- Background is as important as the character — rich, detailed environments"
         "\n- Platform safe, no explicit content"
-        "\n- Output ONLY the prompt: comma-separated descriptors, 90-130 words, no explanations"
+        "\n- The IMAGE must visually connect to the song title and genre mood"
+        "\n- Output ONLY the prompt: comma-separated descriptors, 100-140 words, no explanations, no preamble"
     )
 
-    user = f"""Create a premium anime illustration prompt for a music YouTube Short.
+    user = f"""Create a PREMIUM ultra-vibrant anime illustration prompt for a music YouTube Short.
 
-SONG: "{song_name}"
-GENRE: {style} ({all_styles})
-SHORT NUMBER: {short_num} of 5 (must be visually different from other shorts)
+SONG TITLE: "{song_name}"
+PRIMARY GENRE: {style}
+ALL DETECTED GENRES: {all_styles}
+SHORT NUMBER: {short_num}
 
-CHARACTER:
+CHARACTER DESCRIPTION:
 {character}
 
 COMPOSITION DIRECTION:
 {composition}
 
-COLOR PALETTE:
+COLOR PALETTE (USE THIS — make colors rich and vivid):
 {palette}
 
-REQUIREMENTS:
-- Emotionally resonant, matches the {style} mood
-- Rich detailed background with atmospheric depth
-- Cinematic lighting quality
-- The expression on her face should tell a story
-- Make someone STOP scrolling when they see this
-- 90-130 words total, comma-separated"""
+CRITICAL REQUIREMENTS:
+- Visually connect to the song title "{song_name}" — the image should FEEL like the song
+- Ultra-rich colors: deep saturated hues, vivid contrasts, maximum color depth
+- Atmospheric depth with detailed environment
+- Cinematic lighting quality — volumetric, dramatic, intentional
+- Expression tells a story that matches the genre mood
+- Make someone STOP scrolling instantly when they see this
+- 100-140 words total, comma-separated descriptors only"""
 
     resp = client.messages.create(
         model=get_anthropic_model(),
-        max_tokens=350,
+        max_tokens=400,
         system=system,
         messages=[{"role": "user", "content": user}],
     )
@@ -579,20 +529,21 @@ REQUIREMENTS:
 
 def _static_prompt(character: str, composition: str, palette: str) -> str:
     prompt = (
-        f"masterpiece, best quality, premium anime illustration, highly detailed, "
+        f"masterpiece, best quality, ultra-detailed premium anime illustration, "
         f"{character}, "
         f"{composition}, "
         f"color palette: {palette}, "
-        f"cinematic lighting, atmospheric depth, rich background detail, "
-        f"clean anime lineart, smooth shading, vibrant saturated colors, "
+        f"ultra-vivid saturated colors, deep rich blacks, luminous highlights, "
+        f"cinematic volumetric lighting, atmospheric depth, richly detailed background, "
+        f"clean sharp anime lineart, perfect cel shading, maximum color depth, "
         f"9:16 vertical composition, single character, "
-        f"scroll-stopping visual quality, pixiv trending style"
+        f"scroll-stopping visual impact, pixiv trending premium quality"
     )
     return _compact(prompt)
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO VIA REPLICATE
+# GERAÇÃO VIA REPLICATE — Flux com parâmetros otimizados para cores vivas
 # ══════════════════════════════════════════════════════════════════════
 
 REPLICATE_MODELS = [
@@ -602,18 +553,18 @@ REPLICATE_MODELS = [
 
 MODEL_PARAMS = {
     "black-forest-labs/flux-dev": {
-        "num_inference_steps": 30,
+        "num_inference_steps": 35,
         "aspect_ratio": "9:16",
-        "guidance": 3.5,
+        "guidance": 4.5,          # Aumentado para cores mais vivas e fidelidade ao prompt
         "output_format": "png",
-        "output_quality": 95,
+        "output_quality": 98,     # Qualidade máxima
         "disable_safety_checker": True,
     },
     "black-forest-labs/flux-schnell": {
         "num_inference_steps": 4,
         "aspect_ratio": "9:16",
         "output_format": "png",
-        "output_quality": 95,
+        "output_quality": 98,
         "go_fast": True,
         "disable_safety_checker": True,
     },
@@ -629,8 +580,12 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     os.environ["REPLICATE_API_TOKEN"] = token
     SAVE_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Reforça qualidade visual no prompt final enviado ao modelo
     full_prompt = _compact(
-        prompt + ", anime illustration, NOT photorealistic, NOT 3D, sharp lineart"
+        prompt
+        + ", anime illustration style, NOT photorealistic, NOT 3D render, "
+        + "ultra-vibrant saturated colors, deep rich shadows, luminous vivid highlights, "
+        + "sharp clean lineart, premium anime key visual quality"
     )
 
     for model in REPLICATE_MODELS:
