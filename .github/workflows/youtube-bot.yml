@@ -20,11 +20,21 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── NOVO: restaura state.json do cache entre runs ─────────────────
+      - name: Restore state cache
+        uses: actions/cache@v4
+        with:
+          path: state.json
+          key: state-json-v1
+          restore-keys: state-json-v1
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
+
       - name: Install FFmpeg + fonts
         run: |
           sudo apt-get update -y -q
@@ -35,13 +45,16 @@ jobs:
           ffmpeg -version | head -n 1
           echo "Fontes disponíveis:"
           fc-list | grep -i "bold" | head -5 || true
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
       - name: Prepare folders
         run: |
           mkdir -p output temp assets/backgrounds assets/source_videos
+
       - name: Run Bot
         env:
           GOOGLE_CREDENTIALS:          ${{ secrets.GOOGLE_CREDENTIALS }}
@@ -52,23 +65,31 @@ jobs:
           REPLICATE_API_TOKEN:         ${{ secrets.REPLICATE_API_TOKEN }}
           HF_TOKEN:                    ${{ secrets.HF_TOKEN }}
           OPENAI_API_KEY:              ${{ secrets.OPENAI_API_KEY }}
-          # Facebook / Meta
           FB_PAGE_ID:                  ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_ACCESS_TOKEN:        ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
           FB_ENABLE_POSTING:           ${{ secrets.FB_ENABLE_POSTING }}
-          # Drive Backup
           ENABLE_DRIVE_BACKUP:         ${{ secrets.ENABLE_DRIVE_BACKUP }}
           DRIVE_BACKUP_FOLDER_ID:      ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
+          SHORTS_PER_TRACK:            "1"
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
           echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
+
+      # ── NOVO: salva cache SEMPRE (mesmo se o bot falhar) ──────────────
+      - name: Save state cache
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: state.json
+          key: state-json-v1
+
       - name: Commit state.json
         if: always()
         run: |
           git config --global user.name  "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add state.json
+          git add -f state.json
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
