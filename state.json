@@ -1,4 +1,30 @@
-{
-  "tracks": [],
-  "alpha_index": 0
-}
+      - name: Commit state.json
+        if: always()
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # garante que existe
+          if [ ! -f state.json ]; then
+            echo '{"tracks":[],"alpha_index":0}' > state.json
+          fi
+
+          # salva versão atual (gerada pelo bot)
+          cp state.json /tmp/state.json
+
+          # sincroniza com repo remoto
+          git fetch origin main
+          git reset --hard origin/main
+
+          # restaura state atualizado
+          cp /tmp/state.json state.json
+
+          git add -f state.json
+
+          if git diff --cached --quiet; then
+            echo "state.json sem alterações."
+            exit 0
+          fi
+
+          git commit -m "update state [skip ci]"
+          git push origin HEAD:main
