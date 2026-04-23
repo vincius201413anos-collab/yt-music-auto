@@ -675,3 +675,306 @@ def _build_cmd(
 # ══════════════════════════════════════════════════════════════════════════════
 # OUTPUT VALIDATION
 # ══════════════════════════════════════════════════════════════════════════════
+
+def validate_output(output_path: str, expected_duration: float) -> dict:
+    if not os.path.exists(output_path):
+        return {"ok": False, "issues": ["Arquivo não encontrado."]}
+    try:
+        info = get_video_info(output_path)
+    except Exception as e:
+        return {"ok": False, "issues": [f"ffprobe falhou: {e}"]}
+
+    issues = []
+    if info["width"] != 1080 or info["height"] != 1920:
+        issues.append(f"Resolução: {info['width']}x{info['height']} (esperado 1080x1920)")
+    if abs(info["duration"] - expected_duration) > 2.0:
+        issues.append(f"Duração: {info['duration']:.1f}s (esperado ~{expected_duration:.1f}s)")
+    if info["size_mb"] < MIN_FILE_SIZE_MB:
+        issues.append(f"Arquivo pequeno: {info['size_mb']}MB")
+    if info["size_mb"] > MAX_FILE_SIZE_MB:
+        issues.append(f"Arquivo grande: {info['size_mb']}MB")
+
+    return {"ok": len(issues) == 0, "issues": issues, "info": info}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# THUMBNAIL GENERATOR
+# ══════════════════════════════════════════════════════════════════════════════
+
+def generate_thumbnail(
+    video_path: str,
+    song_name: str,
+    style: str,
+    output_dir: str = THUMB_DIR,
+    timestamp: float = THUMB_TIMESTAMP,
+) -> Optional[str]:
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    stem  = Path(video_path).stem
+    out   = str(Path(output_dir) / f"{stem}_thumb.jpg")
+    font  = get_font()
+    clean = escape_text(song_name)
+    tag   = escape_text(f"#{style.upper()}")
+
+    genre_grade = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
+
+    vf = (
+        f"{genre_grade},"
+        "eq=contrast=1.15:brightness=-0.02:saturation=1.25,"
+        "vignette=angle=0.6:mode=forward,"
+        "drawbox=x=0:y=ih*0.74:w=iw:h=ih*0.26:color=black@0.60:t=fill,"
+        f"drawtext=fontfile='{font}'"
+        f":text='{clean}'"
+        f":fontsize=76:fontcolor=white"
+        f":borderw=4:bordercolor=black@0.92"
+        f":shadowx=4:shadowy=4:shadowcolor=black@0.7"
+        f":x=(w-text_w)/2:y=h*0.78,"
+        f"drawtext=fontfile='{font}'"
+        f":text='{tag}'"
+        f":fontsize=40:fontcolor=white@0.88"
+        f":borderw=2:bordercolor=black@0.75"
+        f":x=(w-text_w)/2:y=h*0.89"
+    )
+
+    cmd = [
+        "ffmpeg", "-y",
+        "-ss", str(timestamp),
+        "-i", video_path,
+        "-vframes", "1",
+        "-vf", vf,
+        "-q:v", "2",
+        out,
+    ]
+
+    try:
+        subprocess.run(cmd, check=True, capture_output=True)
+        logger.info(f"  ► Thumbnail gerada: {out}")
+        return out
+    except subprocess.CalledProcessError as e:
+        logger.warning(f"  ⚠ Thumbnail falhou: {e.stderr.decode()[-300:] if e.stderr else ''}")
+        return None
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CORE: CREATE SHORT
+# ══════════════════════════════════════════════════════════════════════════════
+
+def create_short(
+    audio_path: str,
+    background_path: str,
+    output_name: str,
+    style: str,
+    song_name: str = "",
+    use_smart_window: bool = True,
+    auto_thumbnail: bool = True,
+    upload: bool = False,
+    upload_privacy: str = "private",
+) -> dict:
+    t_start = time.time()
+    result: dict = {"output_path": None, "thumbnail_path": None, "video_id": None}
+
+    output_dir = os.path.dirname(output_name)
+    if output_dir:
+        os.makedirs(output_dir, exist_ok=True)
+
+    song_name = clean_song_name(audio_path, song_name)
+    logger.info(f"▶ Gerando Short: '{song_name}' | estilo={style}")
+    logger.info(f"  ► Color grade: {style} | Hook: instantâneo (frame 0)")
+
+    # ── Análise de áudio ──────────────────────────────────────────────────────
+    logger.info("  ► Analisando áudio…")
+    analysis_full = full_analysis(audio_path)
+    bpm       = analysis_full.get("bpm")
+    audio_dur = get_duration(audio_path)
+
+    # v4: janela começa no drop/pico de energia sempre que possível
+    if use_smart_window:
+        dur = random.randint(MIN_DURATION, min(MAX_DURATION, int(audio_dur)))
+        try:
+            start, dur = find_best_window(audio_path, dur)
+            logger.info(f"  ► Janela inteligente: {start:.1f}s – {start+dur:.1f}s (drop/pico)")
+        except Exception:
+            start, dur = pick_window(audio_dur)
+            logger.info(f"  ► Janela fallback: {start:.1f}s – {start+dur:.1f}s")
+    else:
+        start, dur = pick_window(audio_dur)
+        logger.info(f"  ► Janela manual: {start:.1f}s – {start+dur:.1f}s ({dur:.1f}s)")
+
+    analysis = crop_analysis(analysis_full, start, dur)
+    save_debug({**analysis_full, "short_start": start, "short_duration": dur})
+
+    profile      = get_profile_for_bpm(bpm, style)
+    audio_filter = build_audio_filter(dur)
+    use_logo     = logo_exists()
+
+    # ── Background ────────────────────────────────────────────────────────────
+    ext      = Path(background_path).suffix.lower() if background_path else ""
+    is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
+    is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
+
+    if is_image:
+        base_vf = build_image_filter(profile, analysis, dur, song_name, style)
+        if use_logo:
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-loop", "1", "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+        else:
+            inputs = ["-loop", "1", "-i", background_path, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+
+    elif is_video:
+        bg_dur   = get_duration(background_path)
+        bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
+        base_vf  = build_video_filter(profile, analysis, dur, song_name, style)
+        if use_logo:
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-ss", str(bg_start), "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+        else:
+            inputs = ["-ss", str(bg_start), "-i", background_path, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+
+    else:
+        font    = get_font()
+        hook    = build_hook_text(song_name, style, font)
+        pbar    = build_progress_bar(dur, style)
+        wtmk    = build_watermark(font)
+        fade    = build_fade_filter(dur)
+        genre_g = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
+        base_vf = f"{genre_g},{fade},{hook},{pbar},{wtmk}"
+        if use_logo:
+            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
+            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
+        else:
+            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-ss", str(start), "-i", audio_path]
+            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
+
+    # ── Render com retry ──────────────────────────────────────────────────────
+    logger.info("  ► Iniciando render…")
+    for attempt in range(1, MAX_RETRIES + 2):
+        try:
+            subprocess.run(cmd, check=True, capture_output=True)
+            logger.info("  ► Render concluído ✓")
+            break
+        except subprocess.CalledProcessError as e:
+            err = e.stderr.decode()[-500:] if e.stderr else ""
+            if attempt <= MAX_RETRIES:
+                logger.warning(f"  ⚠ Render falhou (tentativa {attempt}): {err}")
+                time.sleep(RETRY_DELAY_S)
+            else:
+                logger.error(f"  ✗ Render falhou após {MAX_RETRIES+1} tentativas.\n{err}")
+                raise
+
+    # ── Validação ─────────────────────────────────────────────────────────────
+    validation = validate_output(output_name, dur)
+    if validation["ok"]:
+        info = validation["info"]
+        logger.info(
+            f"  ► OK — {info['width']}x{info['height']} | "
+            f"{info['duration']:.1f}s | {info['size_mb']}MB | {info['fps']} fps"
+        )
+    else:
+        for issue in validation["issues"]:
+            logger.warning(f"  ⚠ {issue}")
+
+    result.update({
+        "output_path": output_name,
+        "validation":  validation,
+        "duration":    dur,
+        "bpm":         bpm,
+        "drop_time":   analysis.get("drop_time"),
+    })
+
+    # ── Thumbnail ─────────────────────────────────────────────────────────────
+    if auto_thumbnail:
+        thumb = generate_thumbnail(output_name, song_name, style)
+        result["thumbnail_path"] = thumb
+
+    elapsed = round(time.time() - t_start, 1)
+    result["render_time_s"] = elapsed
+    logger.info(f"✅ Finalizado em {elapsed}s" + (f" | BPM={bpm:.0f}" if bpm else ""))
+    return result
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH PROCESSING
+# ══════════════════════════════════════════════════════════════════════════════
+
+def generate_batch(
+    tasks: list[dict],
+    output_dir: str = "output",
+    auto_thumbnail: bool = True,
+    upload: bool = False,
+    upload_privacy: str = "private",
+) -> list[dict]:
+    Path(output_dir).mkdir(parents=True, exist_ok=True)
+    results = []
+
+    for i, task in enumerate(tasks, 1):
+        audio_path      = task["audio_path"]
+        background_path = task.get("background_path", "")
+        style           = task.get("style", "default")
+        song_name       = task.get("song_name", "")
+        name            = clean_song_name(audio_path, song_name)
+        output_name     = str(
+            Path(output_dir) / f"{i:03d}_{re.sub(r'[^a-zA-Z0-9_]','_',name)}.mp4"
+        )
+
+        logger.info(f"\n{'='*60}")
+        logger.info(f"[{i}/{len(tasks)}] {name}")
+
+        try:
+            r = create_short(
+                audio_path=audio_path,
+                background_path=background_path,
+                output_name=output_name,
+                style=style,
+                song_name=song_name,
+                auto_thumbnail=auto_thumbnail,
+                upload=upload,
+                upload_privacy=upload_privacy,
+            )
+            r["task"]   = task
+            r["status"] = "ok"
+            results.append(r)
+        except Exception as e:
+            logger.error(f"  ✗ Falha task {i}: {e}")
+            results.append({"task": task, "status": "error", "error": str(e)})
+
+    ok    = sum(1 for r in results if r.get("status") == "ok")
+    fails = len(results) - ok
+    logger.info(f"\nBatch: {ok} ok, {fails} erros.")
+    return results
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# CLI
+# ══════════════════════════════════════════════════════════════════════════════
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v4")
+    parser.add_argument("audio")
+    parser.add_argument("background")
+    parser.add_argument("output")
+    parser.add_argument("--style",    default="trap", choices=list_profiles())
+    parser.add_argument("--name",     default="")
+    parser.add_argument("--no-thumb", action="store_true")
+    parser.add_argument("--upload",   action="store_true")
+    parser.add_argument("--privacy",  default="private", choices=["private", "unlisted", "public"])
+    parser.add_argument("--no-smart", action="store_true")
+
+    args = parser.parse_args()
+
+    create_short(
+        audio_path       = args.audio,
+        background_path  = args.background,
+        output_name      = args.output,
+        style            = args.style,
+        song_name        = args.name,
+        use_smart_window = not args.no_smart,
+        auto_thumbnail   = not args.no_thumb,
+        upload           = args.upload,
+        upload_privacy   = args.privacy,
+    )
