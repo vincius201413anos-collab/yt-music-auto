@@ -1,33 +1,32 @@
 name: youtube-bot
+
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */3 * * *"   # a cada 3 horas: 0h, 3h, 6h, 9h, 12h, 15h, 18h, 21h UTC
+    - cron: "0 */3 * * *"
+
 permissions:
   contents: write
+
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
     env:
       PYTHONUNBUFFERED: "1"
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
-
-      # ── NOVO: restaura state.json do cache entre runs ─────────────────
-      - name: Restore state cache
-        uses: actions/cache@v4
-        with:
-          path: state.json
-          key: state-json-v1
-          restore-keys: state-json-v1
 
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
@@ -54,47 +53,50 @@ jobs:
       - name: Prepare folders
         run: |
           mkdir -p output temp assets/backgrounds assets/source_videos
+          test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
 
       - name: Run Bot
         env:
-          GOOGLE_CREDENTIALS:          ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
-          DRIVE_FOLDER_ID:             ${{ secrets.DRIVE_FOLDER_ID }}
-          YOUTUBE_CREDENTIALS:         ${{ secrets.YOUTUBE_CREDENTIALS }}
-          ANTHROPIC_API_KEY:           ${{ secrets.ANTHROPIC_API_KEY }}
-          REPLICATE_API_TOKEN:         ${{ secrets.REPLICATE_API_TOKEN }}
-          HF_TOKEN:                    ${{ secrets.HF_TOKEN }}
-          OPENAI_API_KEY:              ${{ secrets.OPENAI_API_KEY }}
-          FB_PAGE_ID:                  ${{ secrets.FB_PAGE_ID }}
-          FB_PAGE_ACCESS_TOKEN:        ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
-          FB_ENABLE_POSTING:           ${{ secrets.FB_ENABLE_POSTING }}
-          ENABLE_DRIVE_BACKUP:         ${{ secrets.ENABLE_DRIVE_BACKUP }}
-          DRIVE_BACKUP_FOLDER_ID:      ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
-          SHORTS_PER_TRACK:            "1"
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          YOUTUBE_CREDENTIALS: ${{ secrets.YOUTUBE_CREDENTIALS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REPLICATE_API_TOKEN: ${{ secrets.REPLICATE_API_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_ACCESS_TOKEN: ${{ secrets.FB_PAGE_ACCESS_TOKEN }}
+          FB_ENABLE_POSTING: ${{ secrets.FB_ENABLE_POSTING }}
+          ENABLE_DRIVE_BACKUP: ${{ secrets.ENABLE_DRIVE_BACKUP }}
+          DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
+          SHORTS_PER_TRACK: "1"
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
           echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
 
-      # ── NOVO: salva cache SEMPRE (mesmo se o bot falhar) ──────────────
-      - name: Save state cache
-        if: always()
-        uses: actions/cache/save@v4
-        with:
-          path: state.json
-          key: state-json-v1
-
       - name: Commit state.json
         if: always()
         run: |
-          git config --global user.name  "github-actions[bot]"
+          git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add -f state.json
+
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
           fi
+
           git fetch origin main
-          git pull --rebase origin main || true
+          git pull --rebase origin main
+          git add -f state.json
+
+          if git diff --cached --quiet; then
+            echo "Nada novo para commit após rebase."
+            exit 0
+          fi
+
           git commit -m "update state [skip ci]"
-          git push origin HEAD:main || true
+          git push origin HEAD:main
