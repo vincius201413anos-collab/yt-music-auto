@@ -60,9 +60,9 @@
       "id": "1gWapdMP29WW2nl9v-xXXRL5oBtvOCCl-",
       "name": "something shallow fk [Rock].wav",
       "key": "something shallow fk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1Qm_WpM7Dx8CDup8CUxz4niPaxm7GBU_y",
