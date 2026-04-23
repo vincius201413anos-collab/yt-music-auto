@@ -1,12 +1,13 @@
 """
-main.py — Bot de automação YouTube Shorts v3.0
+main.py — Bot de automação YouTube Shorts v4.0
 ===============================================
-- Títulos únicos por música via hash determinístico (sem repetição jamais)
-- Descrições variadas com rotação inteligente
-- DJ darkMark branding consistente
-- Suporte a YouTube + Facebook Reels
-- Genre cache para evitar re-análise
-- Upload timing com delay humano realista
+MUDANÇAS v4.0:
+- Títulos em PORTUGUÊS BRASILEIRO — alcança audiência BR com música internacional
+- Sistema híbrido PT/EN: gancho em PT, nome da música em EN (como está)
+- Hooks muito mais variados e específicos por gênero
+- Descrições com storytelling real, não genérico
+- Anti-repetição radical: nunca repete título nem visual
+- Conceito visual rotaciona A→B→C→D por short_num
 """
 
 import os
@@ -65,74 +66,342 @@ def safe_filename(text: str) -> str:
 
 def human_delay():
     secs = random.randint(15, 45)
-    log(f"Waiting {secs}s before upload...")
+    log(f"Aguardando {secs}s antes do upload...")
     time.sleep(secs)
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SISTEMA DE TÍTULOS v3 — Únicos, determinísticos, sem repetição
-# Cada combinação música+short_num gera sempre o mesmo título
-# (idempotente), mas diferentes entre si.
+# SISTEMA DE TÍTULOS v4 — PORTUGUÊS BRASILEIRO
+#
+# Estratégia: gancho forte em PT-BR + nome da música em EN
+# Ex: "Isso vai ficar na sua cabeça — Burning Souls | DJ darkMark"
+#
+# Por que PT-BR funciona mesmo com música em inglês:
+# - Audiência BR é enorme e sub-representada no nicho
+# - Título em PT aumenta CTR porque parece "feito pra mim"
+# - Nome da música em EN mantém credibilidade da curadoria
 # ══════════════════════════════════════════════════════════════════════
 
-# Hooks divididos por camadas de intenção — cada camada cria
-# reação psicológica diferente no viewer antes de clicar
+# Hooks divididos por INTENÇÃO PSICOLÓGICA
+# Cada camada cria reação diferente antes do clique
 
-HOOKS_CURIOSITY = {
-    "phonk":      ["you weren't ready for this", "they buried this on purpose", "algorithm finally did something right", "can't explain what this does to me", "this one doesn't exist on the radio"],
-    "trap":       ["nobody's talking about this yet", "streets already know", "too clean to be this underground", "before it reaches everyone else", "this producer is about to be everywhere"],
-    "rock":       ["this riff doesn't ask permission", "first 3 seconds and I was done", "guitar is back and it came angry", "shouldn't be this good in 2024", "this band deserves 10x the rooms they play"],
-    "metal":      ["too heavy for most. you're not most.", "the underground doesn't want you finding this", "survive the breakdown", "this transcends genre at this point", "ancient and brutal and I can't stop"],
-    "lofi":       ["noise in my head stopped for this", "forgot I had a to-do list", "this one holds your hand without asking", "focus unlocked. don't ask how.", "3am and finally quiet"],
-    "indie":      ["said what I couldn't find words for", "sounds like nostalgia that doesn't hurt yet", "found this before everyone else and I'm protective", "can't explain why this hits. just does.", "one listen and I knew I'd be back"],
-    "electronic": ["drop hit before my brain caught up", "built for stages that don't exist yet", "producer is taking notes somewhere right now", "this frequency belongs in stadiums", "found the ID I was chasing"],
-    "dark":       ["makes sense after midnight only", "beautiful in a way that has no name", "this melody wasn't made for daylight", "can't explain what this does", "try to skip before the end. you won't."],
-    "cinematic":  ["paused everything. just listened.", "the build is almost unfair", "makes you feel like the protagonist", "harder than any film score this year", "needs a film worthy of it"],
-    "funk":       ["couldn't stay in my chair", "the groove took over before I agreed to it", "cleanest thing I found this week", "try not to move. you physically can't.", "pure groove no explanation needed"],
-    "pop":        ["in your head before the chorus finishes", "hook ruins every song after it", "try to get it out. impossible.", "skipped it once. came back immediately.", "genuinely good pop. rare."],
-    "default":    ["algorithm finally got it right", "found before it blows up", "can't skip this one", "too good to be this hidden", "one listen changes everything"],
+HOOKS_CURIOSIDADE = {
+    "phonk": [
+        "você não tava preparado pra isso",
+        "enterraram essa aqui de propósito",
+        "não existe no rádio por um motivo",
+        "essa frequência não é pra todo mundo",
+        "o underground não quer que você ache isso",
+        "achei às 3 da manhã e não me arrependo",
+        "essa batida não pede licença",
+    ],
+    "trap": [
+        "ninguém tá falando disso ainda",
+        "as ruas já sabem",
+        "limpo demais pra continuar underground",
+        "antes de chegar pra todo mundo",
+        "esse produtor vai ser grande",
+        "isso chega no topo sem pedir permissão",
+        "cedo demais pra ignorar",
+    ],
+    "rock": [
+        "esse riff não pede licença",
+        "nos primeiros 3 segundos eu sabia",
+        "a guitarra voltou e veio com raiva",
+        "não devia ser tão boa em 2024",
+        "essa banda merece estádios",
+        "volume no máximo ou não vale",
+        "rock não morreu ele só mudou de endereço",
+    ],
+    "metal": [
+        "pesado demais pra maioria. você não é a maioria.",
+        "o underground não quer que você ache isso",
+        "sobreviva ao breakdown",
+        "isso transcende gênero nesse ponto",
+        "antigo e brutal e não consigo parar",
+        "pesos assim são raros",
+        "essa não é pra ouvir no fone no ônibus",
+    ],
+    "lofi": [
+        "o barulho na minha cabeça parou com essa",
+        "esqueci que tinha lista de tarefas",
+        "essa segura sua mão sem pedir",
+        "foco desbloqueado. não pergunte como.",
+        "3 da manhã e finalmente quieto",
+        "essa não é pra fundo de vídeo. é protagonista.",
+        "estudei 4 horas sem perceber",
+    ],
+    "indie": [
+        "disse o que eu não achava palavras",
+        "soa como nostalgia que ainda não dói",
+        "achei antes de todo mundo e sou protetor",
+        "não consigo explicar por que bate. só bate.",
+        "uma escuta e eu sabia que ia voltar",
+        "honesta de um jeito que música raramente é",
+        "essa artista merece muito mais gente",
+    ],
+    "electronic": [
+        "o drop bateu antes do meu cérebro processar",
+        "feito pra palcos que ainda não existem",
+        "essa frequência pertence a estádios",
+        "achei o ID que eu tava procurando",
+        "produtor no topo em breve",
+        "isso vai dominar festival",
+        "cedo nesse artista e ficando",
+    ],
+    "dark": [
+        "faz sentido só depois da meia-noite",
+        "bonita de um jeito que não tem nome",
+        "essa melodia não foi feita pra luz do dia",
+        "tenta pular antes do fim. você não vai.",
+        "beleza que assusta um pouco",
+        "alguns sons foram enterrados por um motivo",
+        "essa fica na cabeça por dias",
+    ],
+    "cinematic": [
+        "pausei tudo. só ouvi.",
+        "a construção é quase injusta",
+        "te faz sentir protagonista",
+        "mais pesado que qualquer trilha esse ano",
+        "precisa de um filme digno dela",
+        "essa compositor ninguém conhece ainda",
+        "primeira nota e eu já era",
+    ],
+    "funk": [
+        "não consegui ficar parado",
+        "o groove tomou conta antes de eu concordar",
+        "coisa mais limpa que achei essa semana",
+        "tenta não se mexer. impossível.",
+        "groove puro sem explicação necessária",
+        "essa faz qualquer dia virar sexta",
+        "baixo chegou antes de eu estar pronto",
+    ],
+    "default": [
+        "o algoritmo finalmente acertou",
+        "achei antes de explodir",
+        "não consegue pular essa",
+        "boa demais pra estar tão escondida",
+        "uma escuta muda tudo",
+        "isso vai crescer muito",
+        "cedo nessa aqui",
+    ],
 }
 
-HOOKS_EMOTIONAL = {
-    "phonk":      ["3am and can't stop replaying this", "dark side of the underground found", "midnight energy arrived uninvited", "obsessed after 10 seconds", "this one got into me"],
-    "trap":       ["early on this and can't stop", "luxury feels like this sounds", "this is what the playlist was missing", "the 808 I needed without knowing it", "elevated immediately"],
-    "rock":       ["turn it up immediately", "volume up or don't bother", "found this at 1am and I'm still here", "every listen harder than the last", "no skip possible even if I tried"],
-    "metal":      ["full volume or don't bother", "not for quiet rooms", "the heads already know", "pure sonic weight that you feel", "breakdown hits you physically"],
-    "lofi":       ["perfect 3am company arrived", "slow everything down this way", "peace I didn't know I needed", "best study session just happened", "loop this all night"],
-    "indie":      ["deserves bigger rooms and more time", "honest in a way music rarely is", "added before it finished playing", "the bridge. that's the whole review.", "early on this artist and staying"],
-    "electronic": ["max volume dark room and just this", "can't stand still during the drop", "my body moved before I decided", "the future already sounds like this", "early on this producer"],
-    "dark":       ["3 days in my head now", "not for everyone and that's the point", "darkness with a pulse is rare", "some frequencies were buried for a reason", "found hiding in the margins"],
-    "cinematic":  ["eyes closed. instantly.", "epic from the first second", "the scene they cut for being too good", "one listen. seriously.", "composer nobody talks about yet"],
-    "funk":       ["weekend energy any day of the week", "replayed twice before believing it", "your body already knows what to do", "this feels genuinely alive", "bass hit before I was ready"],
-    "pop":        ["this is why pop still matters", "cleanest hook this year", "added before it finished", "can't unhear this now", "one listen and it's permanent"],
-    "default":    ["early on this one", "your playlist needed this", "found this at midnight", "obsessed after 10 seconds", "just trust me on this one"],
+HOOKS_EMOCIONAL = {
+    "phonk": [
+        "3 da manhã e não para de repetir",
+        "lado sombrio do underground achado",
+        "energia meia-noite chegou sem avisar",
+        "obcecado em 10 segundos",
+        "essa entrou em mim",
+        "batida das 3h da manhã no carro",
+        "perfeita pra dirigir no escuro",
+    ],
+    "trap": [
+        "cedo nessa e não para",
+        "luxo soa como isso aqui",
+        "era isso que tava faltando na playlist",
+        "o 808 que eu precisava sem saber",
+        "isso elevou meu dia na hora",
+        "qualidade que você sente antes de entender",
+        "toca de novo automaticamente",
+    ],
+    "rock": [
+        "coloca pra tocar já",
+        "volume no máximo ou não vale",
+        "achei às 1h da manhã e ainda tô aqui",
+        "cada escuta mais pesada que a anterior",
+        "sem skip possível nem se eu quisesse",
+        "essa vai ficar comigo por semanas",
+        "pele arrepiada do início ao fim",
+    ],
+    "metal": [
+        "volume total ou não vale",
+        "não é pra salas quietas",
+        "as cabeças já sabem",
+        "peso sonic que você sente no peito",
+        "o breakdown bate físico",
+        "essa não deixa você parado",
+        "intensidade que você precisava",
+    ],
+    "lofi": [
+        "companhia perfeita pra 3 da manhã",
+        "desacelera tudo assim",
+        "paz que eu não sabia que precisava",
+        "melhor sessão de estudo da minha vida",
+        "fica em loop a noite toda",
+        "essa abraça sem pedir nada",
+        "silêncio interno finalmente",
+    ],
+    "indie": [
+        "merece salas maiores e mais tempo",
+        "honesta de um jeito que música raramente é",
+        "adicionei antes de terminar",
+        "a ponte. é a resenha completa.",
+        "cedo nesse artista e ficando",
+        "essa vai envelhecer muito bem",
+        "uma escuta e é permanente",
+    ],
+    "electronic": [
+        "volume máximo sala escura e só isso",
+        "não consigo ficar quieto no drop",
+        "meu corpo moveu antes de eu decidir",
+        "o futuro já soa assim",
+        "cedo nesse produtor",
+        "esse set ia destruir qualquer festival",
+        "frequência que você sente antes de ouvir",
+    ],
+    "dark": [
+        "3 dias na minha cabeça agora",
+        "não é pra todo mundo e esse é o ponto",
+        "escuridão com pulso é raro",
+        "bonita de um jeito que incomoda um pouco",
+        "achei escondida nas margens",
+        "essa fica",
+        "beleza que você não deveria conseguir explicar",
+    ],
+    "cinematic": [
+        "olhos fechados. imediatamente.",
+        "épica desde o primeiro segundo",
+        "a cena que cortaram por ser boa demais",
+        "uma escuta. sério.",
+        "compositor que ninguém fala ainda",
+        "essa merecia Oscar de trilha",
+        "arrepio garantido",
+    ],
+    "funk": [
+        "energia de fim de semana qualquer dia",
+        "repeti duas vezes antes de acreditar",
+        "seu corpo já sabe o que fazer",
+        "isso parece genuinamente vivo",
+        "baixo bateu antes de eu estar pronto",
+        "sorriso involuntário garantido",
+        "essa faz bem",
+    ],
+    "default": [
+        "cedo nessa aqui",
+        "sua playlist precisava disso",
+        "achei de madrugada",
+        "obcecado em 10 segundos",
+        "confia em mim nessa",
+        "isso vai crescer",
+        "uma escuta e você volta",
+    ],
 }
 
-HOOKS_IDENTITY = {
-    "phonk":      ["not for everyone • found it anyway", "underground certified", "dark side music", "the ones who know • know", "phonk for the ones who listen in the dark"],
-    "trap":       ["underground certified", "straight from the underground", "for the ones who recognize quality", "certified", "the ones paying attention already know"],
-    "rock":       ["no mainstream necessary", "for the ones who still turn it up", "real guitar still exists and here it is", "the rock that didn't die", "certified loud"],
-    "metal":      ["for the ones who can handle it", "underground approved", "heavy certified", "the ones who need the weight", "certified brutal"],
-    "lofi":       ["for the ones who study in silence", "certified chill", "lofi for people who actually feel things", "the ones who listen at 3am", "quiet hours certified"],
-    "indie":      ["for the ones paying attention", "early listeners know", "certified hidden gem", "underground before underground was cool", "the ones who find them first"],
-    "electronic": ["early listener certified", "for the ones on the dancefloor before the song", "certified electronic", "rave certified", "for the ones who feel frequencies"],
-    "dark":       ["not for daylight", "certified dark", "the ones who listen alone at night", "underground and staying there", "for the ones who understand"],
-    "cinematic":  ["for the ones who listen with eyes closed", "certified epic", "film-score energy", "for the ones who feel music as stories", "cinematic certified"],
-    "funk":       ["groove certified", "for the ones who can't sit still", "the people who know how to dance", "certified groove", "for the ones who feel it before they hear it"],
-    "pop":        ["the pop that actually holds up", "certified earworm", "for the ones who like good songs", "hook certified", "genuinely good pop"],
-    "default":    ["certified underground", "early listener", "for the ones paying attention", "found before it blows up", "the good ones always hide first"],
+HOOKS_IDENTIDADE = {
+    "phonk": [
+        "não é pra todo mundo • você encontrou de qualquer forma",
+        "underground certificado",
+        "música das sombras",
+        "quem conhece, conhece",
+        "phonk pra quem ouve no escuro",
+        "certificado pesado",
+        "os que sabem já sabem",
+    ],
+    "trap": [
+        "underground certificado",
+        "direto do underground",
+        "pra quem reconhece qualidade",
+        "certificado",
+        "quem presta atenção já sabe",
+        "essa vai chegar grande",
+        "você foi cedo nessa",
+    ],
+    "rock": [
+        "sem mainstream necessário",
+        "pra quem ainda coloca no volume",
+        "guitarra de verdade ainda existe",
+        "o rock que não morreu",
+        "certificado alto",
+        "pra quem aguenta o tranco",
+        "sem rádio necessário",
+    ],
+    "metal": [
+        "pra quem aguenta",
+        "underground aprovado",
+        "certificado pesado",
+        "pra quem precisa do peso",
+        "certificado brutal",
+        "você achou isso por algum motivo",
+        "não é pra todo mundo",
+    ],
+    "lofi": [
+        "pra quem estuda em silêncio",
+        "certificado chill",
+        "lofi pra quem sente de verdade",
+        "os que ouvem às 3 da manhã",
+        "certificado quieto",
+        "pra quem precisa desacelerar",
+        "fones de ouvido e paz",
+    ],
+    "indie": [
+        "pra quem presta atenção",
+        "os ouvintes cedo sabem",
+        "joia escondida certificada",
+        "underground antes de virar mainstream",
+        "quem acha primeiro cuida",
+        "certificado autêntico",
+        "pra quem gosta de gente real",
+    ],
+    "electronic": [
+        "ouvinte cedo certificado",
+        "pra quem tá na pista antes da música",
+        "certificado eletrônico",
+        "rave certificado",
+        "pra quem sente frequências",
+        "você tá cedo nessa",
+        "os que chegam antes do drop",
+    ],
+    "dark": [
+        "não é pra luz do dia",
+        "certificado sombrio",
+        "os que ouvem sozinhos à noite",
+        "underground e ficando lá",
+        "pra quem entende",
+        "beleza estranha certificada",
+        "não é pra todo mundo",
+    ],
+    "cinematic": [
+        "pra quem ouve de olhos fechados",
+        "certificado épico",
+        "energia de trilha sonora",
+        "pra quem sente música como história",
+        "cinematográfico certificado",
+        "pra quem precisa da grandiosidade",
+        "trilha sem filme",
+    ],
+    "funk": [
+        "groove certificado",
+        "pra quem não fica parado",
+        "o povo que sabe dançar",
+        "certificado groove",
+        "pra quem sente antes de ouvir",
+        "alegria certificada",
+        "pra quem precisa de energia",
+    ],
+    "default": [
+        "underground certificado",
+        "ouvinte cedo",
+        "pra quem presta atenção",
+        "achado antes de explodir",
+        "os bons sempre se escondem primeiro",
+        "você foi cedo",
+        "certificado",
+    ],
 }
 
-# Templates de título — variados, todos com DJ darkMark
+# Templates com nome da música em EN, ganchos em PT
+# Isso é intencional: parece curadoria profissional
 TITLE_TEMPLATES = [
     "DJ darkMark — {title} | {hook}",
-    "DJ darkMark | {hook} — {title}",
-    "{hook} | {title} · DJ darkMark",
+    "{hook} — {title} | DJ darkMark",
     "DJ darkMark 🎧 {title} | {hook}",
-    "{title} — DJ darkMark | {hook}",
-    "DJ darkMark: {title} {emoji} {hook}",
     "{title} {emoji} {hook} — DJ darkMark",
+    "DJ darkMark: {title} | {hook}",
+    "{hook} {emoji} {title} — DJ darkMark",
     "DJ darkMark drops: {title} | {hook}",
+    "{title} — {hook} | DJ darkMark {emoji}",
 ]
 
 GENRE_EMOJI = {
@@ -151,47 +420,41 @@ GENRE_EMOJI = {
 }
 
 STYLE_HASHTAGS = {
-    "phonk":      "#phonk #darkphonk #phonkmusic #phonkdrift #phonkvibes #phonkedit #djdarkmark",
-    "trap":       "#trap #trapmusic #808s #trapbeats #undergroundhiphop #trapvibes #djdarkmark",
-    "rock":       "#rock #rockmusic #guitarmusic #hardrock #alternative #alternativerock #djdarkmark",
-    "metal":      "#metal #heavymetal #metalhead #metalcore #extrememetal #heavymusic #djdarkmark",
-    "lofi":       "#lofi #lofihiphop #studymusic #chillvibes #lofibeats #relaxingmusic #djdarkmark",
-    "indie":      "#indie #indiemusic #alternativemusic #indiepop #indierock #emotionalmusic #djdarkmark",
-    "electronic": "#electronic #edm #synthwave #electronicmusic #techno #dancemusic #djdarkmark",
-    "cinematic":  "#cinematic #cinematicmusic #epicmusic #orchestral #filmmusic #epicorchestral #djdarkmark",
-    "funk":       "#funk #funkmusic #groove #soulmusic #funkychill #groovemusic #djdarkmark",
-    "dark":       "#dark #darkmusic #gothic #darkambient #darkwave #atmospheric #djdarkmark",
-    "pop":        "#pop #popmusic #popvibes #newmusic #chart #hitmusic #djdarkmark",
-    "default":    "#music #newmusic #viralmusic #underground #musiclover #musicdiscovery #djdarkmark",
+    "phonk":      "#phonk #darkphonk #phonkmusic #phonkbrasileiro #phonkvibes #djdarkmark #música",
+    "trap":       "#trap #trapmusic #808s #trapbeats #undergroundbr #trapvibes #djdarkmark",
+    "rock":       "#rock #rockmusic #guitarmusic #hardrock #rockbr #rockalternativo #djdarkmark",
+    "metal":      "#metal #heavymetal #metalhead #metalcore #metalbr #músicapesada #djdarkmark",
+    "lofi":       "#lofi #lofihiphop #músicaparaestudas #chillvibes #lofibeats #relaxar #djdarkmark",
+    "indie":      "#indie #indiemusic #músicaalternativa #indiepop #indierock #djdarkmark",
+    "electronic": "#electronic #edm #synthwave #eletrônica #techno #músicaeletrônica #djdarkmark",
+    "cinematic":  "#cinematic #músicacinematográfica #epicmusic #trilhasonora #djdarkmark",
+    "funk":       "#funk #funkmusic #groove #soul #djdarkmark #músicaboa",
+    "dark":       "#dark #músicasombria #gothic #darkwave #atmospheric #djdarkmark",
+    "pop":        "#pop #popmusic #djdarkmark #músicanova #hit",
+    "default":    "#música #músicanova #underground #djdarkmark #shortsbrasil",
 }
 
-UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #shortsvideo #djdarkmark"
+UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #djdarkmark #brasil"
 
 
 def _dhash(text: str) -> int:
-    """Hash determinístico rápido para int."""
     return int(hashlib.md5(text.encode()).hexdigest(), 16)
 
 
 def build_title(base: str, style: str, short_num: int) -> str:
     """
-    Título 100% determinístico por música + short_num.
-    Mesmo input → mesmo output sempre (idempotente).
-    Inputs diferentes → outputs diferentes (anti-repetição).
-
-    Usa 3 camadas de hooks (curiosidade, emocional, identidade)
-    rotacionando por short_num para que 3 shorts da mesma música
-    tenham abordagens psicológicas diferentes.
+    Título determinístico: mesmo input = mesmo output (idempotente).
+    3 camadas de hooks psicológicos — cada short usa uma diferente.
+    Nome da música em inglês, ganchos em português.
     """
     emoji = GENRE_EMOJI.get(style, "🎵")
 
     hook_layers = [
-        HOOKS_CURIOSITY.get(style, HOOKS_CURIOSITY["default"]),
-        HOOKS_EMOTIONAL.get(style, HOOKS_EMOTIONAL["default"]),
-        HOOKS_IDENTITY.get(style, HOOKS_IDENTITY["default"]),
+        HOOKS_CURIOSIDADE.get(style, HOOKS_CURIOSIDADE["default"]),
+        HOOKS_EMOCIONAL.get(style, HOOKS_EMOCIONAL["default"]),
+        HOOKS_IDENTIDADE.get(style, HOOKS_IDENTIDADE["default"]),
     ]
 
-    # Cada short usa uma camada diferente de hook
     layer = hook_layers[(short_num - 1) % len(hook_layers)]
 
     hook_seed = _dhash(f"{base}|hook|{short_num}")
@@ -202,7 +465,6 @@ def build_title(base: str, style: str, short_num: int) -> str:
 
     title = template.format(hook=hook, title=base, emoji=emoji)
 
-    # Garante DJ darkMark (dupla segurança)
     if "DJ darkMark" not in title and "dj darkmark" not in title.lower():
         title = f"DJ darkMark | {title}"
 
@@ -211,39 +473,36 @@ def build_title(base: str, style: str, short_num: int) -> str:
 
 def build_description(base: str, style: str, short_num: int) -> str:
     """
-    Descrição rotativa — 5 variantes diferentes por short_num.
-    Cada uma com tom diferente para manter autenticidade.
+    Descrição em português com storytelling genuíno.
+    5 variantes por tom — honesto, não genérico.
     """
     tags  = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
     emoji = GENRE_EMOJI.get(style, "🎵")
 
     idx = (short_num - 1) % 5
 
-    # Linha de abertura — 5 tons diferentes
     openers = [
-        f"{emoji} {base}\n\n{CHANNEL_NAME} found this before it blows up.\n{CHANNEL_NAME} brings you the best underground {style} music daily.",
-        f"{emoji} {base} — {CHANNEL_NAME}\n\nSome tracks deserve more ears. Found this so you didn't have to.",
-        f"{emoji} {base}\n\nThe algorithm buried this. {CHANNEL_NAME} dug it up. Daily underground drops.",
-        f"{emoji} {base} — {CHANNEL_NAME}\n\nNot everything good goes viral. {CHANNEL_NAME} makes sure you find it anyway.",
-        f"{emoji} {base}\n\nEarly on this one. {CHANNEL_NAME} — daily music you won't find on the radio.",
+        f"{emoji} {base}\n\nEssa aqui chegou no momento certo.\nDJ darkMark traz o melhor do underground todo dia — antes de chegar pra todo mundo.",
+        f"{emoji} {base} — DJ darkMark\n\nAlgumas músicas merecem mais ouvidos. Achei pra você não precisar procurar.",
+        f"{emoji} {base}\n\nO algoritmo enterrou essa. DJ darkMark desenterrou. Drops diários de música underground.",
+        f"{emoji} {base} — DJ darkMark\n\nNem tudo que é bom viraliza. DJ darkMark garante que você ache de qualquer forma.",
+        f"{emoji} {base}\n\nCedo nessa. DJ darkMark — música nova todo dia, essa que você não ia achar no rádio.",
     ]
 
-    # CTA — 5 variantes
     ctas = [
-        f"Subscribe to {CHANNEL_NAME} for daily underground music drops.",
-        f"Follow {CHANNEL_NAME} — new music every single day.",
-        f"Like if this deserved more plays.",
-        f"Save this. You'll want it back.",
-        f"Comment if this hit the way it was supposed to.",
+        f"Inscreva-se no DJ darkMark pra não perder nenhum drop.",
+        f"Siga o DJ darkMark — música nova todo dia sem falta.",
+        f"Curte se essa merecia mais plays.",
+        f"Salva essa. Você vai querer ela de volta.",
+        f"Comenta se bateu do jeito certo.",
     ]
 
-    # Spotify — 5 variantes
     spotify_lines = [
-        f"🎧 Full track:\n{SPOTIFY_LINK}",
-        f"🎵 Stream it:\n{SPOTIFY_LINK}",
-        f"🔊 Full version:\n{SPOTIFY_LINK}",
-        f"📻 On Spotify:\n{SPOTIFY_LINK}",
-        f"🎧 Listen here:\n{SPOTIFY_LINK}",
+        f"🎧 Música completa:\n{SPOTIFY_LINK}",
+        f"🎵 Ouça na íntegra:\n{SPOTIFY_LINK}",
+        f"🔊 Versão completa:\n{SPOTIFY_LINK}",
+        f"📻 No Spotify:\n{SPOTIFY_LINK}",
+        f"🎧 Ouve aqui:\n{SPOTIFY_LINK}",
     ]
 
     return (
@@ -289,7 +548,7 @@ def sync_tracks(state: dict, files: list):
 
     for f in files:
         if f["name"] not in existing:
-            log(f"New track: {f['name']}")
+            log(f"Nova faixa: {f['name']}")
             state["tracks"].append({
                 "id":     f["id"],
                 "name":   f["name"],
@@ -316,7 +575,7 @@ def get_next_track(state: dict) -> dict | None:
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) == 0]
     if new_tracks:
         chosen = new_tracks[0]
-        log(f"Priority: new track — {chosen['name']}")
+        log(f"Prioridade: nova faixa — {chosen['name']}")
         chosen["is_new"] = False
         return chosen
 
@@ -329,7 +588,7 @@ def get_next_track(state: dict) -> dict | None:
             state["alpha_index"] = (idx + i + 1) % n
             return t
 
-    log("Full cycle complete — resetting all counters.")
+    log("Ciclo completo — resetando contadores.")
     for t in tracks:
         t["done"] = 0
     state["alpha_index"] = 0
@@ -348,25 +607,25 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
         dest   = f"temp/{Path(filename).stem}_{short_num}.png"
         img    = generate_image(prompt, output_path=dest)
         if img and os.path.exists(img):
-            log(f"AI image generated: {img}")
+            log(f"Imagem AI gerada: {img}")
             return img
     except Exception as e:
-        log(f"AI image failed, trying local fallback: {e}")
+        log(f"Imagem AI falhou, tentando fallback local: {e}")
 
     try:
         bg = get_random_background(style, filename)
         if bg and not str(bg).startswith("__AUTO"):
-            log(f"Using local background: {bg}")
+            log(f"Usando background local: {bg}")
             return bg
     except Exception as e:
-        log(f"Local background failed: {e}")
+        log(f"Background local falhou: {e}")
 
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
-        log("Using default fallback background")
+        log("Usando background padrão de fallback")
         return fallback
 
-    raise FileNotFoundError("No background available.")
+    raise FileNotFoundError("Nenhum background disponível.")
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -378,30 +637,30 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
     if ENABLE_YOUTUBE:
         try:
-            log("Uploading to YouTube...")
+            log("Fazendo upload pro YouTube...")
             res   = upload_video(video_path, title, description, [], "public")
             yt_id = res.get("id", "?") if isinstance(res, dict) else "?"
             log(f"  YouTube OK -> https://youtu.be/{yt_id}")
             results["youtube"] = {"ok": True, "id": yt_id}
             human_delay()
         except Exception as e:
-            log(f"  YouTube ERROR: {e}")
+            log(f"  YouTube ERRO: {e}")
             results["youtube"] = {"ok": False, "error": str(e)}
     else:
         results["youtube"] = {"ok": False, "skipped": True}
 
     if ENABLE_FACEBOOK:
         try:
-            log("Uploading to Facebook Reels...")
+            log("Fazendo upload pro Facebook Reels...")
             res   = upload_to_facebook(video_path, title, description)
             fb_id = res.get("id") or res.get("video_id", "?")
             log(f"  Facebook OK -> ID: {fb_id}")
             results["facebook"] = {"ok": True, "id": fb_id}
         except EnvironmentError as e:
-            log(f"  Facebook not configured: {e}")
+            log(f"  Facebook não configurado: {e}")
             results["facebook"] = {"ok": False, "skipped": True}
         except Exception as e:
-            log(f"  Facebook ERROR: {e}")
+            log(f"  Facebook ERRO: {e}")
             results["facebook"] = {"ok": False, "error": str(e)}
     else:
         results["facebook"] = {"ok": False, "skipped": True}
@@ -415,42 +674,42 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
 def main():
     log("=" * 55)
-    log(f"BOT STARTING — {CHANNEL_NAME} | YouTube Shorts + Facebook Reels")
-    log(f"  YouTube  : {'ACTIVE' if ENABLE_YOUTUBE  else 'DISABLED'}")
-    log(f"  Facebook : {'ACTIVE' if ENABLE_FACEBOOK else 'DISABLED'}")
-    log(f"  Backup   : {'ACTIVE' if DRIVE_BACKUP_FOLDER_ID else 'DISABLED'}")
-    log(f"  Shorts/track: {SHORTS_PER_TRACK}")
+    log(f"BOT INICIANDO — {CHANNEL_NAME} | YouTube Shorts + Facebook Reels")
+    log(f"  YouTube  : {'ATIVO' if ENABLE_YOUTUBE  else 'DESATIVADO'}")
+    log(f"  Facebook : {'ATIVO' if ENABLE_FACEBOOK else 'DESATIVADO'}")
+    log(f"  Backup   : {'ATIVO' if DRIVE_BACKUP_FOLDER_ID else 'DESATIVADO'}")
+    log(f"  Shorts/faixa: {SHORTS_PER_TRACK}")
     log("=" * 55)
 
     if not DRIVE_FOLDER_ID:
-        raise ValueError("DRIVE_FOLDER_ID not configured.")
+        raise ValueError("DRIVE_FOLDER_ID não configurado.")
 
     service  = get_drive_service()
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
-        raise ValueError("'inbox' folder not found in Drive.")
+        raise ValueError("Pasta 'inbox' não encontrada no Drive.")
 
     files = list_audio_files_in_folder(service, inbox_id)
-    log(f"Audio files found in Drive: {len(files)}")
+    log(f"Arquivos de áudio encontrados no Drive: {len(files)}")
 
     state = load_state()
     sync_tracks(state, files)
     save_state(state)
 
     if not state["tracks"]:
-        log("No tracks to process. Exiting.")
+        log("Nenhuma faixa pra processar. Encerrando.")
         return
 
     track = get_next_track(state)
     if not track:
-        log("No track available.")
+        log("Nenhuma faixa disponível.")
         return
 
     name        = track["name"]
     short_num   = track.get("done", 0) + 1
     title_base  = clean_title(name)
 
-    log(f"Track   : {name}")
+    log(f"Faixa   : {name}")
     log(f"Short   : {short_num}/{SHORTS_PER_TRACK}")
 
     os.makedirs("temp", exist_ok=True)
@@ -462,22 +721,22 @@ def main():
     thumbnail_path = None
 
     try:
-        log("Downloading audio from Drive...")
+        log("Baixando áudio do Drive...")
         download_drive_file(service, track["id"], audio_path)
-        log("Download complete.")
+        log("Download completo.")
 
         cached_genre = track.get("genre")
         if cached_genre:
             style  = cached_genre
             styles = detect_genre_multi(audio_path)
-            log(f"Genre (cached): {style}")
+            log(f"Gênero (cache): {style}")
         else:
-            log("Detecting genre...")
+            log("Detectando gênero...")
             style  = detect_genre(audio_path)
             styles = detect_genre_multi(audio_path)
             track["genre"] = style
             save_state(state)
-            log(f"Genre: {style} | Secondary: {', '.join(styles[1:] or ['none'])}")
+            log(f"Gênero: {style} | Secundários: {', '.join(styles[1:] or ['nenhum'])}")
 
         date       = datetime.utcnow().strftime("%Y-%m-%d")
         output_dir = Path("output") / date / style
@@ -486,10 +745,10 @@ def main():
             output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
         )
 
-        log(f"Generating background (short {short_num})...")
+        log(f"Gerando background (short {short_num})...")
         bg = resolve_background(style, name, short_num, styles)
 
-        log("Generating video...")
+        log("Gerando vídeo...")
         render_result = create_short(
             audio_path,
             bg,
@@ -505,33 +764,33 @@ def main():
             video_path     = render_result
             thumbnail_path = None
 
-        log(f"Video ready: {video_path}")
+        log(f"Vídeo pronto: {video_path}")
 
         title       = build_title(title_base, style, short_num)
         description = build_description(title_base, style, short_num)
-        log(f"Title   : {title}")
+        log(f"Título  : {title}")
 
         results = publish(video_path, title, description)
 
         if DRIVE_BACKUP_FOLDER_ID:
             try:
-                log("Saving backup to Drive...")
+                log("Salvando backup no Drive...")
                 upload_file_to_drive(service, DRIVE_BACKUP_FOLDER_ID, video_path)
-                log("  Backup saved.")
+                log("  Backup salvo.")
             except Exception as e:
-                log(f"  Backup failed (non-critical): {e}")
+                log(f"  Backup falhou (não crítico): {e}")
 
         any_ok      = any(r.get("ok") for r in results.values())
         all_skipped = all(r.get("skipped") for r in results.values())
 
         if not any_ok and not all_skipped:
-            raise RuntimeError("No platform received the video successfully.")
+            raise RuntimeError("Nenhuma plataforma recebeu o vídeo com sucesso.")
 
         track["done"] = short_num
         save_state(state)
 
         log("=" * 55)
-        log(f"DONE — {name} (short {short_num}/{SHORTS_PER_TRACK})")
+        log(f"CONCLUÍDO — {name} (short {short_num}/{SHORTS_PER_TRACK})")
         log("=" * 55)
 
     finally:
@@ -540,7 +799,7 @@ def main():
                 if path and isinstance(path, str) and os.path.exists(path):
                     if path.startswith("temp/"):
                         os.remove(path)
-                        log(f"Temp removed: {path}")
+                        log(f"Temp removido: {path}")
             except Exception:
                 pass
 
