@@ -1,10 +1,12 @@
 """
-ai_image_generator.py — v3.0 HYPER-SPECIFIC VISUAL IDENTITY
-============================================================
-Cada gênero tem DNA visual único e inconfundível.
-Personagens com aparências ESPECÍFICAS e distintas — sem "young woman with dark hair" genérico.
-Composições cinematográficas que param o scroll instantaneamente.
-Anti-repetição máxima via seed determinística por música + short_num.
+ai_image_generator.py — v4.0 ANTI-REPETIÇÃO RADICAL
+=====================================================
+MUDANÇAS v4.0:
+- 4 CONCEITOS VISUAIS que rotacionam: personagem, cenário, abstrato, cinematográfico
+- Sem mais "close de rosto genérico" como padrão
+- Cada gênero tem visuais que FOGEM do óbvio
+- Prompts mais curtos e diretos = melhor fidelidade do modelo
+- Seed garante que mesma música nunca repete conceito
 """
 
 import os
@@ -39,367 +41,379 @@ def get_anthropic_model() -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# DNA VISUAL POR GÊNERO
-# Cada gênero tem paleta, personagem, composição e atmosfera ÚNICOS
+# CONCEITOS VISUAIS — 4 abordagens distintas por gênero
+# Rotacionam para garantir variedade máxima no feed
 # ══════════════════════════════════════════════════════════════════════
 
-GENRE_DNA = {
+# CONCEITO A — Personagem (close/retrato)
+# CONCEITO B — Cenário sem personagem dominante
+# CONCEITO C — Cinematográfico / épico
+# CONCEITO D — Abstrato / atmosférico
 
-    # ── LOFI ──────────────────────────────────────────────────────────────
-    "lofi": {
-        "palette": [
-            "deep amber desk lamp warmth bleeding into cold blue moonlight through rain-streaked window, rich contrast between warm interior and cold exterior night",
-            "oversaturated golden-hour orange fading into deep indigo shadow, warm as memory feels, film grain adding texture and depth",
-            "vivid burnt sienna lamp light against midnight navy room, steam rising visible in warm air, cozy maximum contrast",
-            "deep honey-gold glow from below, every surface catching warm light, cold blue rectangle of night window in background",
-            "rich terracotta warm and saturated teal moonlight, vintage film warmth, colors deep like overexposed analog film",
-            "glowing amber-orange from string lights creating halos, surrounding deep purple-blue room darkness, intimate warmth",
-            "deep coral sunset warmth through curtains, cool lavender shadow on opposite wall, soft yet saturated contrast",
-        ],
-        "characters": [
-            "pale Japanese-Korean woman, short asymmetric black bob with blunt cut, dark half-moon eyes with ink liner, tiny silver nose stud, oversized cream vintage university hoodie, headphones resting on shoulders, paint-stained fingers holding mug",
-            "freckled redheaded woman, messy copper curls half-pinned up with pencils sticking out, round wire-frame glasses fogged slightly, green-hazel eyes, large soft knit cardigan in oatmeal beige, open sketchbook in lap",
-            "dark-skinned woman with natural 4C hair in loose puff held by silk scrunchie, deep brown eyes with sleepy warmth, small gauze bandage on chin from art accident, oversized faded band tee, cozy ankle socks with cats",
-            "Southeast Asian woman, long straight dark hair with blunt fringe perfectly cut, large rectangular glasses with clear frames, tired but content dark brown eyes, blue-grey vintage oversized sweater, cup of tea in both hands",
-            "Latina woman with wavy dark brown hair loose and a bit tangled, warm caramel skin, dark eyes with crescent shadows under them, cozy ribbed turtleneck in dusty rose, small gold hoop earrings, paint smudge on cheek",
-            "mixed-race woman, tight dark curls with some escaping a loose bun, honey-brown eyes behind round tortoiseshell glasses, soft oversized flannel in deep green plaid, knees pulled to chest, vinyl record visible nearby",
-            "pale woman with silver-bleached short hair grown out showing dark roots, slightly asymmetric face with gap tooth showing in soft smile, large forest green hoodie, fingers with small rings, mug of ramen visible",
-        ],
-        "compositions": [
-            "tight face-and-shoulders portrait, face half warm amber from desk lamp on right, half cool blue moonlight from window on left, rain visible blurred on glass behind, intimate and emotionally real",
-            "medium side-profile shot, girl absorbed in sketchbook at wooden desk, lamp casting dramatic one-sided warm light, window showing blurred city lights in rain, her world small and complete",
-            "close portrait with soft shallow depth of field, face in sharp focus, string lights behind creating golden bokeh that fills entire background, one eye slightly obscured by hair",
-            "medium shot from slightly above, girl cross-legged on bed surrounded by books and a small plant, full moon visible in window directly behind her creating soft halo effect",
-            "rear shot over shoulder through fogged window, viewer looking through the glass at city lights reflected and blurred, her silhouette before the glass from warm side",
-            "extreme close crop: just eyes and above in focus, below nose soft, steam rising from mug at bottom edge of frame, fairy lights creating subtle bokeh highlights in eyes",
-            "three-quarter medium shot, girl looking directly at viewer with tired but warm expression, lamp and window both visible in frame, the whole cozy ecosystem around her visible",
-        ],
-    },
+VISUAL_CONCEPTS = {
 
-    # ── PHONK ─────────────────────────────────────────────────────────────
-    "phonk": {
-        "palette": [
-            "single brutal crimson neon slash cutting pitch-black frame, blood-red wet concrete reflections below, no other color exists in this world",
-            "cold electric violet-purple against total charcoal black, neon reflecting in puddles, hypercontrast urban underground, no softness anywhere",
-            "burning orange sodium vapor lamp creating one harsh pool of light in infinite black, industrial noir, shadows have weight",
-            "magenta-pink neon ONLY source of light in jet black world, aggressive single-color dominance, reflections everywhere like a crime scene",
-            "split: ice-cold blue LED on left half, deep rust-red sodium on right half, center shadow divides them, maximum tension",
-            "deep red-orange factory light and total darkness fighting each other, empty concrete structure, gritty texture everywhere",
-            "toxic green neon cutting black sky, wet asphalt turning everything to mirrors below, hostile and beautiful",
-        ],
-        "characters": [
-            "Japanese woman, razor-straight jet black hair with geometric undercut showing, sharp almond eyes with cold empty expression that holds nothing back, no makeup except dark liner, black technical jacket with chest zipper, face half in shadow half harsh neon",
-            "Black woman, long microbraids with burgundy highlights, angular strong features with full lips set in absolute neutrality, septum ring, oversized black parka hood half-up, deep brown eyes reflecting neon like water",
-            "Eastern European woman, platinum silver buzzcut with shaved temple showing skin, pale almost translucent skin, ice-grey eyes with zero emotion, black structured jacket collar up, single small scar on cheekbone",
-            "Korean woman, sleek dark hair in tight high ponytail pulling face smooth, sharp monolid eyes with cat-eye liner wing, angular jaw, dark fitted jacket with too many unnecessary zippers, controlled stillness",
-            "Brazilian woman with natural dark tight curls, deep brown skin, wide nose, expressionless full lips, dark fitted technical hoodie, gold earring studs only jewelry, arms crossed like a closed door",
-            "mixed-race woman, dark hair shaved on sides leaving strip of curls on top in loose mohawk, strong cheekbones, deep-set eyes with slow intelligence, matte black jacket, bare wrists",
-            "Chinese woman, blunt-cut black bob with one streak of bleached blonde, sharp angular face, hollow cheeks, eyes looking through camera not at it, black oversized coat, no expression to read",
-        ],
-        "compositions": [
-            "extreme close portrait, face filling 80% of frame, single crimson neon slash lighting one eye and cheekbone, everything below chin in absolute black, manga-panel negative space above",
-            "medium shot, figure leaning against concrete wall in empty parking structure at 3am, arms crossed, single purple neon tube reflected in wet floor below her feet, harsh and still",
-            "low-angle looking up at figure crouching on concrete barrier, harsh sodium light from side, city visible far below and behind, commanding and cold",
-            "rear shot: figure walking away down empty tunnel toward distant light, she never looks back, every step deliberate, mist at ankle level",
-            "tight face crop: only eyes and nose visible, rest obscured by shadow and hood, neon reflection visible in one iris, the mystery is the point",
-            "three-quarter medium shot, figure at edge of empty rooftop, city grid below like a circuit board, wind pulling hair slightly, cold and removed from it all",
-            "reflected shot: face seen in rain-wet car window glass, slightly distorted by water, city and neon inverted behind the reflection, two realities at once",
-        ],
-    },
+    # ── LOFI ──────────────────────────────────────────────────────────
+    "lofi": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime girl at wooden desk, oversized hoodie, headphones around neck, rain hitting window behind her, warm amber desk lamp, late night, cozy and quiet",
+            "palette": "deep amber warm lamp light vs cold blue moonlight from window, rich contrast, film grain",
+            "mood": "peaceful concentration, 3am productivity",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "cozy bedroom at night, no character, vinyl records scattered on floor, open sketchbook, glowing amber lamp, rain on window showing blurred city lights, steam rising from forgotten mug",
+            "palette": "warm honey amber interior vs cold midnight blue window, rich shadows, analog warmth",
+            "mood": "inviting, quiet, the room tells the story",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "anime girl silhouette at floor-to-ceiling window, rain-soaked city below, warm room behind her cold glass in front, she is between two worlds",
+            "palette": "warm interior gold vs cold neon-lit city below in rain, cinematic depth",
+            "mood": "introspective, the city never sleeps but she has found peace",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "musical notes dissolving into rain drops, headphone cable becoming a river, cassette tape unwinding into autumn leaves, warm golden light from below",
+            "palette": "warm amber and soft blue, dreamy and soft, analog textures",
+            "mood": "nostalgia made visible, music as feeling",
+        },
+    ],
 
-    # ── TRAP ──────────────────────────────────────────────────────────────
-    "trap": {
-        "palette": [
-            "deep midnight navy blue and pure burnished gold, luxury cold with warm edges, the palette of penthouse and ambition",
-            "champagne gold and rich velvet black, premium contrast, expensive at first glance, the visual language of arrival",
-            "electric teal and rose gold, premium streetwear editorial, vivid luxury palette that stops the eye immediately",
-            "ice blue-white moonlight and deep rich copper, cold ambition and warm achievement, premium contrast",
-            "deep purple-navy and bright silver chrome, elevated urban twilight, the city as backdrop to power",
-            "vivid coral against deep midnight, warm luxury against cold night, the color story of confidence",
-            "black marble and vivid electric indigo, pure aesthetic luxury, modern and cold and beautiful",
-        ],
-        "characters": [
-            "Nigerian woman, natural afro with gold thread woven through, flawless deep brown skin, sharp angular face with cheekbones that cut, composed cold expression, luxury white turtleneck under structured black coat, small diamond studs",
-            "Korean-American woman, sleek black hair with money-piece highlights, high sharp cheekbones, fox-shaped eyes with clean professional liner, pearl skin, fitted beige tailored set with chunky gold chain",
-            "Dominican woman, long honey-brown boxer braids past shoulders, deep olive skin, cat-shaped dark eyes with thin brow, strong jaw, black oversized designer crewneck, ear full of studs climbing the cartilage",
-            "Japanese woman, sharp bob with gold highlights at tips, neutral expression that reads as power, clean liner, light skin, fitted luxury crop set in dove grey, layered gold chains of different lengths",
-            "Ghanaian woman, long Senegalese twists with silver cuffs, deep rich skin, wide-set eyes that assess everything, no-smile composure, structured leather set, rings on every finger but one",
-            "mixed-race woman, natural loose curls slicked back, warm medium skin, strong Latina features, mascara-only makeup, fitted dark set with architectural cut, thin gold necklace at collarbone",
-            "Chinese woman, sleek middle-part straight black hair, porcelain pale with sharp features, clean no-makeup-makeup, structured camel coat over black, one thick gold cuff wrist, controlled",
-        ],
-        "compositions": [
-            "medium shot at floor-to-ceiling window, figure facing camera with entire city grid spread behind her at night, arms loose, the city is context not destination",
-            "editorial three-quarter shot, strong lighting from floor lamp creating dramatic upward shadow, figure composed and still, luxury room visible but unfocused",
-            "close portrait, city lights soft behind large window, face perfectly lit, neutral expression that holds everything back, luxury at rest",
-            "low-angle medium shot looking up slightly, figure walking forward, city skyline behind through car window, the kind of shot that means arrival",
-            "side-lit close portrait, single window of light grazing cheekbone and jaw, deep shadow on other half, the luxury of negative space",
-            "wide shot, figure small against massive lit penthouse window, city spread below in all directions, scale makes her look more powerful not less",
-            "reflected in dark glass: face in foreground, city lights blurred and reflected in surface, two layers of image creating depth",
-        ],
-    },
+    # ── PHONK ─────────────────────────────────────────────────────────
+    "phonk": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, sharp features, emotionless expression, black technical jacket, standing in empty parking structure at 3am, single crimson neon tube overhead",
+            "palette": "blood red neon slash in absolute darkness, wet concrete reflections, zero warmth",
+            "mood": "cold, controlled, dangerous",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "empty highway at night, no character, red tail lights stretching to horizon, wet asphalt mirror, single orange sodium lamp, fog at ground level",
+            "palette": "deep crimson and charcoal black, neon reflections in wet road, maximum contrast",
+            "mood": "midnight drive, the city as emptiness",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "low angle shot of anime woman walking away down dark tunnel, crimson neon at far end, her silhouette cutting the light, never looking back",
+            "palette": "pitch black with single red vanishing point, dramatic perspective, cinematic",
+            "mood": "inevitability, she owns the dark",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "808 bass wave made visible as crimson shockwave tearing through dark city, car drifting leaving red light trails, vinyl record spinning with fire edge",
+            "palette": "blood red and absolute black, aggressive energy made visual",
+            "mood": "raw power, bass as destruction",
+        },
+    ],
 
-    # ── DARK ──────────────────────────────────────────────────────────────
-    "dark": {
-        "palette": [
-            "near-monochrome silver-grey and absolute black with single bleeding crimson accent, stark as a cut, manga aesthetic maximized",
-            "deep jewel violet and cold silver moonlight, gothic beauty with rich purple shadow filling everything not lit",
-            "black ink and saturated blood red, complete tonal contrast, horror made into art",
-            "ash-white and deep charcoal with ghostly cyan light, supernatural cold, color of things that shouldn't exist",
-            "pitch black with vivid absinthe-green luminescence, toxic beauty, the color of old poison",
-            "deep prussian blue-black and pale silver, cold and ancient, the palette of old cemeteries and frozen water",
-            "matte black and vivid electric violet, dark energy given form, the color of power without warmth",
-        ],
-        "characters": [
-            "ghostly pale Japanese woman, impossibly long straight black hair spreading around her, irises that glow deep crimson against white, slight smile that understands something terrible, dressed in layered black fabric that moves like water",
-            "Scandinavian-looking woman with silver-white hair, hollow silver-grey eyes that catch light like a cat's, sharp defined features, dark gothic dress with high collar, black tear-streak markings on cheekbones",
-            "Chinese woman with black hair partially obscuring one eye, the visible eye a glowing violet-purple, pale skin with faint veining visible at temples, dark layered outfit, fingers with too many joints visible",
-            "dark-skinned woman, natural hair with silver strands woven through, black irises that absorb all light, expression of a person who has seen and survived everything, intricate dark markings on arms, dressed in structured darkness",
-            "pale woman with bleached white short hair, deep-set eyes ringed with dark shadow like bruises, expression peaceful as sleeping, black ink tattoos covering neck and hands, dark Victorian-influenced outfit",
-            "ambiguous-featured woman with angular face, one eye completely black sclera, one eye glowing amber, dark ink-black hair floating slightly as if underwater, minimal dark outfit, presence that fills empty space",
-            "Middle Eastern woman with jet black hair and strong defined features, deep brown eyes that glow with violet inner light, geometric black markings on face, dark structured outfit with gold accents at collar",
-        ],
-        "compositions": [
-            "extreme close portrait, face filling frame, one eye sharp and luminous, hair drifting into black void corners of frame, negative space used as active element",
-            "medium shot in moonlit ruins, single shaft of silver light from above catching face, mist at ground level obscuring feet, scale of decay around her",
-            "wide atmospheric shot, small figure at center of vast dark space, single source of vivid colored light surrounding her, the void is presence",
-            "extreme crop of single glowing eye filling half the frame, surrounded by dark hair and shadow, the other half pure black, minimal and overwhelming",
-            "medium shot reflected in still black water, figure above and reflection below, moonlight from directly above, mirror symmetry as horror element",
-            "rear shot in dark corridor, figure walking toward single light source ahead, her shadow stretching back toward viewer, what is she walking toward",
-            "close portrait from below, face tilted down looking at viewer from above, dramatic underlighting creating inverted shadow that feels wrong, beautiful and wrong",
-        ],
-    },
+    # ── TRAP ──────────────────────────────────────────────────────────
+    "trap": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, natural afro with gold thread, structured black coat, standing at floor-to-ceiling penthouse window, entire city grid spread below at night",
+            "palette": "midnight navy and burnished gold, luxury cold, the palette of arrival",
+            "mood": "composed power, the city is context",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "penthouse interior at night, no character, city lights through massive windows, gold and glass decor, expensive emptiness, champagne glass catching light",
+            "palette": "deep black and champagne gold, premium contrast, luxury at rest",
+            "mood": "arrived but not showing off",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "wide cinematic shot, anime woman small figure against enormous lit city skyline, she stands at rooftop edge, arms relaxed, the scale makes her larger not smaller",
+            "palette": "deep navy sky and warm amber city lights below, epic vertical composition",
+            "mood": "elevation, belonging at the top",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "gold chain links floating in dark space, diamond catching light from multiple directions, 808 waveform as golden architecture, luxury geometry",
+            "palette": "pure black and vivid burnished gold, premium minimal",
+            "mood": "the sound of money made visible",
+        },
+    ],
 
-    # ── ELECTRONIC ────────────────────────────────────────────────────────
-    "electronic": {
-        "palette": [
-            "electric cyan and deep magenta in equal war, complementary clash at maximum saturation, rave light as sculpture",
-            "UV electric purple making white surfaces glow vivid, fluorescent green in shadows, the physics of blacklight",
-            "strobing white laser and rainbow chromatic aberration edges, techno cathedral light quality, precision and chaos",
-            "neon pink and electric teal, vivid complementary palate of the 4am rave, excess as aesthetic principle",
-            "holographic rainbow spectrum across deep black, interference patterns as background, the light of the future",
-            "vivid acid-yellow and deep electric blue, the most aggressive complementary pair, visual as sound wave",
-            "laser red and electric cyan split-lit, two colors at maximum intensity, halation and bloom everywhere",
-        ],
-        "characters": [
-            "Japanese woman with electric midnight-blue hair in bold geometric bob cut with blunt fringe, violet LED-lit eyes, cyberpunk graphic face paint in neon, holographic bodysuit with light-reactive panels",
-            "Black woman with natural 4C hair dyed vivid neon magenta, glowing UV-reactive skin art on shoulders and collarbone, ecstatic eyes open wide, chrome reflective jacket with laser burns as design",
-            "Korean woman with silver chrome undercut, long top section in vivid electric green, cyberpunk contact lenses making eyes glow blue-white, technical festival fashion with LED strips",
-            "mixed-race woman with shaved head and neon yellow geometric lines drawn on scalp with paint, strong features in UV festival makeup, reflective jumpsuit, face caught in ecstasy mid-song",
-            "white woman with chaotic bleached hair going every direction, neon festival paint on face and neck, eyes that catch every light and scatter it back, mesh and holographic layered outfit",
-            "Filipina woman with waist-length hair dyed deep electric purple, bioluminescent face paint activated by UV around eyes, technical fashion from future era, caught mid-movement arms raised",
-            "androgynous-featured woman with platinum buzzcut, glowing bionic-looking teal eye implant aesthetic, sharp geometric face paint, chrome-and-neon armor-fashion, commanding the stage",
-        ],
-        "compositions": [
-            "rear shot from stage level, figure arms raised against ocean of phone lights and crowd, laser beams cutting fog above in multiple colors, the scale of it",
-            "close portrait, face lit by rapid color-changing stage lights, eyes closed in ecstasy, chromatic aberration at frame edges, motion blur on lights only",
-            "medium silhouette against massive LED wall with abstract vivid visuals, only outline defined, color explosion compositing around dark form",
-            "aerial-feeling wide shot, single figure at center of outdoor festival, massive LED stage as bright core, crowd ocean surrounding, stars above completing the circle",
-            "medium shot through crowd, figure in foreground sharp, crowd behind as smear of light and motion blur, she is still while everything moves",
-            "extreme close shot of eye catching laser light, iris reflecting colored beams, pupil surrounded by concentric rings of colored light, abstraction and beauty",
-            "three-quarter medium shot, hands on DJ equipment, face lit from below by vivid deck lighting, crowd hands at frame edges raising toward her",
-        ],
-    },
+    # ── DARK ──────────────────────────────────────────────────────────
+    "dark": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "ghostly pale anime woman, impossibly long black hair floating slightly, glowing crimson irises, slight smile that knows something terrible, moonlit ruins background",
+            "palette": "near-monochrome silver and absolute black, single bleeding crimson accent, manga negative space",
+            "mood": "beautiful and wrong, the smile is the warning",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "moonlit abandoned cathedral, no character, fractured stained glass casting colored shadows, overgrown with dark vines, single candle flame at altar, darkness alive",
+            "palette": "cold silver moonlight and deep shadow, violet accent from broken glass, atmosphere of sacred decay",
+            "mood": "beauty that has outlived its purpose",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "extreme wide shot, anime woman tiny figure at center of vast dark space, single circle of violet light surrounding her, the void pressing in from all sides",
+            "palette": "absolute black and vivid absinthe-violet circle of light, dramatic scale contrast",
+            "mood": "the light she carries is the only light",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "dark melody visualized as black ink spreading through water, crimson notes bleeding at edges, void with heartbeat rhythm made visible as concentric dark rings",
+            "palette": "black ink and deep crimson, water texture, darkness with pulse",
+            "mood": "darkness is not empty it is full",
+        },
+    ],
 
-    # ── ROCK ──────────────────────────────────────────────────────────────
-    "rock": {
-        "palette": [
-            "deep amber stage fire and pure darkness, live show drama, warm volcanic against cold shadow, raw energy in light",
-            "harsh white spotlight and pitch-black shadows, the binary of performance, no grey anywhere, commitment",
-            "vivid red and cold blue split light, two temperatures in conflict, the tension is the point",
-            "deep orange ember tones and concrete grey, industrial warmth, raw venue with history in the walls",
-            "backlit smoke creating orange-amber corona, silhouette dark against glowing fog, the shape of sound",
-            "vivid warm stage flood against deep navy sky, outdoor show at dusk, the moment between world and music",
-            "hot white lamp and deep shadow creating half-face drama, the classic rock image, timeless contrast",
-        ],
-        "characters": [
-            "white woman with fiery copper-orange short pixie with shaved undercut showing, blazing amber eyes, leather jacket covered in hand-sewn band patches and pins, torn fishnet arm, mid-song face",
-            "Black woman with wild natural 4C afro fanned out dramatically, fierce wide eyes, winged liner precise despite chaos, sleeveless band tee knotted at waist, silver rings stacked on fingers, guitar strap visible",
-            "Latina woman with long dark waves wild and electric with stage movement, intense green eyes catching spotlight, ripped band tee showing attitude, leather jacket hanging off one shoulder, caught mid-riff face",
-            "Japanese woman with bleached short choppy hair with dark roots, sharp dramatic eyeliner, intense direct gaze, vintage band tee cut into crop, high-waist jeans, guitar pick between teeth",
-            "mixed-race woman with loose dark curls dyed vivid red-auburn at tips, freckled warm skin, fierce open-mouth expression mid-scream into mic, fishnet and leather layers, ear full of hoops",
-            "white woman with long straight dark hair sticking to sweaty neck and face, heavy kohl liner, expression between pain and transcendence that only performance produces, band tee decades old",
-            "Korean-American woman with wild bleached waves, sharp facial features, black liner wings, shredded leather vest over white tee, arms mid-windmill guitar motion, pure kinetic",
-        ],
-        "compositions": [
-            "tight close performance portrait, face and mic in frame, expression caught between pain and release that only happens in songs, stage light harsh and beautiful",
-            "medium shot from stage floor looking up, figure backlit by wall of stage lights creating halo around wild hair, crowd hands visible at bottom edge as sea",
-            "wide silhouette, figure against wall of white concert lights, arms open, crowd silhouette at feet as suggestion of mass",
-            "three-quarter medium shot, guitar solo moment, head thrown back, face at exact angle between pain and transcendence, spotlight from directly above",
-            "extreme close crop, fingers on guitar frets in focus, face soft-focused above, the instrument and the player equal subjects",
-            "medium shot frozen mid-jump off riser, all gravity suspended, stage lights below and behind, crowd blur surrounding moment",
-            "intimate rear shot from stage wing, figure facing crowd, the enormous space of the room visible, she commands all of it",
-        ],
-    },
+    # ── ELECTRONIC ────────────────────────────────────────────────────
+    "electronic": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, electric blue hair geometric bob, UV-reactive face art, arms raised at festival, laser beams cutting fog above crowd, ocean of phone lights behind her",
+            "palette": "electric cyan vs deep magenta, maximum saturation, rave light as sculpture",
+            "mood": "ecstatic, she is the drop",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "empty dance floor from above, no character, laser grid ceiling, fog at ankle level, colorful light beams cutting through haze, the venue before it fills",
+            "palette": "UV purple floor, cyan and magenta laser grid, deep black space, fluorescent geometry",
+            "mood": "the space that holds the ritual",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "rear view from stage level, anime woman DJ facing enormous crowd, massive LED wall exploding with abstract visuals behind her, her silhouette the only dark thing",
+            "palette": "silhouette vs rainbow LED explosion, chromatic aberration at edges, scale overwhelming",
+            "mood": "she controls the frequency of thousands",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "sound wave architecture, bass frequencies as glowing blue columns, treble as electric sparks, the drop visualized as supernova of cyan and magenta light",
+            "palette": "electric cyan and vivid magenta on black, maximum saturation, frequency as art",
+            "mood": "music made visible and physical",
+        },
+    ],
 
-    # ── METAL ─────────────────────────────────────────────────────────────
-    "metal": {
-        "palette": [
-            "volcanic deep orange-red and absolute char-black, apocalyptic heat, the palette of destruction with beauty",
-            "deep crimson and pure charcoal grey, brutal contrast, nothing wasted, everything at maximum",
-            "cold lightning white-blue and storm-black sky, raw electrical power, nature at its most hostile",
-            "amber ember glow and total darkness, fire as the only light source, primitive and overwhelming",
-            "ice crystal pale blue and black stone, ancient evil cold, the palette of things that predate humanity",
-            "burning orange and deep storm purple, the sky during the worst storm you've survived, vivid and threatening",
-            "matte grey and vivid electric red, industrial power, machinery and violence in color form",
-        ],
-        "characters": [
-            "white woman, impossibly long straight dark hair with blood-red dyed under-layer visible in movement, one natural eye one vivid red glowing eye, dark gothic armor-influenced clothing with intricate detailing, warrior queen who has won every war",
-            "Scandinavian woman, ice-white long flowing hair that moves in wind that isn't there, pale cool skin, stoic commanding expression that has seen the end and chosen to continue, dark structured warrior outfit",
-            "South Asian woman, dark waist-length hair in elaborate warrior braid, deep amber eyes with battle intensity, strong defined features, dark aesthetic with gold accent jewelry, warrior queen energy",
-            "mixed-race woman, wild dark hair matted with rain, warm brown skin with battle-paint markings on cheeks, amber warrior eyes, dark powerful outfit, the kind of presence that ends silences",
-            "pale woman, long dark hair floating slightly as if charged with electricity, glowing purple eyes, dark flowing garment with structured armor elements at shoulders, surrounded by barely visible shadow energy",
-            "Black woman, natural hair pulled into elaborate dark crown, deep rich skin, glowing golden eyes that judge everything, dark intricate outfit with metalwork detail, absolute presence",
-            "Chinese woman, long black hair with geometric silver-white streaks, cold grey eyes with inner light, angular strong face, dark structured outfit with flowing elements, ancient and current simultaneously",
-        ],
-        "compositions": [
-            "close portrait, face lit from below by fire or volcanic glow, everything above head in storm-black, expression absolute and serene in chaos",
-            "wide atmospheric shot, small figure on elevated rock or cliff, storm sky with multiple lightning strikes surrounding, scale of natural power framing human will",
-            "medium shot surrounded by floating embers and ash, fire glow from below, face serene amid active destruction, beauty and chaos as partners",
-            "extreme close face shot, unflinching gaze forward, volcanic or storm light catching every feature at maximum, primal intensity",
-            "dramatic medium from below looking up, figure descending dark stone steps, dark fabric in motion, ancient stronghold behind creating epic scale",
-            "silhouette wide, figure atop extreme high point, multiple lightning strikes simultaneously, the storm obeys her or is afraid of her",
-            "medium shot in dark cathedral or ancient space, candle light casting dramatic long shadows, figure commanding the space simply by being present in it",
-        ],
-    },
+    # ── ROCK ──────────────────────────────────────────────────────────
+    "rock": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, fiery copper pixie cut, leather jacket with patches, mid-scream into mic, harsh amber stage light from above, crowd hands visible below as sea",
+            "palette": "volcanic amber stage light vs pitch black, raw energy in light, no softness",
+            "mood": "catharsis, the scream is the truth",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "empty concert venue, no character, stage lit with warm amber flood, crowd barrier, drum kit and guitar stand alone under light, the stage before chaos",
+            "palette": "warm stage amber and deep venue shadow, concrete and metal textures",
+            "mood": "the quiet before it all starts",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "wide shot, anime woman silhouette backlit by massive wall of stage lights, hair wild in wind, crowd silhouette at her feet as dark mass, arms open",
+            "palette": "pure white concert lights creating halo vs absolute crowd darkness, binary power",
+            "mood": "she owns the room the room owns her",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "guitar string vibration made visible as amber shockwave, pick strike creating ripple of distortion, vinyl record cracked and burning at edge, amplifier grill glowing warm",
+            "palette": "deep amber and raw black, electric energy as visual texture",
+            "mood": "the sound that changes something",
+        },
+    ],
 
-    # ── INDIE ─────────────────────────────────────────────────────────────
-    "indie": {
-        "palette": [
-            "deep honey-amber of last golden hour before sunset, everything warm and ending, natural beauty at maximum",
-            "overcast silver-white light, rich saturated earth tones, honest color, the beauty of cloudy afternoon",
-            "late afternoon deep orange amber, long shadows, the feeling that this moment is almost over and was perfect",
-            "dusk gradient from vivid salmon pink to deep indigo purple, the sky on the best day, magic hour is real",
-            "morning soft golden light shaft through dust, the world before it remembers to be complicated, warm and quiet",
-            "deep green of overgrown places and warm golden light catching leaves from behind, natural and vivid",
-            "rich warm honey and deep burgundy, autumn tones, the color of nostalgia that doesn't hurt yet",
-        ],
-        "characters": [
-            "white woman with long honey-blonde waves genuinely natural and uncurated, warm sea-glass eyes, honest freckles, vintage slip dress with worn denim jacket that has pins and badges, absolutely herself",
-            "Black woman with natural 4C hair loose and full, warm deep skin, genuine bright eyes, sundress with oversized open cardigan, looking directly at viewer with something true",
-            "Latina woman with short natural dark waves, warm olive skin with real freckles, gap tooth visible in soft real smile, wide-leg vintage trousers and knit crop, looks like a person not a model",
-            "mixed-race woman with loose natural curls, warm medium skin, honey eyes, expression of someone who just thought of something that made her smile, layers of vintage finds that shouldn't work together but do",
-            "Asian woman with wavy dark hair, soft warm features, eyes that hold specific thought not just beauty, genuine casual style, the kind of person who finds the good vinyl at the thrift store",
-            "white woman with copper-red loose curls genuinely not quite under control, freckled pale skin, warm grey eyes, flannel over band shirt, the person you want to know",
-            "Filipino woman with natural dark waves, warm brown skin and honest expression, handmade earrings, embroidered jacket that someone important gave her, deeply present in the moment",
-        ],
-        "compositions": [
-            "medium close shot, face in rich golden-hour light with specific warmth that feels like a specific day, environment suggesting more than showing",
-            "intimate shot from passenger seat looking at driver, late afternoon light through windshield catching hair and profile, movement implied by everything",
-            "close portrait with film photography aesthetic, slight beautiful analog overexposure, warm grain giving texture to light, genuinely unposed expression",
-            "medium shot on rooftop or fire escape, dusk sky transitioning vivid colors behind, figure with city soft below, neither nostalgia nor escape, just here",
-            "wide atmospheric shot, figure small in field of tall golden grass, late sun turning everything the color of memory, arms naturally out not performatively",
-            "close shot through café or apartment window, condensation at edges, warm inside cold outside, face looking out at rain, honest and present",
-            "medium shot in beautiful overgrown forgotten place, afternoon light through broken ceiling or branches, life reclaiming beauty, she found it",
-        ],
-    },
+    # ── METAL ─────────────────────────────────────────────────────────
+    "metal": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, impossibly long dark hair with blood-red underlayer, warrior armor-influenced outfit, standing on cliff edge, storm with multiple lightning strikes surrounding her",
+            "palette": "volcanic deep orange and absolute char-black, lightning white cutting storm purple sky",
+            "mood": "the storm obeys her or fears her",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "ancient stone fortress in storm, no character, lightning illuminating every crack, fire torches bending in wind, drawbridge chains, epic scale of old power",
+            "palette": "cold lightning white and storm-black, amber torch fire as only warmth, stone grey textures",
+            "mood": "architecture of endurance",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "extreme wide, anime woman tiny figure atop highest tower, simultaneous lightning strikes in circle around her, the scale of natural power vs human will",
+            "palette": "electric white lightning on purple-black storm sky, the single human figure as contrast",
+            "mood": "she chose to stand here",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "breakdown visualized as tectonic plates cracking, guitar riff as shockwave shattering stone, double bass drum as earthquake ripple, fire erupting from cracks in dark ground",
+            "palette": "volcanic crimson and charcoal black, destruction as beauty",
+            "mood": "heavy music made geological",
+        },
+    ],
 
-    # ── CINEMATIC ─────────────────────────────────────────────────────────
-    "cinematic": {
-        "palette": [
-            "vivid teal and rich orange color science of premium cinematography, complementary grading maximized, film quality",
-            "desaturated environment with single vivid golden beam of light, everything else grey, that one thing glowing",
-            "cold blue exterior and warm amber interior split perfectly, dramatic contrast, the grammar of film lighting",
-            "deep rich shadows and luminous gold highlights, chiaroscuro technique at cinematic scale, Rembrandt in motion",
-            "fog-diffused atmosphere with one brilliant warm light source in grey world, smoke making light visible",
-            "storm break, ray of amber light through dark clouds, the world about to change, epic atmospheric scale",
-            "vivid blue hour and warm artificial light, the most cinematic time of day, world in transition",
-        ],
-        "characters": [
-            "mixed-race woman, long dark hair moving in wind from direction we can't see, strong features with natural presence that cameras love, dramatic long coat, the kind of face that tells a story in every frame",
-            "white woman with short silver-grey hair despite apparent youth, cool intelligent grey eyes, structured tailored jacket, presence suggesting the most interesting person in every room she enters",
-            "Black woman with elaborate braids in motion, luminous warm skin, eyes that observe everything, cinematic fashion with architectural structure, she has already lived the story she's telling",
-            "East Asian woman, dark hair partially obscuring face from wind, expression of someone making a difficult decision that only she knows about, understated outfit that film would light perfectly",
-            "Latina woman, long dark waves catching dramatic light, strong features, warm skin that cinematography was designed for, powerful stance that means something specific",
-            "South Asian woman with long dark hair in motion, deep brown eyes that hold complete inner life, cinematic outfit with movement, the protagonist energy that fills a frame",
-            "white woman with natural blonde hair catching light, jawline that film lighting was invented to find, composed expression that holds back exact right amount, dressed simply because she doesn't need more",
-        ],
-        "compositions": [
-            "wide cinematic shot, small figure against vast dramatic landscape — cliff, impossible sky, storm breaking — scale making the human feel both small and brave",
-            "close portrait, extreme cinematic depth of field, face sharp, environment behind soft-suggested like memory, anamorphic lens quality, widescreen feel in vertical",
-            "medium atmospheric shot, figure walking through deep fog toward single light source, the path between known and unknown, film noir with beauty instead of dread",
-            "close medium shot in rain, figure facing the rain rather than sheltering, city or dramatic environment behind, the specific choice of being present in bad weather",
-            "silhouette against impossible sky, storm break releasing last light, double horizon, the sky itself a painting she stands inside",
-            "perspective medium shot, figure at end of long architectural corridor, single vanishing point, the precision of intention, she is walking somewhere specific",
-            "split composition, upper half figure, lower half her reflection in still water, almost perfect mirror, the line between them slightly wrong in interesting way",
-        ],
-    },
+    # ── INDIE ─────────────────────────────────────────────────────────
+    "indie": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, honey-blonde waves genuinely uncurated, vintage slip dress, sitting in golden field at magic hour, looking directly at viewer with something true",
+            "palette": "deep honey-amber of last golden hour, long shadows, natural beauty at maximum",
+            "mood": "absolutely herself, the authenticity is the point",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "abandoned railway at sunset, no character, wildflowers growing between tracks, golden hour light through tall grass, warm and forgotten and beautiful",
+            "palette": "rich warm honey and deep burgundy, autumn tones, overgrown beauty",
+            "mood": "the world keeps being beautiful without asking permission",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "medium shot from passenger seat, anime woman driving at golden hour, late afternoon light through windshield catching her profile perfectly, movement implied",
+            "palette": "deep orange amber through glass, warm grain, film photography quality",
+            "mood": "going somewhere or leaving something",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "cassette tape unspooling into wildflower field, music notes becoming fireflies at dusk, vinyl record growing as tree ring cross-section, warm golden light through everything",
+            "palette": "honey gold and deep green, warm grain, analog nostalgia",
+            "mood": "music grows in you like something living",
+        },
+    ],
 
-    # ── FUNK ──────────────────────────────────────────────────────────────
-    "funk": {
-        "palette": [
-            "deep warm orange and rich red-brown of late night venue lighting, soulful heat, colors that feel alive",
-            "electric yellow and deep purple, the classic groove complementary pair, vivid as celebration feels",
-            "vivid coral-sunset and deep warm teal, saturated alive, the color of music that makes you move before you decide to",
-            "deep gold and rich dark mahogany, soulful warmth, the texture of old wood and good music",
-            "neon warm magenta and amber, night venue energy, vivid as the best part of any night out",
-            "vivid orange and electric cobalt blue, high-energy contrast, groove has a color and this is it",
-            "rich red-orange and deep purple, warm against cool, the tension that makes music feel inevitable",
-        ],
-        "characters": [
-            "Black woman with voluminous natural afro, gold and amber beaded pins throughout, deep rich warm skin, expression of someone who has been the best dancer in every room, colorful fitted vintage inspired outfit",
-            "Afro-Latina woman with long box braids with bright thread woven through, warm brown skin, wide genuine smile that changes the shape of her face, vibrant fitted outfit, gold jewelry stacked",
-            "Black woman with short natural twists and strong defined features, warm deep skin, knowing smile that holds the whole history of music, colorful expressive retro-inspired style",
-            "mixed-race woman with loose natural curls, medium warm skin, freckles, wide expressive brown eyes full of joy, vibrant layered colorful clothing, the person who makes others dance",
-            "West African woman with elaborate natural hair braided into artistic crown, deep rich skin, expressive warm eyes, brightly colored traditional-influenced modern outfit, gold at ears and wrists",
-            "Latina woman with long natural waves, warm olive skin, genuine laugh caught in photo, vibrant vintage-style outfit with interesting details, the energy in the room",
-            "Black woman with high natural puff hair, deep warm skin, dancing-eyes that make contact, colorful fitted outfit with detail, small gold hoops, pure presence",
-        ],
-        "compositions": [
-            "medium close shot in warm-lit venue, face caught in genuine mid-groove expression, warm colored stage lights making skin glow, crowd blur of color behind",
-            "three-quarter medium shot, caught mid-dance movement at exact perfect moment, warm venue light, arms and hair slightly blurred by motion, frozen joy",
-            "close portrait, warm deep orange-gold lighting from venue stage, natural expressive face with real expression, rich saturated background of lights",
-            "medium shot on outdoor rooftop or courtyard, sunset bathing everything warm, genuine relaxed freedom, city soft and warm below",
-            "intimate close portrait, golden bokeh lights filling background completely, face warm and luminous in that light, the feeling of the song in her face",
-            "wide atmospheric shot, night venue or outdoor space, she is the center of natural attention without trying, warm beautiful chaos around",
-            "medium shot caught between songs, brief exhale and smile, the real moment between performances, warm light and genuine expression",
-        ],
-    },
+    # ── CINEMATIC ─────────────────────────────────────────────────────
+    "cinematic": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, long dark hair in wind, dramatic long coat, standing at edge of impossible cliff, vast storm-breaking sky behind, single ray of amber light through dark clouds",
+            "palette": "desaturated environment vs single vivid golden beam, deep rich shadows, chiaroscuro at scale",
+            "mood": "protagonist at the moment of decision",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "fog-filled valley at dawn, no character, ancient stone bridge, single lantern at center, mountain peaks emerging from mist, the world before it wakes",
+            "palette": "cold blue-grey fog vs warm golden lantern, epic atmospheric depth, layers of mist",
+            "mood": "the world holds its breath",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "perfect widescreen composition, anime woman at end of long architectural corridor, single vanishing point, storm light from window at far end, her silhouette sharp against light",
+            "palette": "teal and orange color science, premium cinematography grade, anamorphic lens quality",
+            "mood": "intention given visual form",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "film frame borders visible, multiple exposures of the same scene at different moments, time as visual layer, rain and light as abstract architecture",
+            "palette": "vivid teal shadows and warm amber highlights, film grain, cinematic color science",
+            "mood": "memory and moment as the same thing",
+        },
+    ],
 
-    # ── DEFAULT ───────────────────────────────────────────────────────────
-    "default": {
-        "palette": [
-            "vivid neon purple and deep black, atmospheric and specifically moody, premium saturation",
-            "cold electric blue and warm gold split, cinematic contrast, the visual language of quality",
-            "deep rich teal and vivid rose, editorial beauty, saturated and sharp as good design",
-            "steel grey and electric blue, urban poetry, cold and beautiful as the city at 3am",
-            "midnight navy and luminous silver, quiet power, deep contrast for deep feeling",
-            "vivid amber and deep indigo, warm cold contrast, cinematic as it gets",
-            "electric cyan and deep burgundy, complementary vivid, premium visual drama",
-        ],
-        "characters": [
-            "young adult woman, striking features with strong individual identity, expressive eyes, confident composed presence, stylish outfit with specific personality",
-            "young adult woman, distinctive appearance that stays with you, warm genuine expression, editorial fashion with real-world energy",
-            "young adult woman, short distinctive hair, sharp features, cool intelligence in expression, modern style that's uniquely hers",
-            "young adult woman, flowing hair with movement, striking features, dramatic presence, fashion that tells a story",
-            "young adult woman, natural hair, luminous skin tone, commanding presence that fills the frame, modern aesthetic",
-            "young adult woman, specific distinguishing features, quiet intensity in expression, sophisticated minimal style",
-            "young adult woman, face with real character and genuine expression, layered artistic fashion, someone worth knowing",
-        ],
-        "compositions": [
-            "close portrait with dramatic lighting, expressive specific face, atmospheric background in soft focus, premium visual quality",
-            "medium shot with strong environmental storytelling, character and place in conversation, moody and deeply intentional",
-            "wide atmospheric shot, figure against significant environment, scale creating emotional resonance",
-            "tight medium shot, editorial composition, strong vivid color palette, character commanding frame",
-            "close portrait, beautiful dramatic lighting, rich detailed background, premium illustration quality throughout",
-            "silhouette medium shot against dramatic sky or strong light source, form and mood over detail",
-            "three-quarter medium shot with interesting environment creating depth and story in every part of frame",
-        ],
-    },
+    # ── FUNK ──────────────────────────────────────────────────────────
+    "funk": [
+        # A — Personagem
+        {
+            "type": "character",
+            "scene": "anime woman, voluminous natural afro with gold pins, warm deep skin, wide genuine smile, colorful vintage-inspired outfit, caught mid-dance in warm-lit venue",
+            "palette": "deep warm orange and rich red-brown of late night venue, soulful heat, colors that feel alive",
+            "mood": "pure joy without performance, the groove took over",
+        },
+        # B — Cenário
+        {
+            "type": "scene",
+            "scene": "record store interior, no character, warm afternoon light through dusty window, vinyl records everywhere, old speakers, plant growing through shelf crack, alive and loved",
+            "palette": "deep gold and rich mahogany, soulful warmth, texture of old wood and good music",
+            "mood": "the place where the music lives",
+        },
+        # C — Cinematográfico
+        {
+            "type": "cinematic",
+            "scene": "medium shot, anime woman at rooftop at sunset, city warm below, natural expression between songs, exhale and real smile, the moment between performances",
+            "palette": "vivid coral sunset and deep warm teal, saturated alive, the color of music that moves you",
+            "mood": "the real person under the performer",
+        },
+        # D — Abstrato
+        {
+            "type": "abstract",
+            "scene": "bass groove visualized as warm concentric rings in water, vinyl record spinning with rainbow light, brass instrument bell made of golden light, rhythm as architecture",
+            "palette": "electric yellow and deep purple, vivid as celebration feels, warm and alive",
+            "mood": "the groove is a physical place",
+        },
+    ],
+
+    # ── DEFAULT ───────────────────────────────────────────────────────
+    "default": [
+        {
+            "type": "character",
+            "scene": "anime woman, striking distinctive features, confident presence, dramatic lighting, atmospheric environment with depth and story",
+            "palette": "vivid neon purple and deep black, premium saturation, cinematic contrast",
+            "mood": "presence that stops the scroll",
+        },
+        {
+            "type": "scene",
+            "scene": "atmospheric urban environment at night, no character, neon lights reflecting in wet streets, layers of depth and color, the city as emotional space",
+            "palette": "deep midnight with vivid colored light sources, rich contrast, wet reflections",
+            "mood": "the city after midnight, beauty without audience",
+        },
+        {
+            "type": "cinematic",
+            "scene": "wide cinematic shot, single figure against vast dramatic environment, epic scale, premium color grading, anamorphic quality",
+            "palette": "cold electric blue and warm gold, cinematic contrast, premium visual language",
+            "mood": "the feeling of the music made visual",
+        },
+        {
+            "type": "abstract",
+            "scene": "sound wave made visible as vivid light sculpture, music frequency as architectural form, abstract beauty with emotional resonance",
+            "palette": "vivid amber and deep indigo, warm cold contrast, cinematic quality",
+            "mood": "music that you can see",
+        },
+    ],
 }
 
 
 # ══════════════════════════════════════════════════════════════════════
-# QUALITY & NEGATIVE
+# QUALIDADE & NEGATIVO
 # ══════════════════════════════════════════════════════════════════════
 
 QUALITY_TAGS = (
     "masterpiece, best quality, ultra-detailed anime illustration, "
     "professional anime key visual, perfect cel shading, clean sharp lineart, "
-    "ultra-vibrant saturated colors, maximum color depth, rich vivid hues, "
+    "ultra-vivid saturated colors, maximum color depth, rich vivid hues, "
     "deep blacks and luminous highlights, cinematic composition, razor-sharp focus, "
     "richly detailed background with atmospheric depth, volumetric lighting, "
     "dynamic light and shadow interplay, studio-level production quality, "
-    "trending on pixiv, ArtStation quality, 9:16 vertical format, single character, "
+    "trending on pixiv, ArtStation quality, 9:16 vertical format, "
     "scroll-stopping visual impact, premium anime visual novel quality"
 )
 
@@ -409,34 +423,36 @@ NEGATIVE_PROMPT = (
     "multiple characters, extra limbs, deformed hands, fused fingers, bad anatomy, "
     "distorted face, wrong proportions, malformed body parts, "
     "child appearance, young teen face, childlike proportions, "
-    "explicit nudity, fetish content, inappropriate content, "
+    "explicit nudity, fetish content, nsfw, cleavage, revealing clothing, "
     "blurry, muddy colors, flat boring lighting, desaturated washed-out colors, "
     "generic gradient background, plain studio void, empty background, "
     "airbrushed plastic skin, uncanny valley, "
     "Western cartoon, Pixar style, chibi, super deformed, "
-    "sketch only, unfinished lineart, low quality, oversaturated to point of noise, "
-    "generic anime waifu, bland background, same composition as always"
+    "sketch only, unfinished lineart, low quality, "
+    "generic anime waifu, bland background, same composition as always, "
+    "repetitive, seen before, boring, forgettable"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SEED DETERMINÍSTICA — garante variação sem repetição
+# SEED DETERMINÍSTICA
 # ══════════════════════════════════════════════════════════════════════
 
 def _seed(filename: str, short_num: int) -> int:
-    """Seed única por música + posição — garante que short 1, 2, 3 da mesma música
-    sempre gerem personagens/composições diferentes entre si, e também diferentes
-    de outros arquivos de música com a mesma posição."""
-    key = f"{filename}|{short_num}|v6"
+    key = f"{filename}|{short_num}|v7"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
-def _pick(pool: list, filename: str, short_num: int, offset: int = 0):
-    """Seleciona item do pool com RNG determinístico.
-    offset diferente para cada componente garante que personagem, composição e paleta
-    sejam selecionados de forma independente (não correlacionada)."""
-    rng = random.Random(_seed(filename, short_num) + offset * 999983)
-    return rng.choice(pool)
+def _pick_concept(style: str, filename: str, short_num: int) -> dict:
+    """
+    Seleciona conceito visual com rotação garantida.
+    short_num 1,2,3,4 = conceitos A,B,C,D em ordem determinística.
+    Nunca repete o mesmo conceito para a mesma música.
+    """
+    concepts = VISUAL_CONCEPTS.get(style, VISUAL_CONCEPTS["default"])
+    # Rotação por short_num garante variedade sequencial
+    concept_idx = (short_num - 1) % len(concepts)
+    return concepts[concept_idx]
 
 
 def _clean_song_name(filename: str) -> str:
@@ -455,18 +471,9 @@ def _compact(text: str, max_chars: int = 1600) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(style: str, filename: str, styles: list, short_num: int = 1) -> str:
-    """
-    Monta prompt com DNA visual específico do gênero.
-    Cada componente (personagem, composição, paleta) é selecionado independentemente
-    via seed determinística — garantindo máxima variação sem repetição.
-    """
     song_name = _clean_song_name(filename)
-    dna = GENRE_DNA.get(style, GENRE_DNA["default"])
-
-    character   = _pick(dna["characters"],   filename, short_num, offset=0)
-    composition = _pick(dna["compositions"], filename, short_num, offset=1)
-    palette     = _pick(dna["palette"],      filename, short_num, offset=2)
-    all_styles  = ", ".join(s.title() for s in styles) if styles else style.title()
+    concept   = _pick_concept(style, filename, short_num)
+    all_styles = ", ".join(s.title() for s in styles) if styles else style.title()
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if api_key:
@@ -475,93 +482,98 @@ def build_ai_prompt(style: str, filename: str, styles: list, short_num: int = 1)
                 song_name=song_name,
                 style=style,
                 all_styles=all_styles,
-                character=character,
-                composition=composition,
-                palette=palette,
+                concept=concept,
                 short_num=short_num,
             )
         except Exception as e:
             print(f"  [Claude] Prompt falhou: {e} — usando fallback")
 
-    return _static_prompt(character, composition, palette)
+    return _static_prompt(concept)
 
 
 def _claude_prompt(
     song_name: str,
     style: str,
     all_styles: str,
-    character: str,
-    composition: str,
-    palette: str,
+    concept: dict,
     short_num: int,
 ) -> str:
     client = get_anthropic_client()
 
+    concept_type_instructions = {
+        "character": "Focus on ONE specific character with distinctive appearance. Background must be rich and detailed, not just backdrop.",
+        "scene":     "NO dominant character. The environment IS the subject. Every detail of the scene tells the story.",
+        "cinematic": "Epic scale and composition. If character present, she is small vs environment. Widescreen feel in vertical format.",
+        "abstract":  "Music visualized as physical reality. No literal people. Sound, emotion, and energy made into visual form.",
+    }
+
+    concept_instruction = concept_type_instructions.get(concept["type"], "")
+
     system = (
-        "You are an elite anime art director. Your prompts generate illustrations that stop people "
-        "mid-scroll. You work like a cinematographer and a character designer at once — "
-        "every prompt has a SPECIFIC visual identity, not generic anime beauty.\n\n"
-        "LAWS YOU NEVER BREAK:\n"
-        "1. ONE adult woman (18+), specific and distinctive, not interchangeable\n"
-        "2. ULTRA-VIVID colors with deep blacks — never flat, never washed out\n"
-        "3. SPECIFIC lighting: the light source has a location, color, and intensity\n"
-        "4. DETAILED background that tells a story — never a gradient void\n"
-        "5. The image must FEEL like the music genre — not just decorate it\n"
-        "6. 9:16 vertical format\n"
-        "7. Platform safe, non-sexualized\n"
-        "8. Output ONLY the final prompt: comma-separated, 100-140 words, no preamble, no explanation"
+        "You are an elite anime art director for YouTube Shorts thumbnails. "
+        "Your images stop people mid-scroll because they are UNEXPECTED and SPECIFIC.\n\n"
+        "ABSOLUTE RULES:\n"
+        "1. NEVER generic close-up faces as default — vary the concept type\n"
+        "2. ULTRA-VIVID colors, deep blacks, luminous highlights — never flat\n"
+        "3. Specific lighting with location, color, intensity\n"
+        "4. Background tells a story — never a gradient void\n"
+        "5. The image must FEEL like the music, not just decorate it\n"
+        "6. 9:16 vertical format, platform-safe, non-sexualized\n"
+        "7. Output ONLY the final prompt: comma-separated, 90-120 words, no preamble"
     )
 
-    user = f"""Create a scroll-stopping anime illustration prompt for a music YouTube Short.
+    user = f"""Create a scroll-stopping anime illustration prompt.
 
 SONG: "{song_name}"
-PRIMARY GENRE: {style}
-ALL GENRES: {all_styles}
-SHORT #: {short_num} (make this DISTINCT from other shorts of this song)
+GENRE: {style} | ALL: {all_styles}
+SHORT #: {short_num}
 
-CHARACTER (use this as foundation, make her SPECIFIC and MEMORABLE):
-{character}
+VISUAL CONCEPT TYPE: {concept["type"].upper()}
+{concept_instruction}
 
-COMPOSITION (use this framing):
-{composition}
+SCENE FOUNDATION:
+{concept["scene"]}
 
-COLOR PALETTE (execute this exactly — rich, vivid, maximum depth):
-{palette}
+COLOR PALETTE (execute exactly):
+{concept["palette"]}
 
-CRITICAL: Connect the image to "{song_name}" emotionally — the SONG TITLE should influence
-the specific mood, expression, or environment detail. Make someone feel the music just from the image.
-100-140 words, comma-separated descriptors only."""
+EMOTIONAL MOOD:
+{concept["mood"]}
+
+CRITICAL: The image must emotionally connect to "{song_name}". 
+Let the song title influence one specific visual detail.
+90-120 words, comma-separated only, no explanation."""
 
     resp = client.messages.create(
         model=get_anthropic_model(),
-        max_tokens=400,
+        max_tokens=350,
         system=system,
         messages=[{"role": "user", "content": user}],
     )
 
     raw  = resp.content[0].text.strip().strip('"').strip("'")
     full = f"{raw}, {QUALITY_TAGS}"
-    print(f"  [Claude] Prompt gerado ({len(full)} chars) — short #{short_num}")
+    concept_label = concept["type"].upper()
+    print(f"  [Claude] Prompt gerado ({len(full)} chars) — short #{short_num} [{concept_label}]")
     return _compact(full)
 
 
-def _static_prompt(character: str, composition: str, palette: str) -> str:
+def _static_prompt(concept: dict) -> str:
     prompt = (
         f"masterpiece, best quality, ultra-detailed premium anime illustration, "
-        f"{character}, "
-        f"{composition}, "
-        f"color palette: {palette}, "
+        f"{concept['scene']}, "
+        f"color palette: {concept['palette']}, "
+        f"mood: {concept['mood']}, "
         f"ultra-vivid saturated colors, deep rich blacks, luminous highlights, "
-        f"cinematic volumetric lighting, atmospheric depth, richly detailed background, "
-        f"clean sharp anime lineart, perfect cel shading, maximum color depth, "
-        f"9:16 vertical composition, single character, "
-        f"scroll-stopping visual impact, pixiv trending premium quality"
+        f"cinematic volumetric lighting, atmospheric depth, richly detailed, "
+        f"clean sharp anime lineart, perfect cel shading, "
+        f"9:16 vertical composition, scroll-stopping visual impact, pixiv quality"
     )
     return _compact(prompt)
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO VIA REPLICATE — Flux otimizado para anime vibrante
+# GERAÇÃO VIA REPLICATE
 # ══════════════════════════════════════════════════════════════════════
 
 REPLICATE_MODELS = [
@@ -573,7 +585,7 @@ MODEL_PARAMS = {
     "black-forest-labs/flux-dev": {
         "num_inference_steps": 35,
         "aspect_ratio": "9:16",
-        "guidance": 4.5,       # Alto para fidelidade ao prompt e cores vivas
+        "guidance": 4.5,
         "output_format": "png",
         "output_quality": 98,
         "disable_safety_checker": True,
@@ -603,7 +615,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         + ", anime illustration style, NOT photorealistic, NOT 3D render, "
         + "ultra-vibrant saturated colors, deep rich shadows, luminous vivid highlights, "
         + "sharp clean lineart, premium anime key visual quality, "
-        + "specific distinctive character design, NOT generic"
+        + "specific distinctive visual, NOT generic, NOT repetitive"
     )
 
     for model in REPLICATE_MODELS:
