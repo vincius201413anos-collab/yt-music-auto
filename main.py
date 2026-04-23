@@ -64,6 +64,16 @@ def safe_filename(text: str) -> str:
     return re.sub(r"\s+", "_", text)[:60]
 
 
+def canonical_track_key(filename: str) -> str:
+    """
+    Chave estável da música para evitar repetição por duplicatas tipo:
+    Song.mp3 / Song (1).mp3 / Song (2).wav
+    """
+    base = clean_title(filename).lower()
+    base = re.sub(r"\s+", " ", base).strip()
+    return base
+
+
 def human_delay():
     secs = random.randint(15, 45)
     log(f"Aguardando {secs}s antes do upload...")
@@ -530,41 +540,101 @@ def load_state() -> dict:
     state.setdefault("tracks", [])
     state.setdefault("alpha_index", 0)
 
+    normalized_tracks = []
+    seen_keys = set()
+
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
         t.setdefault("genre", None)
+        t.setdefault("key", canonical_track_key(t["name"]))
 
+        # remove duplicatas antigas do state
+        if t["key"] in seen_keys:
+            continue
+        seen_keys.add(t["key"])
+        normalized_tracks.append(t)
+
+    state["tracks"] = normalized_tracks
+    n = len(state["tracks"])
+    state["alpha_index"] = state.get("alpha_index", 0) % n if n else 0
     return state
 
 
 def save_state(state: dict):
-    with STATE_FILE.open("w", encoding="utf-8") as f:
+    tmp = STATE_FILE.with_suffix(".tmp")
+    with tmp.open("w", encoding="utf-8") as f:
         json.dump(state, f, indent=2, ensure_ascii=False)
+    tmp.replace(STATE_FILE)
 
 
 def sync_tracks(state: dict, files: list):
-    existing = {t["name"]: t for t in state["tracks"]}
+    """
+    Regras novas:
+    1) respeita a ordem que vem do Drive
+    2) prioriza músicas novas
+    3) ignora duplicatas da mesma música (ex.: Song / Song (1) / Song (2))
+    4) depois que acabar as novas, volta do topo da inbox
+    """
+    deduped_files = []
+    seen_keys = set()
 
     for f in files:
-        if f["name"] not in existing:
-            log(f"Nova faixa: {f['name']}")
-            state["tracks"].append({
-                "id":     f["id"],
-                "name":   f["name"],
-                "done":   0,
-                "is_new": True,
-                "genre":  None,
-            })
-        else:
-            existing[f["name"]]["id"] = f["id"]
+        key = canonical_track_key(f["name"])
+        if key in seen_keys:
+            log(f"Duplicata ignorada na inbox: {f['name']} (key={key})")
+            continue
+        seen_keys.add(key)
+        deduped_files.append({
+            "id": f["id"],
+            "name": f["name"],
+            "key": key,
+        })
 
-    drive_names = {f["name"] for f in files}
-    state["tracks"] = [t for t in state["tracks"] if t["name"] in drive_names]
-    state["tracks"].sort(key=lambda t: t["name"].lower())
+    existing = {t.get("key", canonical_track_key(t["name"])): t for t in state["tracks"]}
+    new_tracks = []
+
+    for f in deduped_files:
+        key = f["key"]
+        if key not in existing:
+            log(f"Nova faixa: {f['name']}")
+            track = {
+                "id": f["id"],
+                "name": f["name"],
+                "key": key,
+                "done": 0,
+                "is_new": True,
+                "genre": None,
+            }
+            existing[key] = track
+            new_tracks.append(track)
+        else:
+            track = existing[key]
+            track["id"] = f["id"]
+            track["name"] = f["name"]
+            track["key"] = key
+            track.setdefault("done", 0)
+            track.setdefault("is_new", False)
+            track.setdefault("genre", None)
+
+    ordered_tracks = []
+    for f in deduped_files:
+        track = existing.get(f["key"])
+        if track:
+            ordered_tracks.append(track)
+
+    state["tracks"] = ordered_tracks
 
     n = len(state["tracks"])
-    state["alpha_index"] = state.get("alpha_index", 0) % n if n else 0
+    if n == 0:
+        state["alpha_index"] = 0
+        return
+
+    # se entrou música nova, depois que acabar as novas reinicia do topo
+    if new_tracks:
+        state["alpha_index"] = 0
+    else:
+        state["alpha_index"] = state.get("alpha_index", 0) % n
 
 
 def get_next_track(state: dict) -> dict | None:
@@ -572,32 +642,37 @@ def get_next_track(state: dict) -> dict | None:
     if not tracks:
         return None
 
-    new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) == 0]
+    # 1) sempre processa novas primeiro, na ordem da inbox
+    new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) < SHORTS_PER_TRACK]
     if new_tracks:
         chosen = new_tracks[0]
         log(f"Prioridade: nova faixa — {chosen['name']}")
         chosen["is_new"] = False
+
+        # quando acabar a fila das novas, volta do topo da pasta
+        state["alpha_index"] = 0
         return chosen
 
-    n   = len(tracks)
+    # 2) depois segue do topo pra baixo, sem pular e sem alfabética
+    n = len(tracks)
     idx = state.get("alpha_index", 0) % n
 
     for i in range(n):
-        t = tracks[(idx + i) % n]
+        pos = (idx + i) % n
+        t = tracks[pos]
         if t.get("done", 0) < SHORTS_PER_TRACK:
-            state["alpha_index"] = (idx + i + 1) % n
+            state["alpha_index"] = (pos + 1) % n
             return t
 
-    log("Ciclo completo — resetando contadores.")
+    # 3) terminou o ciclo inteiro -> zera e volta pra primeira do topo
+    log("Ciclo completo — resetando contadores e voltando ao topo da inbox.")
     for t in tracks:
         t["done"] = 0
+        t["is_new"] = False
+
     state["alpha_index"] = 0
     return tracks[0]
 
-
-# ══════════════════════════════════════════════════════════════════════
-# BACKGROUND
-# ══════════════════════════════════════════════════════════════════════
 
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
     os.makedirs("temp", exist_ok=True)
