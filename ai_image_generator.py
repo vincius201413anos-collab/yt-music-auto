@@ -1,12 +1,13 @@
 """
-ai_image_generator.py — v4.0 ANTI-REPETIÇÃO RADICAL
-=====================================================
-MUDANÇAS v4.0:
-- 4 CONCEITOS VISUAIS que rotacionam: personagem, cenário, abstrato, cinematográfico
-- Sem mais "close de rosto genérico" como padrão
-- Cada gênero tem visuais que FOGEM do óbvio
-- Prompts mais curtos e diretos = melhor fidelidade do modelo
-- Seed garante que mesma música nunca repete conceito
+ai_image_generator.py — v5.0 ANIME DARK CYBERPUNK EDITION
+===========================================================
+MUDANÇAS v5.0:
+- Todos os gêneros agora geram imagens no estilo ANIME DARK CYBERPUNK
+- Paleta unificada: vermelho sangue + roxo neon + preto absoluto
+- 4 CONCEITOS VISUAIS rotacionando: personagem, cenário, cinematográfico, abstrato
+- Sem personagem fixa — teste A/B automático por short_num para descobrir qual performa mais
+- Cada conceito tem um label para rastrear no analytics do YouTube
+- Canal: DJ darkMark | Phonk / Trap / Dubstep
 """
 
 import os
@@ -41,380 +42,227 @@ def get_anthropic_model() -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CONCEITOS VISUAIS — 4 abordagens distintas por gênero
-# Rotacionam para garantir variedade máxima no feed
+# ANIME DARK CYBERPUNK — 4 CONCEITOS VISUAIS
+#
+# Todos os gêneros usam essa temática centralizada.
+# Rotação por short_num: 1=A, 2=B, 3=C, 4=D
+# Rastreie no YouTube Analytics qual conceito gera mais views.
+#
+# CONCEITO A — PERSONAGEM: anime girl, close/retrato, rosto + expressão
+# CONCEITO B — CENÁRIO: ambiente sem personagem dominante
+# CONCEITO C — CINEMATOGRÁFICO: escala épica, silhueta vs ambiente
+# CONCEITO D — ABSTRATO: música visualizada como forma visual
 # ══════════════════════════════════════════════════════════════════════
-
-# CONCEITO A — Personagem (close/retrato)
-# CONCEITO B — Cenário sem personagem dominante
-# CONCEITO C — Cinematográfico / épico
-# CONCEITO D — Abstrato / atmosférico
 
 VISUAL_CONCEPTS = {
 
-    # ── LOFI ──────────────────────────────────────────────────────────
-    "lofi": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime girl at wooden desk, oversized hoodie, headphones around neck, rain hitting window behind her, warm amber desk lamp, late night, cozy and quiet",
-            "palette": "deep amber warm lamp light vs cold blue moonlight from window, rich contrast, film grain",
-            "mood": "peaceful concentration, 3am productivity",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "cozy bedroom at night, no character, vinyl records scattered on floor, open sketchbook, glowing amber lamp, rain on window showing blurred city lights, steam rising from forgotten mug",
-            "palette": "warm honey amber interior vs cold midnight blue window, rich shadows, analog warmth",
-            "mood": "inviting, quiet, the room tells the story",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "anime girl silhouette at floor-to-ceiling window, rain-soaked city below, warm room behind her cold glass in front, she is between two worlds",
-            "palette": "warm interior gold vs cold neon-lit city below in rain, cinematic depth",
-            "mood": "introspective, the city never sleeps but she has found peace",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "musical notes dissolving into rain drops, headphone cable becoming a river, cassette tape unwinding into autumn leaves, warm golden light from below",
-            "palette": "warm amber and soft blue, dreamy and soft, analog textures",
-            "mood": "nostalgia made visible, music as feeling",
-        },
-    ],
-
     # ── PHONK ─────────────────────────────────────────────────────────
     "phonk": [
-        # A — Personagem
+        # A — PERSONAGEM
         {
             "type": "character",
-            "scene": "anime woman, sharp features, emotionless expression, black technical jacket, standing in empty parking structure at 3am, single crimson neon tube overhead",
-            "palette": "blood red neon slash in absolute darkness, wet concrete reflections, zero warmth",
-            "mood": "cold, controlled, dangerous",
+            "label": "PHONK_CHARACTER",
+            "scene": "anime woman, sharp cold features, expressionless face, glowing crimson eyes, black technical jacket with hood, standing alone in empty parking structure at 3am, single blood-red neon tube casting hard shadows on wet concrete below",
+            "palette": "blood red neon slash across absolute darkness, wet concrete reflections, zero warmth, maximum contrast between light and shadow",
+            "mood": "cold calculated dangerous energy, she owns the dark",
         },
-        # B — Cenário
+        # B — CENÁRIO
         {
             "type": "scene",
-            "scene": "empty highway at night, no character, red tail lights stretching to horizon, wet asphalt mirror, single orange sodium lamp, fog at ground level",
-            "palette": "deep crimson and charcoal black, neon reflections in wet road, maximum contrast",
-            "mood": "midnight drive, the city as emptiness",
+            "label": "PHONK_SCENE",
+            "scene": "empty midnight highway stretching to horizon, no character, red tail lights dissolving into fog, wet asphalt mirror reflecting crimson and violet neon signs, single orange sodium lamp at road edge, low ground fog",
+            "palette": "deep crimson and charcoal black, neon reflections bleeding in wet road, violet fog at distance, maximum darkness with selective light",
+            "mood": "midnight drive at 3am, the city as pure emptiness and speed",
         },
-        # C — Cinematográfico
+        # C — CINEMATOGRÁFICO
         {
             "type": "cinematic",
-            "scene": "low angle shot of anime woman walking away down dark tunnel, crimson neon at far end, her silhouette cutting the light, never looking back",
-            "palette": "pitch black with single red vanishing point, dramatic perspective, cinematic",
-            "mood": "inevitability, she owns the dark",
+            "label": "PHONK_CINEMATIC",
+            "scene": "low angle cinematic shot, anime woman silhouette walking away down dark underground tunnel, massive crimson neon portal at far vanishing point, her shadow stretching backwards, fog at ankle level, never looking back",
+            "palette": "pitch black tunnel with single red vanishing point of light, silhouette vs glow, dramatic forced perspective",
+            "mood": "inevitability, she was always going to walk into that light",
         },
-        # D — Abstrato
+        # D — ABSTRATO
         {
             "type": "abstract",
-            "scene": "808 bass wave made visible as crimson shockwave tearing through dark city, car drifting leaving red light trails, vinyl record spinning with fire edge",
-            "palette": "blood red and absolute black, aggressive energy made visual",
-            "mood": "raw power, bass as destruction",
+            "label": "PHONK_ABSTRACT",
+            "scene": "808 bass wave made visible as crimson shockwave tearing through dark cyberpunk city, shattered glass floating in slow motion caught in red light, vinyl record spinning with fire edge and neon purple glow, concrete cracking from sub-bass pressure",
+            "palette": "blood red and absolute black, aggressive energy made physical and visible, purple accent in cracks",
+            "mood": "raw bass power as destruction, the drop as geological event",
         },
     ],
 
     # ── TRAP ──────────────────────────────────────────────────────────
     "trap": [
-        # A — Personagem
+        # A — PERSONAGEM
         {
             "type": "character",
-            "scene": "anime woman, natural afro with gold thread, structured black coat, standing at floor-to-ceiling penthouse window, entire city grid spread below at night",
-            "palette": "midnight navy and burnished gold, luxury cold, the palette of arrival",
-            "mood": "composed power, the city is context",
+            "label": "TRAP_CHARACTER",
+            "scene": "anime woman, sharp dark features, glowing violet eyes, structured black jacket, standing at floor-to-ceiling penthouse window at night, entire neon city grid spread below, rain on glass, arms crossed",
+            "palette": "midnight black and electric violet neon below, premium cold luxury, the palette of someone who made it",
+            "mood": "composed power, the city is just context for her presence",
         },
-        # B — Cenário
+        # B — CENÁRIO
         {
             "type": "scene",
-            "scene": "penthouse interior at night, no character, city lights through massive windows, gold and glass decor, expensive emptiness, champagne glass catching light",
-            "palette": "deep black and champagne gold, premium contrast, luxury at rest",
-            "mood": "arrived but not showing off",
+            "label": "TRAP_SCENE",
+            "scene": "rain-soaked cyberpunk rooftop at night, no character, puddles reflecting violet and red neon signs below, dark skyline, single powerful spotlight beam cutting through storm clouds, expensive emptiness",
+            "palette": "deep black and electric purple neon reflections, rain as texture, premium contrast",
+            "mood": "the top of the city, beauty without needing an audience",
         },
-        # C — Cinematográfico
+        # C — CINEMATOGRÁFICO
         {
             "type": "cinematic",
-            "scene": "wide cinematic shot, anime woman small figure against enormous lit city skyline, she stands at rooftop edge, arms relaxed, the scale makes her larger not smaller",
-            "palette": "deep navy sky and warm amber city lights below, epic vertical composition",
-            "mood": "elevation, belonging at the top",
+            "label": "TRAP_CINEMATIC",
+            "scene": "wide cinematic shot, anime woman tiny figure at rooftop edge against enormous neon-lit city skyline, scale makes her larger not smaller, storm clouds above, city grid stretching to horizon below",
+            "palette": "deep navy storm sky, warm amber and violet city lights below, epic vertical composition",
+            "mood": "elevation, belonging at the top was never in question",
         },
-        # D — Abstrato
+        # D — ABSTRATO
         {
             "type": "abstract",
-            "scene": "gold chain links floating in dark space, diamond catching light from multiple directions, 808 waveform as golden architecture, luxury geometry",
-            "palette": "pure black and vivid burnished gold, premium minimal",
-            "mood": "the sound of money made visible",
+            "label": "TRAP_ABSTRACT",
+            "scene": "808 waveform as violet architecture floating in dark city void, bass frequency rings expanding outward in neon purple, gold chain links dissolving into light particles, luxury geometry in darkness",
+            "palette": "electric violet and black, neon purple accents, premium dark minimalism",
+            "mood": "the sound of power made visible and geometric",
+        },
+    ],
+
+    # ── ELECTRONIC / DUBSTEP ──────────────────────────────────────────
+    "electronic": [
+        # A — PERSONAGEM
+        {
+            "type": "character",
+            "label": "ELECTRONIC_CHARACTER",
+            "scene": "anime woman, dark hair with electric red streaks, glowing crimson eyes, dark streetwear with neon circuit details, standing in heavy rain on city street, neon signs reflecting in puddles around her, looking straight at camera",
+            "palette": "electric crimson and deep violet, rain as texture, dark city glow from every surface",
+            "mood": "the drop is her, she is the frequency",
+        },
+        # B — CENÁRIO
+        {
+            "type": "scene",
+            "label": "ELECTRONIC_SCENE",
+            "scene": "underground rave venue empty before the crowd, no character, laser grid cutting through smoke and fog, dark concrete walls, massive subwoofer stacks glowing red, UV light catching floating dust particles",
+            "palette": "UV purple floor, blood red laser lines, deep black space, fluorescent crimson geometry",
+            "mood": "the space that holds the ritual, charged before it begins",
+        },
+        # C — CINEMATOGRÁFICO
+        {
+            "type": "cinematic",
+            "label": "ELECTRONIC_CINEMATIC",
+            "scene": "rear view from stage, anime woman DJ silhouette facing enormous dark crowd, massive LED wall exploding with red and violet visuals behind her, her silhouette the only dark point in the light storm",
+            "palette": "silhouette against crimson and violet LED explosion, chromatic aberration at edges, scale overwhelming",
+            "mood": "she controls the frequency of thousands",
+        },
+        # D — ABSTRATO
+        {
+            "type": "abstract",
+            "label": "ELECTRONIC_ABSTRACT",
+            "scene": "sound wave architecture in darkness, bass drop visualized as supernova of crimson and violet expanding from center point, frequency rings as concentric neon circles, the moment of impact frozen",
+            "palette": "electric crimson and vivid purple on absolute black, maximum saturation at center fading to dark",
+            "mood": "the drop as big bang, music as creation event",
         },
     ],
 
     # ── DARK ──────────────────────────────────────────────────────────
     "dark": [
-        # A — Personagem
+        # A — PERSONAGEM
         {
             "type": "character",
-            "scene": "ghostly pale anime woman, impossibly long black hair floating slightly, glowing crimson irises, slight smile that knows something terrible, moonlit ruins background",
-            "palette": "near-monochrome silver and absolute black, single bleeding crimson accent, manga negative space",
-            "mood": "beautiful and wrong, the smile is the warning",
+            "label": "DARK_CHARACTER",
+            "scene": "ghostly pale anime woman, long dark hair floating in zero gravity, glowing blood-red irises, dark tactical outfit, surrounded by fragments of shattered neon signs in dark void, slight knowing smile",
+            "palette": "near-monochrome darkness with bleeding crimson eye glow, shattered neon fragments as only other light sources, violet accent at edges",
+            "mood": "beautiful and dangerous, the smile is the warning",
         },
-        # B — Cenário
+        # B — CENÁRIO
         {
             "type": "scene",
-            "scene": "moonlit abandoned cathedral, no character, fractured stained glass casting colored shadows, overgrown with dark vines, single candle flame at altar, darkness alive",
-            "palette": "cold silver moonlight and deep shadow, violet accent from broken glass, atmosphere of sacred decay",
-            "mood": "beauty that has outlived its purpose",
+            "label": "DARK_SCENE",
+            "scene": "abandoned cyberpunk district at night, no character, crumbling neon signs still flickering red and violet, rain filling cracked streets, overgrown dark vines on destroyed buildings, fog at ground level, one working lamp",
+            "palette": "cold darkness with flickering crimson and violet neon remnants, rain texture, atmosphere of beautiful decay",
+            "mood": "the city that was, beauty outliving its purpose",
         },
-        # C — Cinematográfico
+        # C — CINEMATOGRÁFICO
         {
             "type": "cinematic",
-            "scene": "extreme wide shot, anime woman tiny figure at center of vast dark space, single circle of violet light surrounding her, the void pressing in from all sides",
-            "palette": "absolute black and vivid absinthe-violet circle of light, dramatic scale contrast",
-            "mood": "the light she carries is the only light",
+            "label": "DARK_CINEMATIC",
+            "scene": "extreme wide shot, anime woman tiny figure at center of vast dark space, single circle of blood-red light surrounding her, absolute darkness pressing from all sides, rain visible in the light circle only",
+            "palette": "absolute black surrounding single vivid crimson circle of light, the human figure as only reference point",
+            "mood": "the light she carries is the only light, darkness is not empty",
         },
-        # D — Abstrato
+        # D — ABSTRATO
         {
             "type": "abstract",
-            "scene": "dark melody visualized as black ink spreading through water, crimson notes bleeding at edges, void with heartbeat rhythm made visible as concentric dark rings",
-            "palette": "black ink and deep crimson, water texture, darkness with pulse",
-            "mood": "darkness is not empty it is full",
+            "label": "DARK_ABSTRACT",
+            "scene": "dark melody visualized as black ink spreading through neon-lit water, crimson sound waves bleeding at edges, heartbeat rhythm made visible as concentric dark rings with glowing red centers, void with pulse",
+            "palette": "black ink and deep crimson, neon violet at edges, darkness with rhythmic pulse",
+            "mood": "darkness is not absence it is presence, music as organism",
         },
     ],
 
-    # ── ELECTRONIC ────────────────────────────────────────────────────
-    "electronic": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, electric blue hair geometric bob, UV-reactive face art, arms raised at festival, laser beams cutting fog above crowd, ocean of phone lights behind her",
-            "palette": "electric cyan vs deep magenta, maximum saturation, rave light as sculpture",
-            "mood": "ecstatic, she is the drop",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "empty dance floor from above, no character, laser grid ceiling, fog at ankle level, colorful light beams cutting through haze, the venue before it fills",
-            "palette": "UV purple floor, cyan and magenta laser grid, deep black space, fluorescent geometry",
-            "mood": "the space that holds the ritual",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "rear view from stage level, anime woman DJ facing enormous crowd, massive LED wall exploding with abstract visuals behind her, her silhouette the only dark thing",
-            "palette": "silhouette vs rainbow LED explosion, chromatic aberration at edges, scale overwhelming",
-            "mood": "she controls the frequency of thousands",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "sound wave architecture, bass frequencies as glowing blue columns, treble as electric sparks, the drop visualized as supernova of cyan and magenta light",
-            "palette": "electric cyan and vivid magenta on black, maximum saturation, frequency as art",
-            "mood": "music made visible and physical",
-        },
-    ],
-
-    # ── ROCK ──────────────────────────────────────────────────────────
-    "rock": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, fiery copper pixie cut, leather jacket with patches, mid-scream into mic, harsh amber stage light from above, crowd hands visible below as sea",
-            "palette": "volcanic amber stage light vs pitch black, raw energy in light, no softness",
-            "mood": "catharsis, the scream is the truth",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "empty concert venue, no character, stage lit with warm amber flood, crowd barrier, drum kit and guitar stand alone under light, the stage before chaos",
-            "palette": "warm stage amber and deep venue shadow, concrete and metal textures",
-            "mood": "the quiet before it all starts",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "wide shot, anime woman silhouette backlit by massive wall of stage lights, hair wild in wind, crowd silhouette at her feet as dark mass, arms open",
-            "palette": "pure white concert lights creating halo vs absolute crowd darkness, binary power",
-            "mood": "she owns the room the room owns her",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "guitar string vibration made visible as amber shockwave, pick strike creating ripple of distortion, vinyl record cracked and burning at edge, amplifier grill glowing warm",
-            "palette": "deep amber and raw black, electric energy as visual texture",
-            "mood": "the sound that changes something",
-        },
-    ],
-
-    # ── METAL ─────────────────────────────────────────────────────────
-    "metal": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, impossibly long dark hair with blood-red underlayer, warrior armor-influenced outfit, standing on cliff edge, storm with multiple lightning strikes surrounding her",
-            "palette": "volcanic deep orange and absolute char-black, lightning white cutting storm purple sky",
-            "mood": "the storm obeys her or fears her",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "ancient stone fortress in storm, no character, lightning illuminating every crack, fire torches bending in wind, drawbridge chains, epic scale of old power",
-            "palette": "cold lightning white and storm-black, amber torch fire as only warmth, stone grey textures",
-            "mood": "architecture of endurance",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "extreme wide, anime woman tiny figure atop highest tower, simultaneous lightning strikes in circle around her, the scale of natural power vs human will",
-            "palette": "electric white lightning on purple-black storm sky, the single human figure as contrast",
-            "mood": "she chose to stand here",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "breakdown visualized as tectonic plates cracking, guitar riff as shockwave shattering stone, double bass drum as earthquake ripple, fire erupting from cracks in dark ground",
-            "palette": "volcanic crimson and charcoal black, destruction as beauty",
-            "mood": "heavy music made geological",
-        },
-    ],
-
-    # ── INDIE ─────────────────────────────────────────────────────────
-    "indie": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, honey-blonde waves genuinely uncurated, vintage slip dress, sitting in golden field at magic hour, looking directly at viewer with something true",
-            "palette": "deep honey-amber of last golden hour, long shadows, natural beauty at maximum",
-            "mood": "absolutely herself, the authenticity is the point",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "abandoned railway at sunset, no character, wildflowers growing between tracks, golden hour light through tall grass, warm and forgotten and beautiful",
-            "palette": "rich warm honey and deep burgundy, autumn tones, overgrown beauty",
-            "mood": "the world keeps being beautiful without asking permission",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "medium shot from passenger seat, anime woman driving at golden hour, late afternoon light through windshield catching her profile perfectly, movement implied",
-            "palette": "deep orange amber through glass, warm grain, film photography quality",
-            "mood": "going somewhere or leaving something",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "cassette tape unspooling into wildflower field, music notes becoming fireflies at dusk, vinyl record growing as tree ring cross-section, warm golden light through everything",
-            "palette": "honey gold and deep green, warm grain, analog nostalgia",
-            "mood": "music grows in you like something living",
-        },
-    ],
-
-    # ── CINEMATIC ─────────────────────────────────────────────────────
-    "cinematic": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, long dark hair in wind, dramatic long coat, standing at edge of impossible cliff, vast storm-breaking sky behind, single ray of amber light through dark clouds",
-            "palette": "desaturated environment vs single vivid golden beam, deep rich shadows, chiaroscuro at scale",
-            "mood": "protagonist at the moment of decision",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "fog-filled valley at dawn, no character, ancient stone bridge, single lantern at center, mountain peaks emerging from mist, the world before it wakes",
-            "palette": "cold blue-grey fog vs warm golden lantern, epic atmospheric depth, layers of mist",
-            "mood": "the world holds its breath",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "perfect widescreen composition, anime woman at end of long architectural corridor, single vanishing point, storm light from window at far end, her silhouette sharp against light",
-            "palette": "teal and orange color science, premium cinematography grade, anamorphic lens quality",
-            "mood": "intention given visual form",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "film frame borders visible, multiple exposures of the same scene at different moments, time as visual layer, rain and light as abstract architecture",
-            "palette": "vivid teal shadows and warm amber highlights, film grain, cinematic color science",
-            "mood": "memory and moment as the same thing",
-        },
-    ],
-
-    # ── FUNK ──────────────────────────────────────────────────────────
-    "funk": [
-        # A — Personagem
-        {
-            "type": "character",
-            "scene": "anime woman, voluminous natural afro with gold pins, warm deep skin, wide genuine smile, colorful vintage-inspired outfit, caught mid-dance in warm-lit venue",
-            "palette": "deep warm orange and rich red-brown of late night venue, soulful heat, colors that feel alive",
-            "mood": "pure joy without performance, the groove took over",
-        },
-        # B — Cenário
-        {
-            "type": "scene",
-            "scene": "record store interior, no character, warm afternoon light through dusty window, vinyl records everywhere, old speakers, plant growing through shelf crack, alive and loved",
-            "palette": "deep gold and rich mahogany, soulful warmth, texture of old wood and good music",
-            "mood": "the place where the music lives",
-        },
-        # C — Cinematográfico
-        {
-            "type": "cinematic",
-            "scene": "medium shot, anime woman at rooftop at sunset, city warm below, natural expression between songs, exhale and real smile, the moment between performances",
-            "palette": "vivid coral sunset and deep warm teal, saturated alive, the color of music that moves you",
-            "mood": "the real person under the performer",
-        },
-        # D — Abstrato
-        {
-            "type": "abstract",
-            "scene": "bass groove visualized as warm concentric rings in water, vinyl record spinning with rainbow light, brass instrument bell made of golden light, rhythm as architecture",
-            "palette": "electric yellow and deep purple, vivid as celebration feels, warm and alive",
-            "mood": "the groove is a physical place",
-        },
-    ],
-
-    # ── DEFAULT ───────────────────────────────────────────────────────
+    # ── DEFAULT (inclui gêneros não mapeados) ─────────────────────────
     "default": [
+        # A — PERSONAGEM
         {
             "type": "character",
-            "scene": "anime woman, striking distinctive features, confident presence, dramatic lighting, atmospheric environment with depth and story",
-            "palette": "vivid neon purple and deep black, premium saturation, cinematic contrast",
-            "mood": "presence that stops the scroll",
+            "label": "DEFAULT_CHARACTER",
+            "scene": "anime woman, striking features, glowing red eyes, dark hooded jacket, standing in rain-soaked neon-lit alley, crimson and violet reflections in puddles, atmospheric fog, looking directly at viewer",
+            "palette": "blood red and electric violet neon, absolute black shadows, rain as texture, premium dark anime aesthetic",
+            "mood": "presence that stops the scroll, dangerous beauty",
         },
+        # B — CENÁRIO
         {
             "type": "scene",
-            "scene": "atmospheric urban environment at night, no character, neon lights reflecting in wet streets, layers of depth and color, the city as emotional space",
-            "palette": "deep midnight with vivid colored light sources, rich contrast, wet reflections",
-            "mood": "the city after midnight, beauty without audience",
+            "label": "DEFAULT_SCENE",
+            "scene": "rain-soaked cyberpunk street at 3am, no character, neon signs in red and violet reflecting in every puddle, empty except for fog at ground level, fire escape ladders cutting geometric shadows",
+            "palette": "deep midnight with vivid crimson and violet light sources, rich contrast, wet reflections doubling every neon",
+            "mood": "the city after midnight, pure atmosphere",
         },
+        # C — CINEMATOGRÁFICO
         {
             "type": "cinematic",
-            "scene": "wide cinematic shot, single figure against vast dramatic environment, epic scale, premium color grading, anamorphic quality",
-            "palette": "cold electric blue and warm gold, cinematic contrast, premium visual language",
-            "mood": "the feeling of the music made visual",
+            "label": "DEFAULT_CINEMATIC",
+            "scene": "wide cinematic shot, anime woman silhouette against enormous neon city, rain falling in light beams, scale makes her presence larger, violet storm clouds above, crimson city below",
+            "palette": "cold electric violet sky and warm crimson city lights, cinematic contrast, rain visible in every beam",
+            "mood": "the feeling of dark music made visual",
         },
+        # D — ABSTRATO
         {
             "type": "abstract",
-            "scene": "sound wave made visible as vivid light sculpture, music frequency as architectural form, abstract beauty with emotional resonance",
-            "palette": "vivid amber and deep indigo, warm cold contrast, cinematic quality",
-            "mood": "music that you can see",
+            "label": "DEFAULT_ABSTRACT",
+            "scene": "bass frequency made visible as crimson and violet light sculpture, music waveform as glowing architecture in darkness, sound as physical force bending neon light, abstract beauty with emotional weight",
+            "palette": "vivid crimson and deep violet on absolute black, bass frequencies as warm red, treble as cool violet",
+            "mood": "music that you can see and feel, sound as form",
         },
     ],
 }
 
+# Mapear gêneros para os conceitos existentes
+GENRE_MAP = {
+    "lofi":       "dark",        # lofi dark = dark concepts
+    "indie":      "default",
+    "rock":       "electronic",  # rock = energia eletrônica
+    "metal":      "dark",        # metal = dark concepts
+    "cinematic":  "dark",
+    "funk":       "trap",        # funk = trap concepts
+    "pop":        "default",
+}
+
 
 # ══════════════════════════════════════════════════════════════════════
-# QUALIDADE & NEGATIVO
+# QUALIDADE & NEGATIVO — otimizados para Anime Dark Cyberpunk
 # ══════════════════════════════════════════════════════════════════════
 
 QUALITY_TAGS = (
     "masterpiece, best quality, ultra-detailed anime illustration, "
     "professional anime key visual, perfect cel shading, clean sharp lineart, "
-    "ultra-vivid saturated colors, maximum color depth, rich vivid hues, "
-    "deep blacks and luminous highlights, cinematic composition, razor-sharp focus, "
-    "richly detailed background with atmospheric depth, volumetric lighting, "
-    "dynamic light and shadow interplay, studio-level production quality, "
-    "trending on pixiv, ArtStation quality, 9:16 vertical format, "
-    "scroll-stopping visual impact, premium anime visual novel quality"
+    "ultra-vivid saturated colors, deep rich blacks, luminous neon highlights, "
+    "cinematic composition, razor-sharp focus, "
+    "richly detailed dark cyberpunk background with atmospheric depth, "
+    "volumetric neon lighting, dramatic light and shadow interplay, "
+    "studio-level dark anime production quality, "
+    "trending on pixiv dark cyberpunk, ArtStation quality, 9:16 vertical format, "
+    "scroll-stopping visual impact, premium dark anime visual novel quality"
 )
 
 NEGATIVE_PROMPT = (
@@ -423,34 +271,45 @@ NEGATIVE_PROMPT = (
     "multiple characters, extra limbs, deformed hands, fused fingers, bad anatomy, "
     "distorted face, wrong proportions, malformed body parts, "
     "child appearance, young teen face, childlike proportions, "
-    "explicit nudity, fetish content, nsfw, cleavage, revealing clothing, "
+    "explicit nudity, fetish content, nsfw, "
     "blurry, muddy colors, flat boring lighting, desaturated washed-out colors, "
+    "pastel colors, soft colors, warm cozy aesthetic, "
+    "bright daylight, cheerful, kawaii cute style, "
     "generic gradient background, plain studio void, empty background, "
     "airbrushed plastic skin, uncanny valley, "
     "Western cartoon, Pixar style, chibi, super deformed, "
     "sketch only, unfinished lineart, low quality, "
     "generic anime waifu, bland background, same composition as always, "
-    "repetitive, seen before, boring, forgettable"
+    "repetitive, seen before, boring, forgettable, "
+    "green colors, yellow dominant, orange dominant, warm sunset colors"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SEED DETERMINÍSTICA
+# SEED E SELEÇÃO DE CONCEITO
 # ══════════════════════════════════════════════════════════════════════
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|v7"
+    key = f"{filename}|{short_num}|v5_dark_cyberpunk"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
 def _pick_concept(style: str, filename: str, short_num: int) -> dict:
     """
     Seleciona conceito visual com rotação garantida.
-    short_num 1,2,3,4 = conceitos A,B,C,D em ordem determinística.
-    Nunca repete o mesmo conceito para a mesma música.
+    short_num 1,2,3,4 = conceitos A(character),B(scene),C(cinematic),D(abstract)
+    
+    Isso permite rastrear no YouTube Analytics qual tipo gera mais views:
+    - short #1 = sempre CHARACTER
+    - short #2 = sempre SCENE
+    - short #3 = sempre CINEMATIC
+    - short #4 = sempre ABSTRACT
     """
-    concepts = VISUAL_CONCEPTS.get(style, VISUAL_CONCEPTS["default"])
-    # Rotação por short_num garante variedade sequencial
+    # Mapear gênero para conceitos disponíveis
+    mapped_style = GENRE_MAP.get(style, style)
+    concepts = VISUAL_CONCEPTS.get(mapped_style, VISUAL_CONCEPTS["default"])
+    
+    # Rotação determinística: short_num define o tipo de conceito
     concept_idx = (short_num - 1) % len(concepts)
     return concepts[concept_idx]
 
@@ -501,32 +360,56 @@ def _claude_prompt(
     client = get_anthropic_client()
 
     concept_type_instructions = {
-        "character": "Focus on ONE specific character with distinctive appearance. Background must be rich and detailed, not just backdrop.",
-        "scene":     "NO dominant character. The environment IS the subject. Every detail of the scene tells the story.",
-        "cinematic": "Epic scale and composition. If character present, she is small vs environment. Widescreen feel in vertical format.",
-        "abstract":  "Music visualized as physical reality. No literal people. Sound, emotion, and energy made into visual form.",
+        "character": (
+            "ONE specific anime woman character. Sharp, cold, powerful expression. "
+            "She must have GLOWING RED or VIOLET eyes — non-negotiable. "
+            "Background must be rich dark cyberpunk environment, not just backdrop. "
+            "Close to medium shot, character fills 60-70% of frame."
+        ),
+        "scene": (
+            "ENVIRONMENT IS THE SUBJECT — no dominant character visible. "
+            "Every detail tells the story. Rain, neon reflections, fog, darkness. "
+            "The scene must feel alive and charged with energy. "
+            "Viewer should feel the music just looking at the empty space."
+        ),
+        "cinematic": (
+            "EPIC SCALE — if character present, she is small vs the environment. "
+            "Widescreen cinematic feel in 9:16 vertical format. "
+            "Think movie poster: one powerful composition, one mood, no clutter. "
+            "The scale contrast IS the statement."
+        ),
+        "abstract": (
+            "MUSIC VISUALIZED AS PHYSICAL REALITY — no literal people. "
+            "Sound waves, bass frequencies, the DROP made visible. "
+            "Neon light as sound energy. Darkness as pressure. "
+            "The image should feel like the track sounds."
+        ),
     }
 
     concept_instruction = concept_type_instructions.get(concept["type"], "")
+    concept_label = concept.get("label", concept["type"].upper())
 
     system = (
-        "You are an elite anime art director for YouTube Shorts thumbnails. "
-        "Your images stop people mid-scroll because they are UNEXPECTED and SPECIFIC.\n\n"
+        "You are an elite dark anime art director for YouTube Shorts thumbnails. "
+        "Your aesthetic: ANIME DARK CYBERPUNK. Always. No exceptions.\n\n"
+        "CHANNEL: DJ darkMark | Phonk, Trap, Dubstep, Electronic\n"
+        "VISUAL IDENTITY: Blood red + electric violet + absolute black + rain + neon\n\n"
         "ABSOLUTE RULES:\n"
-        "1. NEVER generic close-up faces as default — vary the concept type\n"
-        "2. ULTRA-VIVID colors, deep blacks, luminous highlights — never flat\n"
-        "3. Specific lighting with location, color, intensity\n"
-        "4. Background tells a story — never a gradient void\n"
-        "5. The image must FEEL like the music, not just decorate it\n"
-        "6. 9:16 vertical format, platform-safe, non-sexualized\n"
-        "7. Output ONLY the final prompt: comma-separated, 90-120 words, no preamble"
+        "1. ALWAYS dark cyberpunk — never bright, never warm, never cute\n"
+        "2. PALETTE: crimson/blood red + electric violet/purple + absolute black\n"
+        "3. Rain, wet surfaces, neon reflections are ALWAYS welcome\n"
+        "4. If character present: glowing eyes (red or violet), dark outfit, cold expression\n"
+        "5. Background always dark cyberpunk city, never gradient void\n"
+        "6. Colors must be ULTRA-VIVID neons against absolute darkness\n"
+        "7. 9:16 vertical format, platform-safe, non-sexualized\n"
+        "8. Output ONLY the final prompt: comma-separated, 90-120 words, no preamble"
     )
 
-    user = f"""Create a scroll-stopping anime illustration prompt.
+    user = f"""Create a scroll-stopping ANIME DARK CYBERPUNK illustration prompt.
 
 SONG: "{song_name}"
 GENRE: {style} | ALL: {all_styles}
-SHORT #: {short_num}
+SHORT #: {short_num} | CONCEPT: {concept_label}
 
 VISUAL CONCEPT TYPE: {concept["type"].upper()}
 {concept_instruction}
@@ -534,15 +417,17 @@ VISUAL CONCEPT TYPE: {concept["type"].upper()}
 SCENE FOUNDATION:
 {concept["scene"]}
 
-COLOR PALETTE (execute exactly):
+COLOR PALETTE (execute exactly — DARK CYBERPUNK ONLY):
 {concept["palette"]}
 
 EMOTIONAL MOOD:
 {concept["mood"]}
 
-CRITICAL: The image must emotionally connect to "{song_name}". 
-Let the song title influence one specific visual detail.
-90-120 words, comma-separated only, no explanation."""
+CRITICAL: 
+- Colors MUST be blood red + electric violet/purple + absolute black. Nothing warm.
+- The image must emotionally connect to "{song_name}".
+- Let the song title influence one specific visual detail.
+- 90-120 words, comma-separated only, no explanation."""
 
     resp = client.messages.create(
         model=get_anthropic_model(),
@@ -553,21 +438,22 @@ Let the song title influence one specific visual detail.
 
     raw  = resp.content[0].text.strip().strip('"').strip("'")
     full = f"{raw}, {QUALITY_TAGS}"
-    concept_label = concept["type"].upper()
     print(f"  [Claude] Prompt gerado ({len(full)} chars) — short #{short_num} [{concept_label}]")
     return _compact(full)
 
 
 def _static_prompt(concept: dict) -> str:
     prompt = (
-        f"masterpiece, best quality, ultra-detailed premium anime illustration, "
+        f"masterpiece, best quality, ultra-detailed premium dark cyberpunk anime illustration, "
         f"{concept['scene']}, "
         f"color palette: {concept['palette']}, "
         f"mood: {concept['mood']}, "
-        f"ultra-vivid saturated colors, deep rich blacks, luminous highlights, "
-        f"cinematic volumetric lighting, atmospheric depth, richly detailed, "
+        f"blood red and electric violet neon against absolute black, "
+        f"rain wet surfaces neon reflections, "
+        f"ultra-vivid saturated neon colors, deep rich blacks, luminous neon highlights, "
+        f"cinematic volumetric dark lighting, atmospheric cyberpunk depth, richly detailed, "
         f"clean sharp anime lineart, perfect cel shading, "
-        f"9:16 vertical composition, scroll-stopping visual impact, pixiv quality"
+        f"9:16 vertical composition, scroll-stopping visual impact, dark anime pixiv quality"
     )
     return _compact(prompt)
 
@@ -612,10 +498,11 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
     full_prompt = _compact(
         prompt
-        + ", anime illustration style, NOT photorealistic, NOT 3D render, "
-        + "ultra-vibrant saturated colors, deep rich shadows, luminous vivid highlights, "
-        + "sharp clean lineart, premium anime key visual quality, "
-        + "specific distinctive visual, NOT generic, NOT repetitive"
+        + ", dark cyberpunk anime illustration style, NOT photorealistic, NOT 3D render, "
+        + "blood red and electric violet neon, absolute black shadows, "
+        + "ultra-vibrant dark neon colors, deep rich blacks, luminous crimson and violet highlights, "
+        + "sharp clean lineart, premium dark anime key visual quality, "
+        + "rain wet surfaces neon city, specific distinctive dark visual, NOT generic"
     )
 
     for model in REPLICATE_MODELS:
