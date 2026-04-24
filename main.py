@@ -738,6 +738,16 @@ def run_remotion_overlay(
     style: str = "default",
     song_name: str = "",
 ) -> str:
+    """
+    Renderiza o vídeo final pelo Remotion.
+
+    Melhorias:
+    - Aceita REMOTION_ENTRY como index.ts ou remotion/index.ts.
+    - Usa caminhos absolutos para evitar saída no lugar errado.
+    - Copia input.mp4, audio_data.json e logo.png para remotion/public.
+    - Faz validação antes e depois do render.
+    - Se Remotion falhar, mantém fallback no vídeo base para não perder postagem.
+    """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
         return base_video_path
@@ -756,15 +766,17 @@ def run_remotion_overlay(
         return base_video_path
 
     entry_env = str(REMOTION_ENTRY).replace("\\", "/").strip()
-    if entry_env.startswith("remotion/"):
-        entry_for_cli = entry_env.replace("remotion/", "", 1)
-    else:
-        entry_for_cli = entry_env
-
+    entry_for_cli = entry_env.replace("remotion/", "", 1) if entry_env.startswith("remotion/") else entry_env
     entry_path = remotion_dir / entry_for_cli
 
     if not entry_path.exists():
         log(f"Entrada do Remotion não encontrada: {entry_path}")
+        log("Usando vídeo base sem overlay do Remotion.")
+        return base_video_path
+
+    package_json = remotion_dir / "package.json"
+    if not package_json.exists():
+        log("remotion/package.json não encontrado — npm/remotion pode não estar configurado.")
         log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
 
@@ -775,27 +787,67 @@ def run_remotion_overlay(
     log(f"Vídeo base copiado para Remotion: {input_video_dest}")
 
     audio_dest = public_dir / "audio_data.json"
-    if audio_data_path and os.path.exists(audio_data_path):
-        shutil.copy(audio_data_path, str(audio_dest))
-        log(f"audio_data.json copiado para Remotion: {audio_dest}")
-    else:
+    copied_audio = False
+
+    possible_audio_paths = []
+    if audio_data_path:
+        possible_audio_paths.append(Path(audio_data_path))
+    possible_audio_paths.extend([
+        Path("temp/audio_data.json"),
+        Path("audio_data.json"),
+        Path("remotion/public/audio_data.json"),
+    ])
+
+    for candidate in possible_audio_paths:
+        try:
+            if candidate and candidate.exists() and candidate.stat().st_size > 5:
+                if candidate.resolve() != audio_dest.resolve():
+                    shutil.copy(str(candidate), str(audio_dest))
+                copied_audio = True
+                log(f"audio_data.json copiado para Remotion: {candidate} -> {audio_dest}")
+                break
+        except Exception:
+            pass
+
+    if not copied_audio:
         audio_dest.write_text("[]", encoding="utf-8")
-        log("audio_data.json não encontrado — criado fallback vazio.")
+        log("audio_data.json real não encontrado — criado fallback vazio. Efeitos ficarão menos reativos.")
 
     logo_dest = public_dir / "logo.png"
-    if logo_path and os.path.exists(logo_path):
-        shutil.copy(logo_path, str(logo_dest))
-        log(f"Logo copiada para Remotion: {logo_dest}")
-    elif os.path.exists("assets/logo.png"):
-        shutil.copy("assets/logo.png", str(logo_dest))
-        log(f"Logo copiada de assets/logo.png para Remotion: {logo_dest}")
-    elif os.path.exists("assets/logo_darkmark.png"):
-        shutil.copy("assets/logo_darkmark.png", str(logo_dest))
-        log(f"Logo copiada de assets/logo_darkmark.png para Remotion: {logo_dest}")
-    else:
-        log("logo.png não encontrada — o ícone pode não aparecer.")
+    copied_logo = False
+
+    possible_logo_paths = []
+    if logo_path:
+        possible_logo_paths.append(Path(logo_path))
+    possible_logo_paths.extend([
+        Path("assets/logo.png"),
+        Path("assets/logo_darkmark.png"),
+        Path("logo.png"),
+        Path("remotion/public/logo.png"),
+    ])
+
+    for candidate in possible_logo_paths:
+        try:
+            if candidate and candidate.exists() and candidate.stat().st_size > 0:
+                if candidate.resolve() != logo_dest.resolve():
+                    shutil.copy(str(candidate), str(logo_dest))
+                copied_logo = True
+                log(f"Logo copiada para Remotion: {candidate} -> {logo_dest}")
+                break
+        except Exception:
+            pass
+
+    if not copied_logo:
+        log("Logo não encontrada — o ícone NÃO vai aparecer no Remotion.")
 
     output_abs.parent.mkdir(parents=True, exist_ok=True)
+
+    # Remove output antigo para evitar falso positivo.
+    if output_abs.exists():
+        try:
+            output_abs.unlink()
+        except Exception:
+            pass
 
     cmd = [
         "npx",
@@ -805,19 +857,39 @@ def run_remotion_overlay(
         REMOTION_COMPOSITION_ID,
         str(output_abs),
         "--overwrite",
+        "--concurrency",
+        "2",
     ]
 
     log("Renderizando overlay/ícone com Remotion...")
     log("Comando Remotion: " + " ".join(cmd))
 
     try:
-        subprocess.run(cmd, cwd=str(remotion_dir), check=True)
+        result = subprocess.run(
+            cmd,
+            cwd=str(remotion_dir),
+            check=True,
+            text=True,
+            capture_output=True,
+        )
+        if result.stdout:
+            log("Remotion stdout:")
+            print(result.stdout[-3000:])
+        if result.stderr:
+            log("Remotion stderr:")
+            print(result.stderr[-3000:])
     except FileNotFoundError:
         log("npx não encontrado — Node/Remotion não está instalado no runner.")
         log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
     except subprocess.CalledProcessError as e:
         log(f"Remotion falhou com código {e.returncode}.")
+        if e.stdout:
+            log("Remotion stdout:")
+            print(e.stdout[-4000:])
+        if e.stderr:
+            log("Remotion stderr:")
+            print(e.stderr[-4000:])
         log("Usando vídeo base sem overlay do Remotion para não quebrar o upload.")
         return base_video_path
 
@@ -827,9 +899,13 @@ def run_remotion_overlay(
         log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
 
+    if output_abs.stat().st_size < 100_000:
+        log(f"Vídeo final Remotion parece pequeno demais ({output_abs.stat().st_size} bytes).")
+        log("Usando vídeo base sem overlay por segurança.")
+        return base_video_path
+
     log(f"Vídeo final Remotion pronto: {output_abs}")
     return str(output_abs)
-
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
@@ -987,9 +1063,21 @@ def main():
             audio_data_path  = None
 
         if not audio_data_path:
-            possible_audio_data = Path("temp") / "audio_data.json"
-            if possible_audio_data.exists():
-                audio_data_path = str(possible_audio_data)
+            possible_audio_data_paths = [
+                Path("temp") / "audio_data.json",
+                Path("audio_data.json"),
+                Path("remotion") / "public" / "audio_data.json",
+            ]
+
+            for possible_audio_data in possible_audio_data_paths:
+                if possible_audio_data.exists() and possible_audio_data.stat().st_size > 5:
+                    audio_data_path = str(possible_audio_data)
+                    break
+
+        if audio_data_path:
+            log(f"Audio data para Remotion: {audio_data_path}")
+        else:
+            log("Audio data para Remotion não encontrado — efeitos podem ficar menos sincronizados.")
 
         log(f"Vídeo base pronto: {video_base_ready}")
 
@@ -1001,6 +1089,11 @@ def main():
             style=style,
             song_name=title_base,
         )
+
+        if str(video_path) == str(video_base_ready):
+            log("ATENÇÃO: upload vai usar vídeo BASE. Remotion não gerou overlay final.")
+        else:
+            log("OK: upload vai usar vídeo FINAL do Remotion com overlay/ícone.")
 
         log(f"Vídeo que será enviado: {video_path}")
 
