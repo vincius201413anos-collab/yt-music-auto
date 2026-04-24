@@ -1,6 +1,12 @@
 """
-main.py — Bot de automação YouTube Shorts v4.1
+main.py — Bot de automação YouTube Shorts v4.2
 ===============================================
+CORREÇÃO v4.2:
+- Integra Remotion no fluxo principal.
+- O bot gera o vídeo base com FFmpeg/create_short.
+- Depois renderiza o overlay/ícone pelo Remotion.
+- Upload e backup usam o vídeo FINAL do Remotion.
+
 CORREÇÃO v4.1:
 - NÃO ignora mais músicas com nome duplicado.
 - Cada música agora é tratada pelo ID único do Google Drive.
@@ -14,6 +20,7 @@ import re
 import random
 import time
 import hashlib
+import subprocess
 from pathlib import Path
 from datetime import datetime
 
@@ -45,6 +52,12 @@ CHANNEL_NAME  = "DJ darkMark"
 
 ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE",  "true").lower()  == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
+
+# Remotion
+# Se quiser desligar temporariamente, coloque ENABLE_REMOTION=false nos Secrets/Variables do GitHub.
+ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
+REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MusicVisualizer")
+REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "remotion/index.ts")
 
 
 def log(msg: str):
@@ -695,6 +708,92 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
     raise FileNotFoundError("Nenhum background disponível.")
 
 
+def run_remotion_overlay(
+    base_video_path: str,
+    output_path: str,
+    audio_data_path: str | None = None,
+    logo_path: str | None = None,
+    style: str = "default",
+    song_name: str = "",
+) -> str:
+    """
+    Renderiza o vídeo final pelo Remotion.
+
+    IMPORTANTE:
+    - Entrada: vídeo base gerado pelo FFmpeg/create_short.
+    - Saída: vídeo final com ícone/overlay/efeitos do Remotion.
+    - O upload precisa usar o retorno desta função.
+    """
+    if not ENABLE_REMOTION:
+        log("Remotion desativado — usando vídeo base.")
+        return base_video_path
+
+    if not os.path.exists(base_video_path):
+        raise FileNotFoundError(f"Vídeo base não encontrado: {base_video_path}")
+
+    entry_path = Path(REMOTION_ENTRY)
+    package_json = Path("package.json")
+
+    if not entry_path.exists():
+        log(f"Entrada do Remotion não encontrada: {REMOTION_ENTRY}")
+        log("Usando vídeo base sem overlay do Remotion.")
+        return base_video_path
+
+    if not package_json.exists():
+        log("package.json não encontrado — não dá pra rodar Remotion neste ambiente.")
+        log("Usando vídeo base sem overlay do Remotion.")
+        return base_video_path
+
+    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+
+    input_props = {
+        "videoPath": base_video_path,
+        "baseVideoPath": base_video_path,
+        "audioDataPath": audio_data_path or "",
+        "logoPath": logo_path or "",
+        "style": style,
+        "songName": song_name,
+    }
+
+    props_path = Path("temp") / "remotion_props.json"
+    props_path.parent.mkdir(parents=True, exist_ok=True)
+    props_path.write_text(json.dumps(input_props, ensure_ascii=False), encoding="utf-8")
+
+    cmd = [
+        "npx",
+        "remotion",
+        "render",
+        REMOTION_ENTRY,
+        REMOTION_COMPOSITION_ID,
+        output_path,
+        "--props",
+        str(props_path),
+        "--overwrite",
+    ]
+
+    log("Renderizando overlay/ícone com Remotion...")
+    log("Comando Remotion: " + " ".join(cmd))
+
+    try:
+        subprocess.run(cmd, check=True)
+    except FileNotFoundError:
+        log("npx não encontrado — Node/Remotion não está instalado no runner.")
+        log("Usando vídeo base sem overlay do Remotion.")
+        return base_video_path
+    except subprocess.CalledProcessError as e:
+        log(f"Remotion falhou com código {e.returncode}.")
+        log("Usando vídeo base sem overlay do Remotion para não quebrar o upload.")
+        return base_video_path
+
+    if not os.path.exists(output_path):
+        log("Remotion terminou, mas o arquivo final não apareceu.")
+        log("Usando vídeo base sem overlay do Remotion.")
+        return base_video_path
+
+    log(f"Vídeo final Remotion pronto: {output_path}")
+    return output_path
+
+
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
 
@@ -737,6 +836,7 @@ def main():
     log(f"  YouTube  : {'ATIVO' if ENABLE_YOUTUBE  else 'DESATIVADO'}")
     log(f"  Facebook : {'ATIVO' if ENABLE_FACEBOOK else 'DESATIVADO'}")
     log(f"  Backup   : {'ATIVO' if DRIVE_BACKUP_FOLDER_ID else 'DESATIVADO'}")
+    log(f"  Remotion : {'ATIVO' if ENABLE_REMOTION else 'DESATIVADO'}")
     log(f"  Shorts/faixa: {SHORTS_PER_TRACK}")
     log("=" * 55)
 
@@ -752,8 +852,10 @@ def main():
         DRIVE_FOLDER_ID,
     )
 
-    if assets_result.get("logo_path"):
-        log(f"Logo pronta: {assets_result['logo_path']}")
+    logo_path = assets_result.get("logo_path")
+
+    if logo_path:
+        log(f"Logo pronta: {logo_path}")
     else:
         log("Logo não encontrada — continuando sem logo.")
 
@@ -818,35 +920,61 @@ def main():
         date       = datetime.utcnow().strftime("%Y-%m-%d")
         output_dir = Path("output") / date / style
         output_dir.mkdir(parents=True, exist_ok=True)
-        planned_video_path = str(
-            output_dir / f"{date}__{style}__{safe_filename(title_base)}__{track['id']}__s{short_num}.mp4"
+
+        base_video_path = str(
+            output_dir / f"{date}__{style}__{safe_filename(title_base)}__{track['id']}__s{short_num}__base.mp4"
+        )
+        final_video_path = str(
+            output_dir / f"{date}__{style}__{safe_filename(title_base)}__{track['id']}__s{short_num}__remotion.mp4"
         )
 
         log(f"Gerando background (short {short_num})...")
         bg = resolve_background(style, name, short_num, styles)
 
-        log("Gerando vídeo...")
+        log("Gerando vídeo base com FFmpeg...")
         render_result = create_short(
             audio_path,
             bg,
-            planned_video_path,
+            base_video_path,
             style,
             song_name=title_base,
         )
 
         if isinstance(render_result, dict):
-            video_path     = render_result["output_path"]
-            thumbnail_path = render_result.get("thumbnail_path")
+            video_base_ready = render_result["output_path"]
+            thumbnail_path   = render_result.get("thumbnail_path")
+            audio_data_path  = render_result.get("audio_data_path") or render_result.get("audio_json_path")
         else:
-            video_path     = render_result
-            thumbnail_path = None
+            video_base_ready = render_result
+            thumbnail_path   = None
+            audio_data_path  = None
 
-        log(f"Vídeo pronto: {video_path}")
+        # Fallback para o caminho padrão que seu sistema de análise costuma gerar.
+        if not audio_data_path:
+            possible_audio_data = Path("temp") / "audio_data.json"
+            if possible_audio_data.exists():
+                audio_data_path = str(possible_audio_data)
+
+        log(f"Vídeo base pronto: {video_base_ready}")
+
+        video_path = run_remotion_overlay(
+            base_video_path=video_base_ready,
+            output_path=final_video_path,
+            audio_data_path=audio_data_path,
+            logo_path=logo_path,
+            style=style,
+            song_name=title_base,
+        )
+
+        log(f"Vídeo que será enviado: {video_path}")
 
         title       = build_title(title_base, style, short_num)
         description = build_description(title_base, style, short_num)
         log(f"Título  : {title}")
 
+        # IMPORTANTE:
+        # A partir daqui usa video_path, que agora é o arquivo final do Remotion
+        # quando o render do Remotion funciona.
         results = publish(video_path, title, description)
 
         if DRIVE_BACKUP_FOLDER_ID:
