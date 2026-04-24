@@ -1,0 +1,10 @@
+{
+  "name": "remotion-video",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "remotion studio"
+  },
+  "dependencies": {
+    "remotion": "4.0.451"
+  }
+}
