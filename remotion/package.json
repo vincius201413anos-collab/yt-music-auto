@@ -2,9 +2,12 @@
   "name": "remotion-video",
   "version": "1.0.0",
   "scripts": {
-    "dev": "remotion studio"
+    "dev": "remotion studio",
+    "render": "remotion render"
   },
   "dependencies": {
-    "remotion": "4.0.451"
+    "remotion": "4.0.451",
+    "@remotion/cli": "4.0.451",
+    "@remotion/renderer": "4.0.451"
   }
 }
