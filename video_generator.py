@@ -961,7 +961,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-loop", "1", "-i", background_path,
-                "-i", LOGO_PATH,
+                "-loop", "1", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
@@ -985,7 +985,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-ss", str(bg_start), "-i", background_path,
-                "-i", LOGO_PATH,
+                "-loop", "1", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
@@ -1014,7 +1014,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",
-                "-i", LOGO_PATH,
+                "-loop", "1", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
