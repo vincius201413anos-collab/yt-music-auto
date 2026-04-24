@@ -337,9 +337,9 @@
       "id": "11gHbMRudzu4MfSvp4aU9KVzx5RpXFYVD",
       "name": "This car has no driver… 😳👻 _ Phantom Throttle (1).mp3",
       "key": "11gHbMRudzu4MfSvp4aU9KVzx5RpXFYVD",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk",
       "name_key": "this car has no driver… 😳👻 phantom throttle"
     },
     {
