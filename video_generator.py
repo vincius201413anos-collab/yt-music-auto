@@ -10,6 +10,11 @@ MUDANÇAS v8.0 (VIRAL CONTROL — 15M STYLE):
 - Progress bar removida do FFmpeg para não competir com o Remotion.
 - Filosofia: calmo → build → DROP → impacto, igual Shorts virais de 15M+.
 - Remotion continua sendo responsável por logo, texto, partículas, túnel e glow final
+
+FIX v8.1:
+- Removido parâmetro 'shadows=enable' do filtro colorbalance (não suportado pelo FFmpeg do runner).
+  Substituído por dois filtros colorbalance separados: um para sombras (rs/gs/bs baixo) e outro
+  para highlights (rs/gs/bs alto), que é a forma correta e compatível.
 """
 
 from __future__ import annotations
@@ -104,14 +109,16 @@ MIN_FILE_SIZE_MB = 0.5
 MAX_FILE_SIZE_MB = 350.0
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLOR GRADES — v8.0 CYBERPUNK MÁXIMO
-# Filosofia: fundo escuro como breu, neon explodindo, contraste brutal
+# COLOR GRADES — v8.1 CYBERPUNK MÁXIMO
+# FIX: 'shadows=enable' e 'highlights=enable' não são parâmetros válidos do
+# filtro colorbalance. O filtro aceita apenas rs/gs/bs/rm/gm/bm/rh/gh/bh.
+# Separamos em dois colorbalance encadeados para simular o mesmo efeito.
 # ══════════════════════════════════════════════════════════════════════════════
 GENRE_COLOR_GRADE = {
     "phonk": (
         # Base escura + roxo profundo + vermelho sangue + grain cinematográfico
-        "colorbalance=rs=0.35:gs=-0.20:bs=-0.25:shadows=enable,"
-        "colorbalance=rs=-0.15:gs=0.05:bs=0.40:highlights=enable,"
+        "colorbalance=rs=0.35:gs=-0.20:bs=-0.25,"
+        "colorbalance=rh=-0.15:gh=0.05:bh=0.40,"
         "eq=contrast=1.48:brightness=-0.075:saturation=1.35:gamma=0.92,"
         "curves=r='0/0 0.2/0.05 0.7/0.65 1/1':g='0/0 0.3/0.10 1/0.80':b='0/0 0.2/0.30 1/1',"
         "unsharp=7:7:2.2:7:7:0,"
@@ -119,16 +126,16 @@ GENRE_COLOR_GRADE = {
     ),
     "trap": (
         # Azul gelo + ciano neon + preto profundo
-        "colorbalance=rs=-0.25:gs=0.08:bs=0.45:shadows=enable,"
-        "colorbalance=rs=-0.10:gs=0.15:bs=0.30:highlights=enable,"
+        "colorbalance=rs=-0.25:gs=0.08:bs=0.45,"
+        "colorbalance=rh=-0.10:gh=0.15:bh=0.30,"
         "eq=contrast=1.42:brightness=-0.065:saturation=1.32:gamma=0.93,"
         "curves=r='0/0 0.3/0.08 1/0.85':b='0/0 0.1/0.25 0.7/0.85 1/1',"
         "unsharp=5:5:1.8:5:5:0"
     ),
     "dark": (
         # Roxo puro + quase sem luz — máximo sinistro
-        "colorbalance=rs=-0.10:gs=-0.15:bs=0.55:shadows=enable,"
-        "colorbalance=rs=0.05:gs=-0.05:bs=0.25:highlights=enable,"
+        "colorbalance=rs=-0.10:gs=-0.15:bs=0.55,"
+        "colorbalance=rh=0.05:gh=-0.05:bh=0.25,"
         "eq=contrast=1.50:brightness=-0.105:saturation=0.92:gamma=0.90,"
         "curves=all='0/0 0.15/0.02 0.5/0.35 1/1',"
         "unsharp=5:5:1.5:5:5:0,"
@@ -136,8 +143,8 @@ GENRE_COLOR_GRADE = {
     ),
     "electronic": (
         # Ciano + magenta — bifurcação neon
-        "colorbalance=rs=-0.20:gs=0.15:bs=0.38:shadows=enable,"
-        "colorbalance=rs=0.30:gs=-0.10:bs=0.20:highlights=enable,"
+        "colorbalance=rs=-0.20:gs=0.15:bs=0.38,"
+        "colorbalance=rh=0.30:gh=-0.10:bh=0.20,"
         "eq=contrast=1.40:brightness=-0.055:saturation=1.50:gamma=0.94,"
         "unsharp=5:5:1.2:5:5:0"
     ),
@@ -180,7 +187,8 @@ GENRE_COLOR_GRADE = {
         "unsharp=3:3:0.7:3:3:0"
     ),
     "default": (
-        "colorbalance=rs=-0.08:gs=-0.05:bs=0.30:shadows=enable,"
+        "colorbalance=rs=-0.08:gs=-0.05:bs=0.30,"
+        "colorbalance=rh=-0.08:gh=-0.05:bh=0.30,"
         "eq=contrast=1.55:brightness=-0.08:saturation=1.40:gamma=0.88,"
         "unsharp=5:5:1.2:5:5:0"
     ),
@@ -595,12 +603,10 @@ def build_vignette_pulse(analysis: dict, strength: float, style: str = "default"
     angle = round(strength * 1.15, 3)
     base_vig = f"vignette=angle={angle}:mode=forward"
 
-    # Escurecimento extra nas bordas pulsante
     bass_hits = analysis.get("bass_hits", [])[:20]
     drop_time = analysis.get("drop_time")
 
     borders = []
-    # Vinheta base nas quatro bordas
     borders.append(f"drawbox=x=0:y=0:w=iw:h=80:color=black@0.40:t=fill")
     borders.append(f"drawbox=x=0:y=ih-80:w=iw:h=80:color=black@0.40:t=fill")
     borders.append(f"drawbox=x=0:y=0:w=60:h=ih:color=black@0.35:t=fill")
@@ -612,7 +618,7 @@ def build_vignette_pulse(analysis: dict, strength: float, style: str = "default"
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FILTROS BASE (mantidos do v6)
+# FILTROS BASE
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_audio_filter(duration: float) -> str:
