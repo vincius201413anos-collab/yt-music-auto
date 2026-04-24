@@ -21,6 +21,7 @@ import random
 import time
 import hashlib
 import subprocess
+import shutil
 from pathlib import Path
 from datetime import datetime
 
@@ -56,8 +57,8 @@ ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 # Remotion
 # Se quiser desligar temporariamente, coloque ENABLE_REMOTION=false nos Secrets/Variables do GitHub.
 ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
-REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MusicVisualizer")
-REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "remotion/index.ts")
+REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
+REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "index.ts")
 
 
 def log(msg: str):
@@ -719,10 +720,12 @@ def run_remotion_overlay(
     """
     Renderiza o vídeo final pelo Remotion.
 
-    IMPORTANTE:
-    - Entrada: vídeo base gerado pelo FFmpeg/create_short.
-    - Saída: vídeo final com ícone/overlay/efeitos do Remotion.
-    - O upload precisa usar o retorno desta função.
+    Fluxo correto:
+    - Copia o vídeo base do FFmpeg para remotion/public/input.mp4
+    - Copia o audio_data.json para remotion/public/audio_data.json
+    - Copia a logo para remotion/public/logo.png
+    - Roda o Remotion
+    - Retorna o vídeo final com ícone/overlay
     """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
@@ -731,33 +734,48 @@ def run_remotion_overlay(
     if not os.path.exists(base_video_path):
         raise FileNotFoundError(f"Vídeo base não encontrado: {base_video_path}")
 
-    entry_path = Path(REMOTION_ENTRY)
-    package_json = Path("package.json")
+    remotion_dir = Path("remotion")
+    public_dir = remotion_dir / "public"
 
+    if not remotion_dir.exists():
+        log("Pasta remotion não encontrada — usando vídeo base sem overlay.")
+        return base_video_path
+
+    entry_path = remotion_dir / REMOTION_ENTRY
     if not entry_path.exists():
-        log(f"Entrada do Remotion não encontrada: {REMOTION_ENTRY}")
+        log(f"Entrada do Remotion não encontrada: {entry_path}")
         log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
 
-    if not package_json.exists():
-        log("package.json não encontrado — não dá pra rodar Remotion neste ambiente.")
-        log("Usando vídeo base sem overlay do Remotion.")
-        return base_video_path
+    public_dir.mkdir(parents=True, exist_ok=True)
+
+    # O Composition.tsx usa staticFile("input.mp4")
+    input_video_dest = public_dir / "input.mp4"
+    shutil.copy(base_video_path, input_video_dest)
+    log(f"Vídeo base copiado para Remotion: {input_video_dest}")
+
+    # O Composition.tsx usa staticFile("audio_data.json")
+    audio_dest = public_dir / "audio_data.json"
+    if audio_data_path and os.path.exists(audio_data_path):
+        shutil.copy(audio_data_path, audio_dest)
+        log(f"audio_data.json copiado para Remotion: {audio_dest}")
+    else:
+        # Cria um fallback mínimo para não quebrar o fetch no Remotion.
+        audio_dest.write_text("[]", encoding="utf-8")
+        log("audio_data.json não encontrado — criado fallback vazio.")
+
+    # O Composition.tsx usa staticFile("logo.png")
+    logo_dest = public_dir / "logo.png"
+    if logo_path and os.path.exists(logo_path):
+        shutil.copy(logo_path, logo_dest)
+        log(f"Logo copiada para Remotion: {logo_dest}")
+    elif os.path.exists("assets/logo.png"):
+        shutil.copy("assets/logo.png", logo_dest)
+        log(f"Logo copiada de assets/logo.png para Remotion: {logo_dest}")
+    else:
+        log("logo.png não encontrada — o ícone pode não aparecer.")
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
-    input_props = {
-        "videoPath": base_video_path,
-        "baseVideoPath": base_video_path,
-        "audioDataPath": audio_data_path or "",
-        "logoPath": logo_path or "",
-        "style": style,
-        "songName": song_name,
-    }
-
-    props_path = Path("temp") / "remotion_props.json"
-    props_path.parent.mkdir(parents=True, exist_ok=True)
-    props_path.write_text(json.dumps(input_props, ensure_ascii=False), encoding="utf-8")
 
     cmd = [
         "npx",
@@ -766,8 +784,6 @@ def run_remotion_overlay(
         REMOTION_ENTRY,
         REMOTION_COMPOSITION_ID,
         output_path,
-        "--props",
-        str(props_path),
         "--overwrite",
     ]
 
@@ -775,7 +791,7 @@ def run_remotion_overlay(
     log("Comando Remotion: " + " ".join(cmd))
 
     try:
-        subprocess.run(cmd, check=True)
+        subprocess.run(cmd, cwd=str(remotion_dir), check=True)
     except FileNotFoundError:
         log("npx não encontrado — Node/Remotion não está instalado no runner.")
         log("Usando vídeo base sem overlay do Remotion.")
@@ -792,7 +808,6 @@ def run_remotion_overlay(
 
     log(f"Vídeo final Remotion pronto: {output_path}")
     return output_path
-
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
