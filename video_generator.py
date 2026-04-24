@@ -103,8 +103,8 @@ LOGO_PULSE_BASS_DECAY = 0.08
 LOGO_PULSE_DROP_DECAY = 0.30
 
 # Limites máximos de batidas para expressões (performance)
-LOGO_MAX_BEATS     = 50
-LOGO_MAX_BASS_HITS = 50
+LOGO_MAX_BEATS     = 16
+LOGO_MAX_BASS_HITS = 10
 
 THUMB_DIR       = "thumbnails"
 THUMB_TIMESTAMP = 1.5
