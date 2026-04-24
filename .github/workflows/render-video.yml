@@ -1,0 +1,40 @@
+name: Render Video
+
+on:
+  workflow_dispatch:
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install librosa numpy
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+
+      - run: |
+          cd remotion
+          npm install
+
+      - run: python audio_analysis.py
+
+      - run: mv audio_data.json remotion/public/
+
+      - run: |
+          cd remotion
+          npx remotion render src/index.ts MyComp out.mp4
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video
+          path: remotion/out.mp4
