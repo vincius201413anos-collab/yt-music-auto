@@ -23,6 +23,7 @@ from drive_service import (
     list_audio_files_in_folder,
     download_drive_file,
     upload_file_to_drive,
+    download_assets_from_drive,
 )
 from background_selector import get_random_background
 from genre_detector import detect_genre, detect_genre_multi
@@ -743,6 +744,23 @@ def main():
         raise ValueError("DRIVE_FOLDER_ID não configurado.")
 
     service  = get_drive_service()
+        log("Sincronizando assets (logo/efeitos) do Drive...")
+
+    assets_result = download_assets_from_drive(
+        service,
+        DRIVE_FOLDER_ID,
+    )
+
+    if assets_result.get("logo_path"):
+        log(f"Logo pronta: {assets_result['logo_path']}")
+    else:
+        log("Logo não encontrada — continuando sem logo.")
+
+    if assets_result.get("effects"):
+        log(f"Efeitos carregados: {list(assets_result['effects'].keys())}")
+    else:
+        log("Nenhum efeito encontrado — continuando sem efeitos.")
+        
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
         raise ValueError("Pasta 'inbox' não encontrada no Drive.")
