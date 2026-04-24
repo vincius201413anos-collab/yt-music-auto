@@ -395,31 +395,15 @@ def build_logo_center_overlay_filter(analysis: dict) -> str:
     cy = f"H*{LOGO_CENTER_Y_RATIO:.2f}-h/2"
 
     return (
-        # ── 1. Scale beat-reactive + opacidade ────────────────────────
+        # Logo simples e segura: centro do vídeo, sem pulse e sem glow pesado.
+        # Isso evita erro do FFmpeg em filter_complex e mantém a logo visível.
         f"[1:v]"
         f"scale=w='{pulse_expr}':h=-1:eval=frame,"
         f"format=rgba,"
         f"colorchannelmixer=aa={LOGO_OPACITY:.2f}"
         f"[logo_scaled];"
 
-        # ── 2. Split: sharp + fonte do glow ───────────────────────────
-        f"[logo_scaled]split=2[ls_sharp][ls_glow_src];"
-
-        # ── 3. Criar camada de glow ────────────────────────────────────
-        #    iw*GLOW_SCALE usa a largura já beat-reactive → glow reativo!
-        f"[ls_glow_src]"
-        f"scale=iw*{LOGO_GLOW_SCALE:.2f}:-1,"
-        f"boxblur={LOGO_GLOW_BLUR}:2,"
-        f"colorchannelmixer="
-        f"rr={LOGO_GLOW_BRIGHTNESS:.1f}:"
-        f"gg={LOGO_GLOW_BRIGHTNESS:.1f}:"
-        f"bb={LOGO_GLOW_BRIGHTNESS:.1f}:"
-        f"aa={LOGO_GLOW_OPACITY:.2f}"
-        f"[logo_glow];"
-
-        # ── 4. Compositing: glow embaixo, logo nítida em cima ─────────
-        f"[base][logo_glow]overlay=x='{cx}':y='{cy}':format=auto[bg_glow];"
-        f"[bg_glow][ls_sharp]overlay=x='{cx}':y='{cy}':format=auto[vout]"
+        f"[base][logo_scaled]overlay=x='{cx}':y='{cy}':format=auto[vout]"
     )
 
 
