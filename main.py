@@ -1,13 +1,11 @@
 """
-main.py — Bot de automação YouTube Shorts v4.0
+main.py — Bot de automação YouTube Shorts v4.1
 ===============================================
-MUDANÇAS v4.0:
-- Títulos em PORTUGUÊS BRASILEIRO — alcança audiência BR com música internacional
-- Sistema híbrido PT/EN: gancho em PT, nome da música em EN (como está)
-- Hooks muito mais variados e específicos por gênero
-- Descrições com storytelling real, não genérico
-- Anti-repetição radical: nunca repete título nem visual
-- Conceito visual rotaciona A→B→C→D por short_num
+CORREÇÃO v4.1:
+- NÃO ignora mais músicas com nome duplicado.
+- Cada música agora é tratada pelo ID único do Google Drive.
+- Resolve o problema de músicas diferentes com nomes iguais/parecidos.
+- Mantém o ciclo, estado, upload e títulos do bot.
 """
 
 import os
@@ -66,12 +64,26 @@ def safe_filename(text: str) -> str:
 
 def canonical_track_key(filename: str) -> str:
     """
-    Chave estável da música para evitar repetição por duplicatas tipo:
-    Song.mp3 / Song (1).mp3 / Song (2).wav
+    Mantido só por compatibilidade com estados antigos.
+    A partir da v4.1, a chave principal é o ID do arquivo no Google Drive.
     """
     base = clean_title(filename).lower()
     base = re.sub(r"\s+", " ", base).strip()
     return base
+
+
+def track_key_from_drive_file(file_obj: dict) -> str:
+    """
+    Chave REAL da música.
+
+    Antes o bot usava o nome normalizado, então:
+    Song.mp3 / Song (1).mp3 / Song.wav
+    podiam virar a mesma key.
+
+    Agora usa o ID único do Google Drive.
+    Assim, músicas diferentes com nome duplicado serão processadas.
+    """
+    return str(file_obj.get("id") or canonical_track_key(file_obj.get("name", "")))
 
 
 def human_delay():
@@ -79,21 +91,6 @@ def human_delay():
     log(f"Aguardando {secs}s antes do upload...")
     time.sleep(secs)
 
-
-# ══════════════════════════════════════════════════════════════════════
-# SISTEMA DE TÍTULOS v4 — PORTUGUÊS BRASILEIRO
-#
-# Estratégia: gancho forte em PT-BR + nome da música em EN
-# Ex: "Isso vai ficar na sua cabeça — Burning Souls | DJ darkMark"
-#
-# Por que PT-BR funciona mesmo com música em inglês:
-# - Audiência BR é enorme e sub-representada no nicho
-# - Título em PT aumenta CTR porque parece "feito pra mim"
-# - Nome da música em EN mantém credibilidade da curadoria
-# ══════════════════════════════════════════════════════════════════════
-
-# Hooks divididos por INTENÇÃO PSICOLÓGICA
-# Cada camada cria reação diferente antes do clique
 
 HOOKS_CURIOSIDADE = {
     "phonk": [
@@ -401,8 +398,6 @@ HOOKS_IDENTIDADE = {
     ],
 }
 
-# Templates com nome da música em EN, ganchos em PT
-# Isso é intencional: parece curadoria profissional
 TITLE_TEMPLATES = [
     "DJ darkMark — {title} | {hook}",
     "{hook} — {title} | DJ darkMark",
@@ -452,11 +447,6 @@ def _dhash(text: str) -> int:
 
 
 def build_title(base: str, style: str, short_num: int) -> str:
-    """
-    Título determinístico: mesmo input = mesmo output (idempotente).
-    3 camadas de hooks psicológicos — cada short usa uma diferente.
-    Nome da música em inglês, ganchos em português.
-    """
     emoji = GENRE_EMOJI.get(style, "🎵")
 
     hook_layers = [
@@ -482,10 +472,6 @@ def build_title(base: str, style: str, short_num: int) -> str:
 
 
 def build_description(base: str, style: str, short_num: int) -> str:
-    """
-    Descrição em português com storytelling genuíno.
-    5 variantes por tom — honesto, não genérico.
-    """
     tags  = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
     emoji = GENRE_EMOJI.get(style, "🎵")
 
@@ -500,11 +486,11 @@ def build_description(base: str, style: str, short_num: int) -> str:
     ]
 
     ctas = [
-        f"Inscreva-se no DJ darkMark pra não perder nenhum drop.",
-        f"Siga o DJ darkMark — música nova todo dia sem falta.",
-        f"Curte se essa merecia mais plays.",
-        f"Salva essa. Você vai querer ela de volta.",
-        f"Comenta se bateu do jeito certo.",
+        "Inscreva-se no DJ darkMark pra não perder nenhum drop.",
+        "Siga o DJ darkMark — música nova todo dia sem falta.",
+        "Curte se essa merecia mais plays.",
+        "Salva essa. Você vai querer ela de volta.",
+        "Comenta se bateu do jeito certo.",
     ]
 
     spotify_lines = [
@@ -524,10 +510,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
     )
 
 
-# ══════════════════════════════════════════════════════════════════════
-# ESTADO
-# ══════════════════════════════════════════════════════════════════════
-
 def load_state() -> dict:
     if not STATE_FILE.exists():
         return {"tracks": [], "alpha_index": 0}
@@ -541,18 +523,26 @@ def load_state() -> dict:
     state.setdefault("alpha_index", 0)
 
     normalized_tracks = []
-    seen_keys = set()
+    seen_ids = set()
 
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
         t.setdefault("genre", None)
-        t.setdefault("key", canonical_track_key(t["name"]))
 
-        # remove duplicatas antigas do state
-        if t["key"] in seen_keys:
+        drive_id = t.get("id")
+        if drive_id:
+            t["key"] = str(drive_id)
+        else:
+            t.setdefault("key", canonical_track_key(t["name"]))
+
+        # Só remove duplicata se for exatamente o mesmo ID do Drive.
+        # Não remove por nome.
+        unique_id = t.get("id") or t.get("key")
+        if unique_id in seen_ids:
             continue
-        seen_keys.add(t["key"])
+
+        seen_ids.add(unique_id)
         normalized_tracks.append(t)
 
     state["tracks"] = normalized_tracks
@@ -570,38 +560,44 @@ def save_state(state: dict):
 
 def sync_tracks(state: dict, files: list):
     """
-    Regras novas:
-    1) respeita a ordem que vem do Drive
-    2) prioriza músicas novas
-    3) ignora duplicatas da mesma música (ex.: Song / Song (1) / Song (2))
-    4) depois que acabar as novas, volta do topo da inbox
+    v4.1:
+    - Não remove duplicatas por nome.
+    - Cada arquivo do Drive entra como faixa única pelo ID.
+    - Se tiver 50 músicas com o mesmo nome, mas IDs diferentes, processa as 50.
     """
-    deduped_files = []
-    seen_keys = set()
+    drive_files = []
 
     for f in files:
-        key = canonical_track_key(f["name"])
-        if key in seen_keys:
-            log(f"Duplicata ignorada na inbox: {f['name']} (key={key})")
-            continue
-        seen_keys.add(key)
-        deduped_files.append({
+        key = track_key_from_drive_file(f)
+        name_key = canonical_track_key(f["name"])
+
+        drive_files.append({
             "id": f["id"],
             "name": f["name"],
             "key": key,
+            "name_key": name_key,
         })
 
-    existing = {t.get("key", canonical_track_key(t["name"])): t for t in state["tracks"]}
+    existing = {}
+
+    for t in state["tracks"]:
+        if t.get("id"):
+            existing[str(t["id"])] = t
+        else:
+            existing[t.get("key", canonical_track_key(t["name"]))] = t
+
     new_tracks = []
 
-    for f in deduped_files:
+    for f in drive_files:
         key = f["key"]
+
         if key not in existing:
             log(f"Nova faixa: {f['name']}")
             track = {
                 "id": f["id"],
                 "name": f["name"],
                 "key": key,
+                "name_key": f["name_key"],
                 "done": 0,
                 "is_new": True,
                 "genre": None,
@@ -613,12 +609,13 @@ def sync_tracks(state: dict, files: list):
             track["id"] = f["id"]
             track["name"] = f["name"]
             track["key"] = key
+            track["name_key"] = f["name_key"]
             track.setdefault("done", 0)
             track.setdefault("is_new", False)
             track.setdefault("genre", None)
 
     ordered_tracks = []
-    for f in deduped_files:
+    for f in drive_files:
         track = existing.get(f["key"])
         if track:
             ordered_tracks.append(track)
@@ -630,7 +627,6 @@ def sync_tracks(state: dict, files: list):
         state["alpha_index"] = 0
         return
 
-    # se entrou música nova, depois que acabar as novas reinicia do topo
     if new_tracks:
         state["alpha_index"] = 0
     else:
@@ -642,18 +638,14 @@ def get_next_track(state: dict) -> dict | None:
     if not tracks:
         return None
 
-    # 1) sempre processa novas primeiro, na ordem da inbox
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) < SHORTS_PER_TRACK]
     if new_tracks:
         chosen = new_tracks[0]
         log(f"Prioridade: nova faixa — {chosen['name']}")
         chosen["is_new"] = False
-
-        # quando acabar a fila das novas, volta do topo da pasta
         state["alpha_index"] = 0
         return chosen
 
-    # 2) depois segue do topo pra baixo, sem pular e sem alfabética
     n = len(tracks)
     idx = state.get("alpha_index", 0) % n
 
@@ -664,7 +656,6 @@ def get_next_track(state: dict) -> dict | None:
             state["alpha_index"] = (pos + 1) % n
             return t
 
-    # 3) terminou o ciclo inteiro -> zera e volta pra primeira do topo
     log("Ciclo completo — resetando contadores e voltando ao topo da inbox.")
     for t in tracks:
         t["done"] = 0
@@ -703,10 +694,6 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
     raise FileNotFoundError("Nenhum background disponível.")
 
 
-# ══════════════════════════════════════════════════════════════════════
-# PUBLICAÇÃO
-# ══════════════════════════════════════════════════════════════════════
-
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
 
@@ -742,10 +729,6 @@ def publish(video_path: str, title: str, description: str) -> dict:
 
     return results
 
-
-# ══════════════════════════════════════════════════════════════════════
-# MAIN
-# ══════════════════════════════════════════════════════════════════════
 
 def main():
     log("=" * 55)
@@ -788,7 +771,7 @@ def main():
     log(f"Short   : {short_num}/{SHORTS_PER_TRACK}")
 
     os.makedirs("temp", exist_ok=True)
-    audio_path = f"temp/{name}"
+    audio_path = f"temp/{track['id']}_{safe_filename(name)}"
 
     bg             = None
     style          = "default"
@@ -817,7 +800,7 @@ def main():
         output_dir = Path("output") / date / style
         output_dir.mkdir(parents=True, exist_ok=True)
         planned_video_path = str(
-            output_dir / f"{date}__{style}__{safe_filename(title_base)}__s{short_num}.mp4"
+            output_dir / f"{date}__{style}__{safe_filename(title_base)}__{track['id']}__s{short_num}.mp4"
         )
 
         log(f"Gerando background (short {short_num})...")
