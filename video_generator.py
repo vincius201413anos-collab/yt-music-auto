@@ -1,16 +1,14 @@
 """
-video_generator.py — Elite Music Shorts Generator v6.0
+video_generator.py — Elite Music Shorts Generator v6.3
 =======================================================
-MUDANÇAS v6.0 (LOGO BEAT-REACTIVE):
-- Logo movida para o CENTRO do frame (posição premium)
-- Sistema de pulse da logo sincronizado com o áudio:
-    · Beat fraco  → logo pulsa +6%  (sutil)
-    · Bass/kick   → logo cresce +20% + halo de glow
-    · Drop        → logo explode +38% + glow máximo
-- Glow animado: camada de brilho ao redor da logo que
-  também pulsa porque é derivada do tamanho beat-reactive
-- Zoom de fundo mais hipnótico (drift senoidal multi-axis)
-- Todas as outras features da v5 mantidas intactas
+CORREÇÃO v6.3 (BASE LIMPA PARA REMOTION):
+- Remove texto/título do FFmpeg para não cobrir rosto/personagem.
+- Remove logo do FFmpeg para evitar duplicidade e bugs no GitHub Actions.
+- Mantém fundo, color grading, zoom, shake, energia, água/reflexo e progress bar base.
+- Gera audio_data.json para o Remotion sincronizar efeitos.
+- Regra final:
+    FFmpeg    = vídeo base limpo + áudio
+    Remotion  = logo, texto, glitch, partículas, progress bar final e efeitos reativos
 """
 
 from __future__ import annotations
@@ -297,6 +295,16 @@ def escape_text(text: str) -> str:
     return text[:50]
 
 
+
+
+def join_filters(parts: list[str]) -> str:
+    """
+    Junta filtros FFmpeg ignorando strings vazias.
+    Isso permite desligar texto/watermark sem gerar vírgulas quebradas.
+    """
+    return ",".join([p for p in parts if p and str(p).strip()])
+
+
 def clean_song_name(audio_path: str, override: str = "") -> str:
     if override:
         return override.strip()
@@ -307,11 +315,14 @@ def clean_song_name(audio_path: str, override: str = "") -> str:
 
 
 def logo_exists() -> bool:
-    # BLINDAGEM FFmpeg/GitHub:
-    # O overlay da logo via FFmpeg estava quebrando com erro
-    # "[1:v] ... matches no streams" em PNG no GitHub Actions.
-    # Por enquanto, desativamos SOMENTE a logo do FFmpeg para o bot renderizar.
-    # A logo/efeitos continuam podendo ser usados pelo Remotion depois.
+    """
+    A logo NÃO deve ser aplicada no FFmpeg.
+
+    Motivo:
+    - O FFmpeg gera apenas o vídeo base limpo.
+    - A logo principal fica no Remotion como remotion/public/logo.png.
+    - Isso evita duplicidade, bugs de overlay e texto/logo cobrindo o personagem.
+    """
     return False
 
 
@@ -543,43 +554,18 @@ def build_energy_ring(analysis: dict, duration: float, style: str, font: str) ->
 
 
 def build_hook_text(song_name: str, style: str, font: str, duration: float) -> str:
-    clean     = escape_text(song_name)
-    style_tag = escape_text(f"#{style.upper()} · DJ darkMark")
+    """
+    Texto removido do FFmpeg.
 
-    title_alpha = (
-        "if(lt(t,0.03),0,"
-        "if(lt(t,0.22),(t/0.22),"
-        f"if(lt(t,{duration-1.2:.2f}),1.0,"
-        f"if(lt(t,{duration:.2f}),({duration:.2f}-t)/1.2,0))))"
-    )
+    Antes:
+    - O FFmpeg colocava título no topo/centro.
+    - Isso cobria rosto/olhos do personagem e poluía o vídeo.
 
-    title = (
-        f"drawtext=fontfile='{font}'"
-        f":text='{clean}'"
-        f":fontsize=58:fontcolor=white"
-        f":borderw=4:bordercolor=black@0.95"
-        f":shadowx=3:shadowy=3:shadowcolor=black@0.8"
-        f":x=(w-text_w)/2:y=h*0.08"
-        f":alpha='{title_alpha}'"
-    )
-
-    tag_alpha = (
-        "if(lt(t,0.12),0,"
-        "if(lt(t,0.35),(t-0.12)/0.23,"
-        f"if(lt(t,{duration-1.2:.2f}),0.90,"
-        f"if(lt(t,{duration:.2f}),({duration:.2f}-t)/1.2,0))))"
-    )
-    tag = (
-        f"drawtext=fontfile='{font}'"
-        f":text='{style_tag}'"
-        f":fontsize=26:fontcolor=white@0.85"
-        f":borderw=2:bordercolor=black@0.80"
-        f":x=(w-text_w)/2:y=h*0.08+64"
-        f":alpha='{tag_alpha}'"
-    )
-
-    return f"{title},{tag}"
-
+    Agora:
+    - Todo texto bonito e seguro fica no Remotion/Composition.tsx.
+    - O Remotion coloca o texto na parte inferior, sem cobrir o personagem.
+    """
+    return ""
 
 def build_progress_bar(duration: float, style: str = "default") -> str:
     color = GENRE_ENERGY_RGBA.get(style, "0xCC44FF@0.9")
@@ -590,14 +576,14 @@ def build_progress_bar(duration: float, style: str = "default") -> str:
 
 
 def build_watermark(font: str) -> str:
-    return (
-        f"drawtext=fontfile='{font}'"
-        f":text='@darkmrkedit'"
-        f":fontsize=22:fontcolor=white@0.50"
-        f":borderw=1:bordercolor=black@0.40"
-        f":x=w-text_w-16:y=18"
-        f":alpha='if(lt(t,1.2),0,if(lt(t,1.8),(t-1.2)/0.6,0.50))'"
-    )
+    """
+    Watermark removida do FFmpeg.
+
+    A identidade visual agora fica na logo do Remotion.
+    Isso deixa o vídeo base limpo e evita poluição visual.
+    """
+    return ""
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -739,7 +725,7 @@ def build_image_filter(
 
     parts.append(energy)
     parts += [fades, f"fps={fps}", hook, pbar, wtmk]
-    return ",".join(parts)
+    return join_filters(parts)
 
 
 def build_video_filter(
@@ -778,7 +764,7 @@ def build_video_filter(
 
     parts.append(energy)
     parts += [fades, f"fps={fps}", hook, pbar, wtmk]
-    return ",".join(parts)
+    return join_filters(parts)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -949,9 +935,9 @@ def create_short(
     use_logo     = logo_exists()
 
     if use_logo:
-        logger.info(f"  ► Logo encontrada: {LOGO_PATH} → modo CENTRO beat-reactive")
+        logger.info(f"  ► Logo FFmpeg ativada: {LOGO_PATH}")
     else:
-        logger.info(f"  ⚠ Logo não encontrada em '{LOGO_PATH}' — renderizando sem logo")
+        logger.info("  ► Logo/texto do FFmpeg desativados — Remotion cuidará da logo, texto e efeitos finais.")
 
     ext      = Path(background_path).suffix.lower() if background_path else ""
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
@@ -1012,7 +998,7 @@ def create_short(
         fade    = build_fade_filter(dur)
         energy  = build_energy_ring(analysis, dur, style, font)
         genre_g = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
-        base_vf = f"{genre_g},{energy},{fade},{hook},{pbar},{wtmk}"
+        base_vf = join_filters([genre_g, energy, fade, hook, pbar, wtmk])
 
         if use_logo:
             logo_fc = build_logo_center_overlay_filter(analysis)
