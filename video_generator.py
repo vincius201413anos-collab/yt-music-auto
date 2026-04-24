@@ -220,6 +220,17 @@ GENRE_ENERGY_RGBA = {
     "pop":        "0xFF44AA@0.85",
     "default":    "0xCC44FF@0.9",
 }
+# ── Cyberpunk water/reflection FX v6.1 ─────────────────────────────────────
+# Efeito visual seguro (sem mexer na análise de áudio): cria brilho de água,
+# reflexo neon e linhas de luz no chão molhado. Funciona tanto com imagem quanto
+# com vídeo e não depende de plugins externos do FFmpeg.
+WATER_FX_ENABLED = True
+WATER_FX_START_Y_RATIO = 0.54      # começa da metade pra baixo do frame
+WATER_FX_BASE_ALPHA = 0.035        # brilho base da água
+WATER_FX_LINE_ALPHA = 0.18         # linhas neon refletidas
+WATER_FX_BASS_ALPHA = 0.12         # boost no grave/kick
+WATER_FX_MAX_BASS_HITS = 45
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -463,6 +474,79 @@ def build_vignette(strength: float) -> str:
     return f"vignette=angle={angle}:mode=forward"
 
 
+
+def build_cyberpunk_water_fx(analysis: dict, style: str = "default") -> str:
+    """
+    Camada de acabamento visual para água/reflexo cyberpunk.
+
+    O objetivo é melhorar a cena sem quebrar o pipeline:
+    - brilho base na parte inferior (como chão molhado / água)
+    - linhas neon horizontais simulando reflexos
+    - pulso extra no bass/kick usando bass_hits
+
+    É propositalmente feito com drawbox/eq, porque esses filtros são estáveis
+    no FFmpeg do GitHub Actions e não exigem plugins externos.
+    """
+    if not WATER_FX_ENABLED:
+        return ""
+
+    bass_hits = analysis.get("bass_hits", [])[:WATER_FX_MAX_BASS_HITS]
+
+    # Cores por estilo: puxa para cyberpunk azul/roxo/rosa.
+    if style in {"phonk", "dark", "trap", "electronic"}:
+        c1 = "0x00CCFF"   # cyan neon
+        c2 = "0xCC44FF"   # purple neon
+        c3 = "0xFF2DAA"   # magenta neon
+    elif style in {"rock", "metal"}:
+        c1 = "0xFF5500"
+        c2 = "0xCC44FF"
+        c3 = "0x00CCFF"
+    else:
+        c1 = "0x00CCFF"
+        c2 = "0xCC44FF"
+        c3 = "0xFF44AA"
+
+    filters = []
+
+    # Brilho base na região da água/chão molhado.
+    filters.append(
+        f"drawbox=x=0:y=ih*{WATER_FX_START_Y_RATIO:.2f}:w=iw:h=ih*(1-{WATER_FX_START_Y_RATIO:.2f})"
+        f":color={c1}@{WATER_FX_BASE_ALPHA:.3f}:t=fill"
+    )
+    filters.append(
+        f"drawbox=x=0:y=ih*0.68:w=iw:h=ih*0.32"
+        f":color={c2}@{WATER_FX_BASE_ALPHA * 0.75:.3f}:t=fill"
+    )
+
+    # Linhas neon finas simulando reflexo tremendo na água.
+    # Elas se mexem suavemente com sin(t), sem deixar a cena artificial.
+    filters.append(
+        f"drawbox=x='iw*0.08+24*sin(t*0.70)':y='ih*0.70+10*sin(t*1.10)'"
+        f":w='iw*0.78':h=3:color={c1}@{WATER_FX_LINE_ALPHA:.3f}:t=fill"
+    )
+    filters.append(
+        f"drawbox=x='iw*0.16+18*sin(t*0.95+1.4)':y='ih*0.78+12*sin(t*1.35)'"
+        f":w='iw*0.66':h=2:color={c2}@{WATER_FX_LINE_ALPHA * 0.85:.3f}:t=fill"
+    )
+    filters.append(
+        f"drawbox=x='iw*0.25+20*sin(t*0.55+2.1)':y='ih*0.86+9*sin(t*1.60)'"
+        f":w='iw*0.50':h=2:color={c3}@{WATER_FX_LINE_ALPHA * 0.70:.3f}:t=fill"
+    )
+
+    # Pulsos rápidos no grave: dá sensação da água/reflexo reagindo à música.
+    # Cada pulso aparece só por alguns frames, então fica sutil e profissional.
+    for i, bt in enumerate(bass_hits):
+        alpha = WATER_FX_BASS_ALPHA if i < 25 else WATER_FX_BASS_ALPHA * 0.65
+        filters.append(
+            f"drawbox=enable='between(t,{max(0.0, bt-0.012):.4f},{bt+0.060:.4f})'"
+            f":x=0:y=ih*0.58:w=iw:h=ih*0.42:color={c1}@{alpha:.3f}:t=fill"
+        )
+
+    # Pequeno polish global para reforçar o look gráfico sem estourar a imagem.
+    filters.append("eq=gamma=1.015:saturation=1.035")
+
+    return ",".join(filters)
+
 def build_fade_filter(duration: float) -> str:
     fo_start = max(0.0, duration - VIDEO_FADE_OUT_DUR)
     return f"fade=t=out:st={fo_start:.3f}:d={VIDEO_FADE_OUT_DUR}"
@@ -688,6 +772,7 @@ def build_image_filter(
     )
 
     color = build_color_grade(profile, brightness_expr, style)
+    water_fx = build_cyberpunk_water_fx(analysis, style)
     vig_strength = GENRE_VIGNETTE.get(style, GENRE_VIGNETTE["default"])
     vig   = build_vignette(vig_strength)
     fades = build_fade_filter(duration)
@@ -708,6 +793,8 @@ def build_image_filter(
         ),
         color,
     ]
+    if water_fx:
+        parts.append(water_fx)
     if vig:
         parts.append(vig)
 
@@ -728,6 +815,7 @@ def build_video_filter(
     sy = min(profile.get("shake_y", 4), MAX_SHAKE_Y)
     shake_x_expr, shake_y_expr = build_elite_shake(analysis, sx, sy, style=style)
     color = build_color_grade(profile, brightness_expr, style)
+    water_fx = build_cyberpunk_water_fx(analysis, style)
     vig_strength = GENRE_VIGNETTE.get(style, GENRE_VIGNETTE["default"])
     vig   = build_vignette(vig_strength)
     fades = build_fade_filter(duration)
@@ -745,6 +833,8 @@ def build_video_filter(
         ),
         color,
     ]
+    if water_fx:
+        parts.append(water_fx)
     if vig:
         parts.append(vig)
 
