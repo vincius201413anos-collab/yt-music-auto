@@ -348,9 +348,10 @@ def build_logo_pulse_expr(analysis: dict, base_width: int) -> str:
 
 def build_logo_center_overlay_filter(analysis: dict) -> str:
     """
-    CORREÇÃO v6.1: scale usa largura estática — 't' não é variável válida
-    no filtro scale do FFmpeg e causava 'Numerical result out of range'.
-    O glow e overlay continuam funcionando normalmente.
+    CORREÇÃO v6.2:
+    - colorchannelmixer: rr/bb limitados a 2.0 (FFmpeg aceita -2.0 a 2.0)
+    - scale usa largura estática — 't' não é variável válida no filtro scale
+    Ambos causavam 'Numerical result out of range'.
     """
     base_w = int(1080 * LOGO_BASE_WIDTH_RATIO)
     cx = "(W-w)/2"
@@ -367,9 +368,9 @@ def build_logo_center_overlay_filter(analysis: dict) -> str:
         f"scale=iw*1.40:-1,"
         f"boxblur=12:2,"
         f"colorchannelmixer="
-        f"rr=2.5:"
+        f"rr=2.0:"
         f"gg=0.8:"
-        f"bb=3.5:"
+        f"bb=2.0:"
         f"aa=0.60"
         f"[logo_glow];"
 
