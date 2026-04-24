@@ -319,9 +319,9 @@
       "id": "1YHbL-9jl1U4Y1vuprCXRUxp0ktpdoqeZ",
       "name": "#20 FREQUENCY 666 (1).mp3",
       "key": "1YHbL-9jl1U4Y1vuprCXRUxp0ktpdoqeZ",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "#20 frequency 666"
     },
     {
