@@ -367,43 +367,52 @@ def build_logo_pulse_expr(analysis: dict, base_width: int) -> str:
 
 def build_logo_center_overlay_filter(analysis: dict) -> str:
     """
-    Gera os segmentos do filter_complex para a logo centralizada
-    com pulse beat-reactive e camada de glow animada.
+    Logo central com neon absurdo, mas estável para FFmpeg.
 
-    Grafo de filtros:
-        [1:v]
-          └─ scale(w=beat_expr, eval=frame)   ← tamanho pulsa com o beat
-          └─ format(rgba) + opacity
-          └─ split ─────────────────────────────┐
-               ├─ [ls_sharp]                    │  (logo nítida, centro)
-               └─ [ls_glow_src]                 │
-                    └─ scale(iw*1.45)            │  ← glow maior (e também pulsa!)
-                    └─ boxblur(14)               │
-                    └─ colorchannelmixer(brilho) │
-                    └─ [logo_glow] (centro, sob a sharp)
-        [base][logo_glow] overlay(center) → [bg_glow]
-        [bg_glow][ls_sharp] overlay(center) → [vout]
-    
-    Nota: como o glow é derivado do ls_glow_src (que já veio do split
-    pós-scale), ele TAMBÉM pulsa com o beat → glow reativo automático.
+    Versão segura:
+    - Pulse leve com sin(t), sem lista gigante de beats.
+    - Glow neon roxo/azul nas bordas.
+    - Mantém transparência RGBA da PNG.
+    - Evita overflow no filter_complex.
     """
-    base_w     = int(1080 * LOGO_BASE_WIDTH_RATIO)
-    pulse_expr = str(base_w)
+    base_w = int(1080 * LOGO_BASE_WIDTH_RATIO)
 
-    # Posição central (ligeiramente abaixo do meio)
+    # Pulse suave e estável: não usa dezenas de beats na fórmula.
+    # Visualmente parece sincronizado com a música, mas não quebra o FFmpeg.
+    pulse_expr = f"({base_w}*(1+0.08*sin(t*6)))"
+
+    # Posição central
     cx = "(W-w)/2"
     cy = f"H*{LOGO_CENTER_Y_RATIO:.2f}-h/2"
 
     return (
-        # Logo simples e segura: centro do vídeo, sem pulse e sem glow pesado.
-        # Isso evita erro do FFmpeg em filter_complex e mantém a logo visível.
+        # Logo principal
         f"[1:v]"
         f"scale=w='{pulse_expr}':h=-1:eval=frame,"
         f"format=rgba,"
         f"colorchannelmixer=aa={LOGO_OPACITY:.2f}"
-        f"[logo_scaled];"
+        f"[logo_main];"
 
-        f"[base][logo_scaled]overlay=x='{cx}':y='{cy}':format=auto[vout]"
+        # Glow neon maior, derivado da própria logo
+        f"[logo_main]"
+        f"scale=iw*1.40:-1,"
+        f"boxblur=12:2,"
+        f"colorchannelmixer="
+        f"rr=2.5:"
+        f"gg=0.8:"
+        f"bb=3.5:"
+        f"aa=0.60"
+        f"[logo_glow];"
+
+        # Glow por baixo
+        f"[base][logo_glow]"
+        f"overlay=x='{cx}':y='{cy}':format=auto"
+        f"[bg_glow];"
+
+        # Logo nítida por cima
+        f"[bg_glow][logo_main]"
+        f"overlay=x='{cx}':y='{cy}':format=auto"
+        f"[vout]"
     )
 
 
