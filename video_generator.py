@@ -857,9 +857,12 @@ def create_short(
     analysis = crop_analysis(analysis_full, start, dur)
     save_debug({**analysis_full, "short_start": start, "short_duration": dur})
 
-    kicks  = len(analysis.get("bass_hits", []))
-    beats  = len(analysis.get("beats", []))
-    logger.info(f"  ► Kicks detectados: {kicks} | Beats: {beats} | BPM: {bpm:.1f if bpm else 'N/A'}")
+  kicks  = len(analysis.get("bass_hits", []))
+beats  = len(analysis.get("beats", []))
+
+bpm_text = f"{bpm:.1f}" if bpm else "N/A"
+
+logger.info(f"  ► {kicks} | Beats: {beats} | BPM: {bpm_text}")
 
     profile      = get_profile_for_bpm(bpm, style)
     audio_filter = build_audio_filter(dur)
