@@ -103,8 +103,8 @@ LOGO_PULSE_BASS_DECAY = 0.08
 LOGO_PULSE_DROP_DECAY = 0.30
 
 # Limites máximos de batidas para expressões (performance)
-LOGO_MAX_BEATS     = 16
-LOGO_MAX_BASS_HITS = 10
+LOGO_MAX_BEATS     = 10
+LOGO_MAX_BASS_HITS = 6
 
 THUMB_DIR       = "thumbnails"
 THUMB_TIMESTAMP = 1.5
@@ -388,7 +388,7 @@ def build_logo_center_overlay_filter(analysis: dict) -> str:
     pós-scale), ele TAMBÉM pulsa com o beat → glow reativo automático.
     """
     base_w     = int(1080 * LOGO_BASE_WIDTH_RATIO)
-    pulse_expr = build_logo_pulse_expr(analysis, base_w)
+    pulse_expr = str(base_w)
 
     # Posição central (ligeiramente abaixo do meio)
     cx = "(W-w)/2"
