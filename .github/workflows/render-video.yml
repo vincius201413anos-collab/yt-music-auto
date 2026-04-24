@@ -1,4 +1,5 @@
 name: Render Video
+
 on:
   workflow_dispatch:
 
@@ -6,8 +7,11 @@ jobs:
   render:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+
     env:
       PYTHONUNBUFFERED: "1"
+      ENABLE_REMOTION: "true"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -22,6 +26,8 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: "npm"
+          cache-dependency-path: remotion/package-lock.json
 
       - name: Install FFmpeg + fonts
         run: |
@@ -44,54 +50,22 @@ jobs:
           cd remotion
           npm install
 
-      - name: Download audio from Drive + generate audio_data.json
+      - name: Run bot
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+          DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
+
+          YOUTUBE_CLIENT_SECRET: ${{ secrets.YOUTUBE_CLIENT_SECRET }}
+          YOUTUBE_TOKEN: ${{ secrets.YOUTUBE_TOKEN }}
+
+          ENABLE_YOUTUBE: "true"
+          ENABLE_FACEBOOK: "false"
+          ENABLE_REMOTION: "true"
+
+          REMOTION_COMPOSITION_ID: "MyComposition"
+          REMOTION_ENTRY: "index.ts"
+
         run: |
-          python - <<'EOF'
-          import os, json
-          from pathlib import Path
-          from drive_service import get_drive_service, find_folder_id, list_audio_files_in_folder, download_drive_file
-
-          service   = get_drive_service()
-          inbox_id  = find_folder_id(service, os.environ["DRIVE_FOLDER_ID"], "inbox")
-          files     = list_audio_files_in_folder(service, inbox_id)
-
-          if not files:
-              print("Nenhum áudio encontrado no Drive.")
-              exit(0)
-
-          # Pega a primeira música disponível
-          f = files[0]
-          ext = Path(f["name"]).suffix or ".mp3"
-          dest = f"temp/render_audio{ext}"
-          download_drive_file(service, f["id"], dest)
-          print(f"Áudio baixado: {dest}")
-
-          # Salva o caminho pro próximo step
-          with open("temp/audio_path.txt", "w") as fp:
-              fp.write(dest)
-          EOF
-
-      - name: Generate audio_data.json
-        run: |
-          AUDIO=$(cat temp/audio_path.txt 2>/dev/null || echo "")
-          if [ -z "$AUDIO" ] || [ ! -f "$AUDIO" ]; then
-            echo "Sem áudio — gerando JSON vazio"
-            echo '{"rms":[],"bpm":120,"duration":0,"beats":[],"bass_hits":[],"snare_hits":[],"hihat_hits":[],"drop_time":null,"beat_intensities":[],"energy_curve":[],"sections":{},"song_profile":"medium"}' > remotion/public/audio_data.json
-          else
-            python audio_to_remotion.py "$AUDIO" remotion/public/audio_data.json
-          fi
-
-      - name: Render with Remotion
-        run: |
-          cd remotion
-          npx remotion render src/index.ts MyComp out.mp4
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: video
-          path: remotion/out.mp4
+          python main.py
