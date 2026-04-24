@@ -329,9 +329,9 @@
       "name": "#20 FREQUENCY 666.mp3",
       "key": "19nG5rbV5ieKZ9XE3JVReYGdiuzSSH8CK",
       "name_key": "#20 frequency 666",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "11gHbMRudzu4MfSvp4aU9KVzx5RpXFYVD",
