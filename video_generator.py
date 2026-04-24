@@ -1,13 +1,15 @@
 """
-video_generator.py — Elite Music Shorts Generator v6.3
+video_generator.py — Elite Music Shorts Generator v6.4
 =======================================================
-CORREÇÃO v6.3 (BASE LIMPA PARA REMOTION):
+CORREÇÃO v6.4 (DURAÇÃO SHORTS + BASE LIMPA):
+- Força base do FFmpeg entre 45 e 60 segundos.
+- Mantém vídeo vertical 1080x1920 para Shorts.
 - Remove texto/título do FFmpeg para não cobrir rosto/personagem.
 - Remove logo do FFmpeg para evitar duplicidade e bugs no GitHub Actions.
 - Mantém fundo, color grading, zoom, shake, energia, água/reflexo e progress bar base.
 - Gera audio_data.json para o Remotion sincronizar efeitos.
 - Regra final:
-    FFmpeg    = vídeo base limpo + áudio
+    FFmpeg    = vídeo base limpo + áudio entre 45–60s
     Remotion  = logo, texto, glitch, partículas, progress bar final e efeitos reativos
 """
 
@@ -58,8 +60,8 @@ setup_logging()
 logger = logging.getLogger("video_generator")
 
 # ── Parâmetros gerais ──────────────────────────────────────────────────────
-MIN_DURATION        = 38
-MAX_DURATION        = 58
+MIN_DURATION        = 45
+MAX_DURATION        = 60
 VIDEO_FADE_OUT_DUR  = 0.7
 AUDIO_FADE_IN       = 0.03
 AUDIO_FADE_OUT      = 0.7
@@ -74,7 +76,7 @@ FONT_PATHS = [
 ]
 
 FFMPEG_VIDEO_CODEC   = "libx264"
-FFMPEG_CRF           = "18"
+FFMPEG_CRF           = "23"
 FFMPEG_PRESET        = "medium"
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
@@ -109,7 +111,7 @@ MAX_RETRIES     = 2
 RETRY_DELAY_S   = 3
 
 MIN_FILE_SIZE_MB = 0.5
-MAX_FILE_SIZE_MB = 200.0
+MAX_FILE_SIZE_MB = 500.0
 
 # ── Grading de cor por gênero ──────────────────────────────────────────────
 GENRE_COLOR_GRADE = {
@@ -269,12 +271,30 @@ def get_video_info(path: str) -> dict:
 
 
 def pick_window(audio_dur: float) -> tuple[float, float]:
-    dur = random.randint(MIN_DURATION, min(MAX_DURATION, max(MIN_DURATION, int(audio_dur))))
+    """
+    Escolhe uma janela de 45 a 60 segundos para Shorts.
+
+    Se o áudio for menor que 45s, usa o áudio inteiro.
+    Se o áudio tiver entre 45 e 60s, usa o áudio inteiro.
+    Se for maior que 60s, escolhe uma janela entre 45 e 60s.
+    """
+    if audio_dur <= MIN_DURATION:
+        return 0.0, float(audio_dur)
+
+    max_allowed = min(MAX_DURATION, int(audio_dur))
+    dur = random.randint(MIN_DURATION, max_allowed)
+
     if audio_dur <= dur:
         return 0.0, float(audio_dur)
+
     min_start = int(audio_dur * 0.12)
-    max_start = min(int(audio_dur * 0.35), int(audio_dur - dur))
-    start = random.randint(min_start, max(min_start, max_start))
+    max_start = min(int(audio_dur * 0.45), int(audio_dur - dur))
+
+    if max_start <= min_start:
+        start = max(0, int(audio_dur - dur))
+    else:
+        start = random.randint(min_start, max_start)
+
     return float(start), float(dur)
 
 
@@ -906,15 +926,27 @@ def create_short(
 
     # ── Janela de tempo ───────────────────────────────────────────────────
     if use_smart_window:
-        dur = random.randint(MIN_DURATION, min(MAX_DURATION, int(audio_dur)))
+        if audio_dur <= MIN_DURATION:
+            target_dur = float(audio_dur)
+        else:
+            target_dur = random.randint(MIN_DURATION, min(MAX_DURATION, int(audio_dur)))
+
         try:
-            start, dur = find_best_window(audio_path, dur)
-            logger.info(f"  ► Janela inteligente: {start:.1f}s – {start+dur:.1f}s")
+            start, dur = find_best_window(audio_path, target_dur)
+
+            # Blindagem: garante que a janela final respeite 45–60s quando o áudio permitir.
+            if audio_dur >= MIN_DURATION:
+                dur = max(MIN_DURATION, min(MAX_DURATION, float(dur)))
+                if start + dur > audio_dur:
+                    start = max(0.0, audio_dur - dur)
+
+            logger.info(f"  ► Janela inteligente: {start:.1f}s – {start+dur:.1f}s ({dur:.1f}s)")
         except Exception:
             start, dur = pick_window(audio_dur)
-            logger.info(f"  ► Janela fallback: {start:.1f}s – {start+dur:.1f}s")
+            logger.info(f"  ► Janela fallback: {start:.1f}s – {start+dur:.1f}s ({dur:.1f}s)")
     else:
         start, dur = pick_window(audio_dur)
+        logger.info(f"  ► Janela manual: {start:.1f}s – {start+dur:.1f}s ({dur:.1f}s)")
 
     analysis = crop_analysis(analysis_full, start, dur)
     save_debug({**analysis_full, "short_start": start, "short_duration": dur})
