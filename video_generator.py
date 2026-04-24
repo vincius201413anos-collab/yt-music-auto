@@ -1,17 +1,15 @@
 """
-video_generator.py — Elite Music Shorts Generator v7.0 CYBERPUNK HYPNOTIC
+video_generator.py — Elite Music Shorts Generator v8.0 VIRAL CONTROL
 =========================================================================
-MUDANÇAS v7.0 (CYBERPUNK MÁXIMO):
-- Color grade radicalmente mais escuro e neon: preto profundo + roxo #8B00FF + ciano #00FFEE
-- Chromatic aberration no fundo sincronizada com o drop
-- Scan lines animadas (estilo CRT/anime cyberpunk)
-- Vinheta pulsante no beat — aumenta/diminui no ritmo
-- Flash branco total no drop (estoura a tela como nos referência)
-- Glitch horizontal slices no beat pesado
-- Reflexo/água mais dramático com ondas RGB split
-- Energy ring removido — substituído por scan lines + chromatic aberration
-- FFmpeg gera base limpa + todos os efeitos de cor/glitch
-- Remotion cuida do logo, texto, partículas e glow final
+MUDANÇAS v8.0 (VIRAL CONTROL — 15M STYLE):
+- FFmpeg agora gera uma base cyberpunk LIMPA e forte, sem brigar com o Remotion.
+- Efeitos pesados foram reduzidos fora do drop: menos poluição visual, mais retenção.
+- Scanlines, borda neon, water FX e glitch ficaram mais sutis.
+- Flash/drop continua forte, mas mais controlado e cinematográfico.
+- CRF ajustado para arquivo menor e render mais estável no GitHub Actions.
+- Progress bar removida do FFmpeg para não competir com o Remotion.
+- Filosofia: calmo → build → DROP → impacto, igual Shorts virais de 15M+.
+- Remotion continua sendo responsável por logo, texto, partículas, túnel e glow final
 """
 
 from __future__ import annotations
@@ -76,7 +74,7 @@ FONT_PATHS = [
 ]
 
 FFMPEG_VIDEO_CODEC   = "libx264"
-FFMPEG_CRF           = "18"
+FFMPEG_CRF           = "23"
 FFMPEG_PRESET        = "medium"
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
@@ -103,10 +101,10 @@ THUMB_TIMESTAMP = 1.5
 MAX_RETRIES     = 2
 RETRY_DELAY_S   = 3
 MIN_FILE_SIZE_MB = 0.5
-MAX_FILE_SIZE_MB = 500.0
+MAX_FILE_SIZE_MB = 350.0
 
 # ══════════════════════════════════════════════════════════════════════════════
-# COLOR GRADES — v7.0 CYBERPUNK MÁXIMO
+# COLOR GRADES — v8.0 CYBERPUNK MÁXIMO
 # Filosofia: fundo escuro como breu, neon explodindo, contraste brutal
 # ══════════════════════════════════════════════════════════════════════════════
 GENRE_COLOR_GRADE = {
@@ -114,7 +112,7 @@ GENRE_COLOR_GRADE = {
         # Base escura + roxo profundo + vermelho sangue + grain cinematográfico
         "colorbalance=rs=0.35:gs=-0.20:bs=-0.25:shadows=enable,"
         "colorbalance=rs=-0.15:gs=0.05:bs=0.40:highlights=enable,"
-        "eq=contrast=1.80:brightness=-0.12:saturation=1.60:gamma=0.85,"
+        "eq=contrast=1.48:brightness=-0.075:saturation=1.35:gamma=0.92,"
         "curves=r='0/0 0.2/0.05 0.7/0.65 1/1':g='0/0 0.3/0.10 1/0.80':b='0/0 0.2/0.30 1/1',"
         "unsharp=7:7:2.2:7:7:0,"
         "noise=alls=20:allf=t+u"
@@ -123,7 +121,7 @@ GENRE_COLOR_GRADE = {
         # Azul gelo + ciano neon + preto profundo
         "colorbalance=rs=-0.25:gs=0.08:bs=0.45:shadows=enable,"
         "colorbalance=rs=-0.10:gs=0.15:bs=0.30:highlights=enable,"
-        "eq=contrast=1.70:brightness=-0.10:saturation=1.55:gamma=0.88,"
+        "eq=contrast=1.42:brightness=-0.065:saturation=1.32:gamma=0.93,"
         "curves=r='0/0 0.3/0.08 1/0.85':b='0/0 0.1/0.25 0.7/0.85 1/1',"
         "unsharp=5:5:1.8:5:5:0"
     ),
@@ -131,7 +129,7 @@ GENRE_COLOR_GRADE = {
         # Roxo puro + quase sem luz — máximo sinistro
         "colorbalance=rs=-0.10:gs=-0.15:bs=0.55:shadows=enable,"
         "colorbalance=rs=0.05:gs=-0.05:bs=0.25:highlights=enable,"
-        "eq=contrast=1.90:brightness=-0.18:saturation=0.80:gamma=0.80,"
+        "eq=contrast=1.50:brightness=-0.105:saturation=0.92:gamma=0.90,"
         "curves=all='0/0 0.15/0.02 0.5/0.35 1/1',"
         "unsharp=5:5:1.5:5:5:0,"
         "vignette=angle=PI/2.2:mode=forward"
@@ -140,7 +138,7 @@ GENRE_COLOR_GRADE = {
         # Ciano + magenta — bifurcação neon
         "colorbalance=rs=-0.20:gs=0.15:bs=0.38:shadows=enable,"
         "colorbalance=rs=0.30:gs=-0.10:bs=0.20:highlights=enable,"
-        "eq=contrast=1.65:brightness=-0.08:saturation=1.85:gamma=0.90,"
+        "eq=contrast=1.40:brightness=-0.055:saturation=1.50:gamma=0.94,"
         "unsharp=5:5:1.2:5:5:0"
     ),
     "lofi": (
@@ -238,10 +236,20 @@ GENRE_NEON = {
 
 WATER_FX_ENABLED = True
 WATER_FX_START_Y_RATIO = 0.54
-WATER_FX_BASE_ALPHA = 0.04
-WATER_FX_LINE_ALPHA = 0.22
-WATER_FX_BASS_ALPHA = 0.18
-WATER_FX_MAX_BASS_HITS = 50
+WATER_FX_BASE_ALPHA = 0.025
+WATER_FX_LINE_ALPHA = 0.10
+WATER_FX_BASS_ALPHA = 0.08
+WATER_FX_MAX_BASS_HITS = 22
+
+# Controle viral: efeitos de FFmpeg servem como base, não como protagonista.
+# O protagonista final é o Remotion.
+VIRAL_FX_MODE = True
+KEEP_FFMPEG_PROGRESS_BAR = False
+SCANLINE_BASE_ALPHA = 0.025
+SCANLINE_BASS_ALPHA = 0.10
+GLITCH_MAX_HITS = 10
+BORDER_MAX_HITS = 16
+
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -338,50 +346,46 @@ def logo_exists() -> bool:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# EFEITOS CYBERPUNK v7.0
+# EFEITOS CYBERPUNK v8.0
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_scanlines(analysis: dict, style: str = "default") -> str:
     """
-    Scan lines animadas estilo CRT/anime cyberpunk.
-    Pulsam com o beat — ficam mais visíveis no drop.
+    Scanlines v8 — bem sutis fora do drop.
+    Objetivo: textura premium, não poluição visual.
     """
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
 
     drop_time = analysis.get("drop_time")
-    bass_hits = analysis.get("bass_hits", [])[:30]
+    bass_hits = analysis.get("bass_hits", [])[:12]
 
-    # Scan lines base: linhas horizontais finas movendo para baixo
     lines = []
 
-    # Linha principal animada
+    # Base quase imperceptível
     lines.append(
-        f"drawbox=x=0:y='mod(t*120,ih)':w=iw:h=2:color={c1}@0.08:t=fill"
+        f"drawbox=x=0:y='mod(t*90,ih)':w=iw:h=1:color={c1}@{SCANLINE_BASE_ALPHA:.3f}:t=fill"
     )
     lines.append(
-        f"drawbox=x=0:y='mod(t*120+ih/3,ih)':w=iw:h=2:color={c1}@0.06:t=fill"
-    )
-    lines.append(
-        f"drawbox=x=0:y='mod(t*120+ih*2/3,ih)':w=iw:h=1:color={c1}@0.04:t=fill"
+        f"drawbox=x=0:y='mod(t*90+ih/2,ih)':w=iw:h=1:color={c1}@{SCANLINE_BASE_ALPHA*0.75:.3f}:t=fill"
     )
 
-    # Scan lines pulsantes no bass hit
-    for bt in bass_hits[:15]:
-        t0 = max(0.0, bt - 0.008)
-        t1 = bt + 0.045
+    # Pulsos leves em alguns bass hits
+    for bt in bass_hits:
+        t0 = max(0.0, bt - 0.006)
+        t1 = bt + 0.035
         lines.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y='mod(t*120,ih)':w=iw:h=4:color={c1}@0.20:t=fill"
+            f":x=0:y='mod(t*100,ih)':w=iw:h=2:color={c1}@{SCANLINE_BASS_ALPHA:.3f}:t=fill"
         )
 
-    # Flash de scan no drop
+    # Drop scan: curto e forte, só no impacto
     if drop_time is not None:
-        t0 = max(0.0, drop_time - 0.01)
-        t1 = drop_time + 0.08
+        t0 = max(0.0, drop_time - 0.008)
+        t1 = drop_time + 0.075
         lines.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=white@0.15:t=fill"
+            f":x=0:y=0:w=iw:h=ih:color=white@0.08:t=fill"
         )
 
     return ",".join(lines)
@@ -389,41 +393,37 @@ def build_scanlines(analysis: dict, style: str = "default") -> str:
 
 def build_drop_flash(analysis: dict) -> str:
     """
-    Flash branco total no drop — estoura a tela como nos vídeos referência.
-    Múltiplas camadas de flash decrescente para impacto máximo.
+    Flash v8 — impacto forte, mas cinematográfico.
+    Branco total muito longo mata retenção; aqui ele bate e some rápido.
     """
     drop_time = analysis.get("drop_time")
-    bass_hits = analysis.get("bass_hits", [])
+    bass_hits = analysis.get("bass_hits", [])[:24]
 
     flashes = []
 
-    # Flash branco instantâneo no drop
     if drop_time is not None:
-        t0 = max(0.0, drop_time - 0.005)
-        # Flash principal — branco total
+        t0 = max(0.0, drop_time - 0.006)
         flashes.append(
-            f"drawbox=enable='between(t,{t0:.4f},{drop_time+0.05:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=white@0.85:t=fill"
+            f"drawbox=enable='between(t,{t0:.4f},{drop_time+0.035:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=white@0.62:t=fill"
         )
-        # Segundo flash roxo
         flashes.append(
-            f"drawbox=enable='between(t,{drop_time+0.05:.4f},{drop_time+0.12:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=0x8800FF@0.45:t=fill"
+            f"drawbox=enable='between(t,{drop_time+0.035:.4f},{drop_time+0.105:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=0x8800FF@0.24:t=fill"
         )
-        # Terceiro flash que some
         flashes.append(
-            f"drawbox=enable='between(t,{drop_time+0.12:.4f},{drop_time+0.22:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=0x8800FF@0.18:t=fill"
+            f"drawbox=enable='between(t,{drop_time+0.105:.4f},{drop_time+0.180:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=0x00FFEE@0.10:t=fill"
         )
 
-    # Flashes menores nos bass hits (não no drop)
-    for bt in bass_hits[:50]:
-        if drop_time is not None and abs(bt - drop_time) < 0.5:
-            continue  # pula perto do drop, já tem flash lá
-        t0 = max(0.0, bt - 0.005)
+    # Micro flashes só nos bass hits principais
+    for bt in bass_hits:
+        if drop_time is not None and abs(bt - drop_time) < 0.7:
+            continue
+        t0 = max(0.0, bt - 0.004)
         flashes.append(
-            f"drawbox=enable='between(t,{t0:.4f},{bt+0.035:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=white@0.12:t=fill"
+            f"drawbox=enable='between(t,{t0:.4f},{bt+0.022:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=white@0.055:t=fill"
         )
 
     return ",".join(flashes) if flashes else ""
@@ -431,58 +431,53 @@ def build_drop_flash(analysis: dict) -> str:
 
 def build_neon_border_pulse(analysis: dict, style: str = "default") -> str:
     """
-    Borda neon pulsante nas laterais e topo/baixo — sincronizada com o beat.
-    Cria o efeito de 'respiração' do frame com a música.
+    Borda neon v8 — respira de leve e explode apenas no drop.
     """
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
     c2 = neon["c2"]
 
-    bass_hits = analysis.get("bass_hits", [])[:60]
+    bass_hits = analysis.get("bass_hits", [])[:BORDER_MAX_HITS]
     drop_time = analysis.get("drop_time")
 
     borders = []
 
-    # Bordas laterais sempre presentes (sutis)
-    borders.append(f"drawbox=x=0:y=0:w=4:h=ih:color={c1}@0.15:t=fill")
-    borders.append(f"drawbox=x=iw-4:y=0:w=4:h=ih:color={c1}@0.15:t=fill")
-    borders.append(f"drawbox=x=0:y=0:w=iw:h=3:color={c2}@0.10:t=fill")
-    borders.append(f"drawbox=x=0:y=ih-3:w=iw:h=3:color={c2}@0.10:t=fill")
+    # Base discreta
+    borders.append(f"drawbox=x=0:y=0:w=2:h=ih:color={c1}@0.07:t=fill")
+    borders.append(f"drawbox=x=iw-2:y=0:w=2:h=ih:color={c2}@0.07:t=fill")
 
-    # Bordas pulsantes no beat
-    for bt in bass_hits[:40]:
-        t0 = max(0.0, bt - 0.008)
-        t1 = bt + 0.055
-        # Borda esquerda pulsa
+    # Bass hits: bem mais seletivo
+    for bt in bass_hits:
+        t0 = max(0.0, bt - 0.006)
+        t1 = bt + 0.040
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y=0:w=12:h=ih:color={c1}@0.55:t=fill"
+            f":x=0:y=0:w=7:h=ih:color={c1}@0.22:t=fill"
         )
-        # Borda direita pulsa
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=iw-12:y=0:w=12:h=ih:color={c1}@0.55:t=fill"
+            f":x=iw-7:y=0:w=7:h=ih:color={c2}@0.22:t=fill"
         )
 
-    # No drop: bordas explodem
+    # Drop: borda explode curta
     if drop_time is not None:
-        t0 = max(0.0, drop_time - 0.01)
-        t1 = drop_time + 0.15
+        t0 = max(0.0, drop_time - 0.008)
+        t1 = drop_time + 0.120
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y=0:w=30:h=ih:color={c1}@0.90:t=fill"
+            f":x=0:y=0:w=20:h=ih:color={c1}@0.62:t=fill"
         )
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=iw-30:y=0:w=30:h=ih:color={c2}@0.90:t=fill"
+            f":x=iw-20:y=0:w=20:h=ih:color={c2}@0.62:t=fill"
         )
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y=0:w=iw:h=20:color={c2}@0.80:t=fill"
+            f":x=0:y=0:w=iw:h=10:color={c2}@0.45:t=fill"
         )
         borders.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y=ih-20:w=iw:h=20:color={c1}@0.80:t=fill"
+            f":x=0:y=ih-10:w=iw:h=10:color={c1}@0.45:t=fill"
         )
 
     return ",".join(borders)
@@ -490,36 +485,35 @@ def build_neon_border_pulse(analysis: dict, style: str = "default") -> str:
 
 def build_glitch_slices(analysis: dict, style: str = "default") -> str:
     """
-    Glitch horizontal — fatias da imagem deslocam no beat pesado.
-    Simulado via drawbox com cores que cobrem faixas da tela.
-    Efeito visual de 'corrupção digital' — muito usado em cyberpunk.
+    Glitch v8 — só em drops e bass hits principais.
+    Menos constante = mais impacto.
     """
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c3 = neon["c3"]
 
-    bass_hits = analysis.get("bass_hits", [])[:30]
+    bass_hits = analysis.get("bass_hits", [])[:GLITCH_MAX_HITS]
     drop_time = analysis.get("drop_time")
 
     glitches = []
 
-    # Glitch sutil no beat — faixa fina com cor diferente
-    for i, bt in enumerate(bass_hits[:20]):
-        t0 = max(0.0, bt - 0.004)
-        t1 = bt + 0.025
-        y_pos = random.randint(100, 1800)
+    # Glitch pequeno só em poucos bass hits
+    for i, bt in enumerate(bass_hits):
+        t0 = max(0.0, bt - 0.003)
+        t1 = bt + 0.018
+        y_pos = 220 + ((i * 173) % 1420)
         glitches.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y={y_pos}:w=iw:h=6:color={c3}@0.35:t=fill"
+            f":x=0:y={y_pos}:w=iw:h=4:color={c3}@0.20:t=fill"
         )
 
-    # Glitch pesado no drop
+    # Drop glitch mais forte
     if drop_time is not None:
-        t0 = max(0.0, drop_time - 0.005)
-        for offset in [0.01, 0.02, 0.035]:
-            y = random.randint(200, 1700)
+        t0 = max(0.0, drop_time - 0.004)
+        for i, offset in enumerate([0.012, 0.024, 0.040]):
+            y = 260 + ((i * 421) % 1300)
             glitches.append(
                 f"drawbox=enable='between(t,{t0:.4f},{drop_time+offset:.4f})'"
-                f":x=0:y={y}:w=iw:h=18:color={c3}@0.60:t=fill"
+                f":x=0:y={y}:w=iw:h=14:color={c3}@0.42:t=fill"
             )
 
     return ",".join(glitches) if glitches else ""
@@ -527,7 +521,7 @@ def build_glitch_slices(analysis: dict, style: str = "default") -> str:
 
 def build_cyberpunk_water_fx(analysis: dict, style: str = "default") -> str:
     """
-    Reflexo/água cyberpunk v7.0 — mais dramático, RGB split, ondas mais largas.
+    Reflexo/água cyberpunk v8.0 — mais dramático, RGB split, ondas mais largas.
     """
     if not WATER_FX_ENABLED:
         return ""
@@ -667,13 +661,18 @@ def build_fade_filter(duration: float) -> str:
 
 
 def build_progress_bar(duration: float, style: str = "default") -> str:
+    """
+    v8: progress bar removida.
+    Ela entrega o final e pode reduzir replay/loop.
+    """
+    if not KEEP_FFMPEG_PROGRESS_BAR:
+        return ""
+
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
-    c2 = neon["c2"]
     return (
-        "drawbox=x=0:y=ih-10:w=iw:h=10:color=black@0.70:t=fill,"
-        f"drawbox=x=0:y=ih-10:w='iw*t/{duration:.3f}':h=10:color={c1}@0.95:t=fill,"
-        f"drawbox=x='max(0,iw*t/{duration:.3f}-4)':y=ih-10:w=8:h=10:color=white@0.90:t=fill"
+        "drawbox=x=0:y=ih-8:w=iw:h=8:color=black@0.45:t=fill,"
+        f"drawbox=x=0:y=ih-8:w='iw*t/{duration:.3f}':h=8:color={c1}@0.85:t=fill"
     )
 
 
@@ -688,7 +687,7 @@ def build_watermark(font: str) -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ZOOM HIPNÓTICO v7.0 — mais agressivo
+# ZOOM HIPNÓTICO v8.0 — mais agressivo
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_elite_zoom(
@@ -780,7 +779,7 @@ def build_elite_shake(analysis: dict, sx: int, sy: int, style: str = "default"):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FILTROS COMPLETOS v7.0
+# FILTROS COMPLETOS v8.0
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_image_filter(
@@ -1102,7 +1101,7 @@ def create_short(
                          audio_input_idx=1)
 
     # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Iniciando render v7.0 (Cyberpunk Máximo)…")
+    logger.info("  ► Iniciando render v8.0 (Viral Control)…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
             subprocess.run(cmd, check=True, capture_output=True)
@@ -1190,7 +1189,7 @@ def generate_batch(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v7.0 — Cyberpunk Máximo")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v8.0 — Viral Control")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
