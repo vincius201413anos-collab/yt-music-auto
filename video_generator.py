@@ -358,7 +358,7 @@ def build_logo_center_overlay_filter(analysis: dict) -> str:
     cy = f"H*{LOGO_CENTER_Y_RATIO:.2f}-h/2"
 
     return (
-        f"[1]"
+        f"[1:v]"
         f"scale=w={base_w}:h=-1,"
         f"format=rgba,"
         f"colorchannelmixer=aa={LOGO_OPACITY:.2f}"
@@ -961,7 +961,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-loop", "1", "-i", background_path,
-                "-f", "image2", "-loop", "1", "-i", LOGO_PATH,
+                "-loop", "1", "-framerate", "30", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
@@ -985,7 +985,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-ss", str(bg_start), "-i", background_path,
-                "-f", "image2", "-loop", "1", "-i", LOGO_PATH,
+                "-loop", "1", "-framerate", "30", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
@@ -1014,7 +1014,7 @@ def create_short(
             fc = f"[0:v]{base_vf}[base];{logo_fc}"
             inputs = [
                 "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",
-                "-f", "image2", "-loop", "1", "-i", LOGO_PATH,
+                "-loop", "1", "-framerate", "30", "-i", LOGO_PATH,
                 "-ss", str(start), "-i", audio_path,
             ]
             cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
