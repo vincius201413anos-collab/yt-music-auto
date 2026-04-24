@@ -15,8 +15,9 @@ SUPPORTED_ASSETS = (
     ".mp4", ".mov", ".webm", ".mkv"
 )
 
-LOCAL_ASSETS_DIR = "assets"
+SUPPORTED_LOGO = (".png", ".jpg", ".jpeg", ".webp")
 
+LOCAL_ASSETS_DIR = "assets"
 DEFAULT_LOGO_NAME = "logo_darkmark.png"
 
 OPTIONAL_EFFECT_FILES = [
@@ -87,10 +88,7 @@ def find_folder_id(service, parent_folder_id: str, folder_name: str) -> str | No
 
 
 def find_file_id(service, parent_folder_id: str, file_name: str) -> str | None:
-    """
-    Procura um arquivo específico dentro de uma pasta do Drive.
-    Retorna o ID ou None.
-    """
+    """Procura um arquivo específico dentro de uma pasta do Drive."""
     query = (
         f"'{parent_folder_id}' in parents and "
         f"name = '{_safe_name(file_name)}' and "
@@ -158,15 +156,51 @@ def download_drive_file(service, file_id: str, output_path: str) -> str:
 
 
 def download_drive_file_safe(service, file_id: str, output_path: str) -> str | None:
-    """
-    Baixa arquivo sem quebrar o bot.
-    Se falhar, retorna None.
-    """
+    """Baixa arquivo sem quebrar o bot. Se falhar, retorna None."""
     try:
         return download_drive_file(service, file_id, output_path)
     except Exception as e:
         print(f"[drive_service] Aviso: falha ao baixar {output_path}: {e}")
         return None
+
+
+def _find_logo_candidate(service, assets_folder_id: str) -> dict | None:
+    """
+    Primeiro procura logo_darkmark.png.
+    Se não achar, procura qualquer imagem que tenha 'logo' no nome.
+    """
+    exact_id = find_file_id(service, assets_folder_id, DEFAULT_LOGO_NAME)
+    if exact_id:
+        return {"id": exact_id, "name": DEFAULT_LOGO_NAME}
+
+    try:
+        files = list_files_in_folder(service, assets_folder_id)
+    except Exception:
+        return None
+
+    logo_files = [
+        f for f in files
+        if "logo" in f.get("name", "").lower()
+        and f.get("name", "").lower().endswith(SUPPORTED_LOGO)
+    ]
+
+    if not logo_files:
+        return None
+
+    # Dá preferência para arquivos com darkmark no nome.
+    logo_files.sort(key=lambda f: ("darkmark" not in f.get("name", "").lower(), f.get("name", "")))
+    return logo_files[0]
+
+
+def _use_existing_local_logo(local_assets_dir: str = LOCAL_ASSETS_DIR) -> str | None:
+    """
+    Se a logo já veio pelo GitHub/repositório, usa ela mesmo.
+    Isso evita o erro visual de 'não achei no Drive', mas depois o video_generator acha localmente.
+    """
+    local_logo_path = Path(local_assets_dir) / DEFAULT_LOGO_NAME
+    if local_logo_path.exists():
+        return str(local_logo_path)
+    return None
 
 
 def download_assets_from_drive(
@@ -178,17 +212,8 @@ def download_assets_from_drive(
     """
     Baixa assets opcionais do Drive.
 
-    Estrutura esperada no Drive:
-
-    pasta_principal/
-    ├── musicas/
-    ├── assets/
-    │   ├── logo_darkmark.png
-    │   ├── rain_overlay.mp4
-    │   ├── water_ripple.mp4
-    │   └── particles.mp4
-
-    Se não achar assets, logo ou efeitos, apenas ignora e continua.
+    Se não achar logo no Drive, mas a logo já existir localmente em
+    assets/logo_darkmark.png, usa a local e continua sem erro.
     """
     result = {
         "assets_folder_found": False,
@@ -200,29 +225,39 @@ def download_assets_from_drive(
 
     Path(local_assets_dir).mkdir(parents=True, exist_ok=True)
 
+    # Fallback local primeiro: se a logo já está no GitHub, ela já é válida.
+    local_logo = _use_existing_local_logo(local_assets_dir)
+    if local_logo:
+        result["logo_path"] = local_logo
+        print(f"[drive_service] Logo local encontrada: {local_logo}")
+
     assets_folder_id = find_folder_id(service, parent_folder_id, assets_folder_name)
 
     if not assets_folder_id:
-        print(f"[drive_service] Pasta '{assets_folder_name}' nao encontrada no Drive. Ignorando assets.")
+        print(f"[drive_service] Pasta '{assets_folder_name}' nao encontrada no Drive. Usando apenas assets locais.")
         return result
 
     result["assets_folder_found"] = True
     print(f"[drive_service] Pasta de assets encontrada: {assets_folder_name}")
 
-    # Logo
-    logo_file_id = find_file_id(service, assets_folder_id, DEFAULT_LOGO_NAME)
+    # Logo no Drive: baixa se existir. Aceita logo_darkmark.png ou outro arquivo com 'logo' no nome.
+    logo_file = _find_logo_candidate(service, assets_folder_id)
 
-    if logo_file_id:
+    if logo_file:
         local_logo_path = str(Path(local_assets_dir) / DEFAULT_LOGO_NAME)
-        downloaded = download_drive_file_safe(service, logo_file_id, local_logo_path)
+        downloaded = download_drive_file_safe(service, logo_file["id"], local_logo_path)
 
         if downloaded:
             result["logo_path"] = downloaded
-            result["downloaded"].append(DEFAULT_LOGO_NAME)
-            print(f"[drive_service] Logo baixada: {downloaded}")
+            if DEFAULT_LOGO_NAME not in result["downloaded"]:
+                result["downloaded"].append(DEFAULT_LOGO_NAME)
+            print(f"[drive_service] Logo baixada: {downloaded} (origem: {logo_file['name']})")
     else:
         result["missing"].append(DEFAULT_LOGO_NAME)
-        print(f"[drive_service] Logo nao encontrada no Drive: {DEFAULT_LOGO_NAME}")
+        if result["logo_path"]:
+            print(f"[drive_service] Logo nao encontrada no Drive, usando logo local: {result['logo_path']}")
+        else:
+            print(f"[drive_service] Logo nao encontrada no Drive nem localmente: {DEFAULT_LOGO_NAME}")
 
     # Efeitos opcionais
     for effect_name in OPTIONAL_EFFECT_FILES:
@@ -253,8 +288,6 @@ def download_all_assets_in_folder(
     """
     Baixa todos os arquivos suportados da pasta assets.
     Útil se depois você quiser colocar novos efeitos sem alterar código.
-
-    Se não achar nada, ignora.
     """
     result = {
         "assets_folder_found": False,
@@ -281,11 +314,12 @@ def download_all_assets_in_folder(
             result["skipped"].append(name)
             continue
 
-        local_path = str(Path(local_assets_dir) / name)
+        output_name = DEFAULT_LOGO_NAME if ("logo" in name.lower() and name.lower().endswith(SUPPORTED_LOGO)) else name
+        local_path = str(Path(local_assets_dir) / output_name)
         downloaded = download_drive_file_safe(service, f["id"], local_path)
 
         if downloaded:
-            result["downloaded"].append(name)
+            result["downloaded"].append(output_name)
 
     print(f"[drive_service] Assets baixados: {result['downloaded']}")
     return result
