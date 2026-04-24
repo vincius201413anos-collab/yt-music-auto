@@ -744,7 +744,8 @@ def main():
         raise ValueError("DRIVE_FOLDER_ID não configurado.")
 
     service  = get_drive_service()
-        log("Sincronizando assets (logo/efeitos) do Drive...")
+
+    log("Sincronizando assets (logo/efeitos) do Drive...")
 
     assets_result = download_assets_from_drive(
         service,
@@ -760,7 +761,7 @@ def main():
         log(f"Efeitos carregados: {list(assets_result['effects'].keys())}")
     else:
         log("Nenhum efeito encontrado — continuando sem efeitos.")
-        
+
     inbox_id = find_folder_id(service, DRIVE_FOLDER_ID, "inbox")
     if not inbox_id:
         raise ValueError("Pasta 'inbox' não encontrada no Drive.")
