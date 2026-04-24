@@ -1,12 +1,15 @@
 name: Render Video
-
 on:
   workflow_dispatch:
+    inputs:
+      audio_file:
+        description: "Caminho do áudio (ex: temp/musica.mp3)"
+        required: false
+        default: ""
 
 jobs:
   render:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v4
 
@@ -14,23 +17,56 @@ jobs:
         with:
           python-version: "3.11"
 
-      - run: pip install librosa numpy
+      - name: Install Python dependencies
+        run: pip install librosa numpy scipy
 
       - uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg
+        run: sudo apt-get update && sudo apt-get install -y ffmpeg
 
-      - run: |
+      - name: Install Remotion dependencies
+        run: |
           cd remotion
           npm install
 
-      - run: python audio_analysis.py
+      - name: Prepare folders
+        run: |
+          mkdir -p remotion/public
+          mkdir -p temp
 
-      - run: mv audio_data.json remotion/public/
+      - name: Find audio file
+        id: find_audio
+        run: |
+          INPUT="${{ github.event.inputs.audio_file }}"
+          if [ -n "$INPUT" ] && [ -f "$INPUT" ]; then
+            echo "audio=$INPUT" >> $GITHUB_OUTPUT
+            echo "Usando áudio: $INPUT"
+          else
+            FOUND=$(find temp assets -name "*.mp3" -o -name "*.wav" -o -name "*.flac" 2>/dev/null | head -1)
+            if [ -n "$FOUND" ]; then
+              echo "audio=$FOUND" >> $GITHUB_OUTPUT
+              echo "Áudio encontrado: $FOUND"
+            else
+              echo "audio=" >> $GITHUB_OUTPUT
+              echo "Nenhum áudio encontrado — Remotion vai rodar sem sync"
+            fi
+          fi
 
-      - run: |
+      - name: Generate audio_data.json
+        run: |
+          AUDIO="${{ steps.find_audio.outputs.audio }}"
+          if [ -n "$AUDIO" ]; then
+            python audio_to_remotion.py "$AUDIO" remotion/public/audio_data.json
+          else
+            echo "Sem áudio — gerando audio_data.json vazio"
+            echo '{"rms":[],"bpm":120,"duration":0,"beats":[],"bass_hits":[],"snare_hits":[],"hihat_hits":[],"drop_time":null,"beat_intensities":[],"energy_curve":[],"sections":{},"song_profile":"medium"}' > remotion/public/audio_data.json
+          fi
+
+      - name: Render with Remotion
+        run: |
           cd remotion
           npx remotion render src/index.ts MyComp out.mp4
 
