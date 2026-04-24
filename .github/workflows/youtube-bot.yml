@@ -20,6 +20,9 @@ jobs:
     env:
       PYTHONUNBUFFERED: "1"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      ENABLE_REMOTION: "true"
+      REMOTION_COMPOSITION_ID: "MyComposition"
+      REMOTION_ENTRY: "index.ts"
 
     steps:
       - name: Checkout
@@ -33,6 +36,11 @@ jobs:
         with:
           python-version: "3.11"
           cache: "pip"
+
+      - name: Setup Node 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
 
       - name: Install FFmpeg + fonts
         run: |
@@ -50,9 +58,14 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install Remotion dependencies
+        run: |
+          cd remotion
+          npm install
+
       - name: Prepare folders
         run: |
-          mkdir -p output temp assets/backgrounds assets/source_videos
+          mkdir -p output temp assets/backgrounds assets/source_videos remotion/public
           test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
 
       - name: Run Bot
@@ -70,6 +83,9 @@ jobs:
           FB_ENABLE_POSTING: ${{ secrets.FB_ENABLE_POSTING }}
           ENABLE_DRIVE_BACKUP: ${{ secrets.ENABLE_DRIVE_BACKUP }}
           DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
+          ENABLE_REMOTION: "true"
+          REMOTION_COMPOSITION_ID: "MyComposition"
+          REMOTION_ENTRY: "index.ts"
           SHORTS_PER_TRACK: "1"
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
