@@ -307,7 +307,12 @@ def clean_song_name(audio_path: str, override: str = "") -> str:
 
 
 def logo_exists() -> bool:
-    return os.path.exists(LOGO_PATH)
+    # BLINDAGEM FFmpeg/GitHub:
+    # O overlay da logo via FFmpeg estava quebrando com erro
+    # "[1:v] ... matches no streams" em PNG no GitHub Actions.
+    # Por enquanto, desativamos SOMENTE a logo do FFmpeg para o bot renderizar.
+    # A logo/efeitos continuam podendo ser usados pelo Remotion depois.
+    return False
 
 
 # ══════════════════════════════════════════════════════════════════════════════
