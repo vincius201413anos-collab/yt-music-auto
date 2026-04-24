@@ -54,8 +54,6 @@ CHANNEL_NAME  = "DJ darkMark"
 ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE",  "true").lower()  == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 
-# Remotion
-# Se quiser desligar temporariamente, coloque ENABLE_REMOTION=false nos Secrets/Variables do GitHub.
 ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
 REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
 REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "index.ts")
@@ -78,26 +76,12 @@ def safe_filename(text: str) -> str:
 
 
 def canonical_track_key(filename: str) -> str:
-    """
-    Mantido só por compatibilidade com estados antigos.
-    A partir da v4.1, a chave principal é o ID do arquivo no Google Drive.
-    """
     base = clean_title(filename).lower()
     base = re.sub(r"\s+", " ", base).strip()
     return base
 
 
 def track_key_from_drive_file(file_obj: dict) -> str:
-    """
-    Chave REAL da música.
-
-    Antes o bot usava o nome normalizado, então:
-    Song.mp3 / Song (1).mp3 / Song.wav
-    podiam virar a mesma key.
-
-    Agora usa o ID único do Google Drive.
-    Assim, músicas diferentes com nome duplicado serão processadas.
-    """
     return str(file_obj.get("id") or canonical_track_key(file_obj.get("name", "")))
 
 
@@ -413,16 +397,18 @@ HOOKS_IDENTIDADE = {
     ],
 }
 
-TITLE_TEMPLATES = [
-    "DJ darkMark — {title} | {hook}",
-    "{hook} — {title} | DJ darkMark",
-    "DJ darkMark 🎧 {title} | {hook}",
-    "{title} {emoji} {hook} — DJ darkMark",
-    "DJ darkMark: {title} | {hook}",
-    "{hook} {emoji} {title} — DJ darkMark",
-    "DJ darkMark drops: {title} | {hook}",
-    "{title} — {hook} | DJ darkMark {emoji}",
-]
+# ══════════════════════════════════════════════════════════════════════════════
+# SISTEMA DE TÍTULOS — PREFIXO DE GÊNERO SEMPRE PRIMEIRO
+# ══════════════════════════════════════════════════════════════════════════════
+#
+# Estrutura final de todo título:
+#   [GENRE PREFIX] [SEP] [HOOK] — DJ darkMark
+#
+# Exemplos:
+#   Phonk Music 😈 — você não tava preparado · DJ darkMark
+#   💎 Trap Music | as ruas já sabem — DJ darkMark
+#   Electronic Music ⚡ ✦ o drop bateu antes do cérebro — DJ darkMark
+# ══════════════════════════════════════════════════════════════════════════════
 
 GENRE_EMOJI = {
     "phonk":      "🌑",
@@ -438,6 +424,78 @@ GENRE_EMOJI = {
     "pop":        "💫",
     "default":    "🎵",
 }
+
+# Múltiplas variações de prefixo por gênero — feed sempre variado
+GENRE_PREFIXES = {
+    "phonk":      ["Phonk Music 😈", "🖤 Phonk Music", "Dark Phonk 🌑", "Phonk Vibes 😈", "💀 Phonk Music", "Phonk Mode 🖤", "Drift Phonk 😈"],
+    "trap":       ["Trap Music 🔥", "💎 Trap Music", "Hard Trap 🔥", "Trap Banger 💎", "🔥 Trap Vibes", "Trap Mode 😤", "Street Trap 🔥"],
+    "electronic": ["Electronic Music ⚡", "⚡ Electronic", "EDM Energy 🔥", "Electronic Drop ⚡", "🎛️ Electronic", "Synth Wave ⚡", "Electronic Banger ⚡"],
+    "rock":       ["Rock Music 🎸", "🔥 Rock Music", "Hard Rock 🎸", "Rock Vibes ⚡", "🎸 Rock Energy", "Rock Banger 🔥", "Electric Rock 🎸"],
+    "metal":      ["Metal Music 🤘", "🔥 Heavy Metal", "Metal Rage 🤘", "Heavy Metal 💀", "🤘 Metal Vibes", "Death Metal 🔥", "Metal Energy 🤘"],
+    "indie":      ["Indie Music 🌙", "✨ Indie Vibes", "Indie Dream 🌙", "Indie Mood ✨", "🎧 Indie Music", "Indie Soul 🌙", "Bedroom Indie ✨"],
+    "lofi":       ["Lo-Fi Music 🌙", "☁️ Lo-Fi Vibes", "Lo-Fi Chill 🎧", "Lofi Mood 🌙", "🎧 Lo-Fi Music", "Chill Lofi ☁️", "Late Night Lofi 🌙"],
+    "cinematic":  ["Cinematic Music 🎬", "🎬 Epic Music", "Cinematic Drop 🎬", "Epic Cinematic ✨", "🌌 Cinematic", "Film Score Energy 🎬", "Cinematic Vibes 🌌"],
+    "funk":       ["Funk Music 🎵", "🔥 Funk Vibes", "Groove Music 🎵", "Funk Energy ⚡", "🎵 Funk Mode", "Brazilian Funk 🔥", "Funk Banger 🎵"],
+    "dark":       ["Dark Music 🌑", "🖤 Dark Vibes", "Dark Ambient 🌑", "Dark Energy 😈", "💀 Dark Music", "Dark Mode 🌑", "Shadow Music 🖤"],
+    "pop":        ["Pop Music 💫", "✨ Pop Vibes", "Pop Banger 🔥", "Pop Energy 💫", "🎵 Pop Music", "Pop Hit ✨", "Pop Mood 💫"],
+    "default":    ["Music 🎵", "🔥 New Music", "Music Vibes 🎧", "🎧 Underground", "New Music 🔥"],
+}
+
+# Separadores rotativos — variam a cada vídeo
+TITLE_SEPARATORS = [" — ", " | ", " · ", " ✦ ", " » ", " ▸ "]
+
+# Templates: gênero SEMPRE primeiro, DJ darkMark sempre presente
+TITLE_TEMPLATES = [
+    "{genre_prefix}{sep}{hook} — DJ darkMark",
+    "{genre_prefix}{sep}{hook} | DJ darkMark",
+    "{genre_prefix}{sep}DJ darkMark · {hook}",
+    "{genre_prefix}{sep}{hook} {emoji} DJ darkMark",
+    "{genre_prefix}{sep}DJ darkMark 🎧 {hook}",
+    "{genre_prefix}{sep}{hook} — DJ darkMark {emoji}",
+    "{genre_prefix}{sep}DJ darkMark: {hook}",
+    "{genre_prefix}{sep}{hook} · DJ darkMark {emoji}",
+]
+
+
+def _dhash(text: str) -> int:
+    return int(hashlib.md5(text.encode()).hexdigest(), 16)
+
+
+def build_title(base: str, style: str, short_num: int) -> str:
+    emoji = GENRE_EMOJI.get(style, "🎵")
+
+    # Prefixo de gênero — determinístico mas variado por short_num
+    prefix_pool = GENRE_PREFIXES.get(style, GENRE_PREFIXES["default"])
+    prefix_seed = _dhash(f"{base}|prefix|{short_num}")
+    genre_prefix = prefix_pool[prefix_seed % len(prefix_pool)]
+
+    # Separador — determinístico e variado
+    sep_seed = _dhash(f"{base}|sep|{short_num}")
+    sep = TITLE_SEPARATORS[sep_seed % len(TITLE_SEPARATORS)]
+
+    # Hook — 3 camadas rotativas por short_num
+    hook_layers = [
+        HOOKS_CURIOSIDADE.get(style, HOOKS_CURIOSIDADE["default"]),
+        HOOKS_EMOCIONAL.get(style, HOOKS_EMOCIONAL["default"]),
+        HOOKS_IDENTIDADE.get(style, HOOKS_IDENTIDADE["default"]),
+    ]
+    layer = hook_layers[(short_num - 1) % len(hook_layers)]
+    hook_seed = _dhash(f"{base}|hook|{short_num}")
+    hook = layer[hook_seed % len(layer)]
+
+    # Template — determinístico
+    tmpl_seed = _dhash(f"{base}|tmpl|{short_num}")
+    template = TITLE_TEMPLATES[tmpl_seed % len(TITLE_TEMPLATES)]
+
+    title = template.format(
+        genre_prefix=genre_prefix,
+        sep=sep,
+        hook=hook,
+        emoji=emoji,
+    )
+
+    return title[:100]
+
 
 STYLE_HASHTAGS = {
     "phonk":      "#phonk #darkphonk #phonkmusic #phonkbrasileiro #phonkvibes #djdarkmark #música",
@@ -455,35 +513,6 @@ STYLE_HASHTAGS = {
 }
 
 UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #djdarkmark #brasil"
-
-
-def _dhash(text: str) -> int:
-    return int(hashlib.md5(text.encode()).hexdigest(), 16)
-
-
-def build_title(base: str, style: str, short_num: int) -> str:
-    emoji = GENRE_EMOJI.get(style, "🎵")
-
-    hook_layers = [
-        HOOKS_CURIOSIDADE.get(style, HOOKS_CURIOSIDADE["default"]),
-        HOOKS_EMOCIONAL.get(style, HOOKS_EMOCIONAL["default"]),
-        HOOKS_IDENTIDADE.get(style, HOOKS_IDENTIDADE["default"]),
-    ]
-
-    layer = hook_layers[(short_num - 1) % len(hook_layers)]
-
-    hook_seed = _dhash(f"{base}|hook|{short_num}")
-    tmpl_seed = _dhash(f"{base}|tmpl|{short_num}")
-
-    hook     = layer[hook_seed % len(layer)]
-    template = TITLE_TEMPLATES[tmpl_seed % len(TITLE_TEMPLATES)]
-
-    title = template.format(hook=hook, title=base, emoji=emoji)
-
-    if "DJ darkMark" not in title and "dj darkmark" not in title.lower():
-        title = f"DJ darkMark | {title}"
-
-    return title[:100]
 
 
 def build_description(base: str, style: str, short_num: int) -> str:
@@ -551,8 +580,6 @@ def load_state() -> dict:
         else:
             t.setdefault("key", canonical_track_key(t["name"]))
 
-        # Só remove duplicata se for exatamente o mesmo ID do Drive.
-        # Não remove por nome.
         unique_id = t.get("id") or t.get("key")
         if unique_id in seen_ids:
             continue
@@ -574,12 +601,6 @@ def save_state(state: dict):
 
 
 def sync_tracks(state: dict, files: list):
-    """
-    v4.1:
-    - Não remove duplicatas por nome.
-    - Cada arquivo do Drive entra como faixa única pelo ID.
-    - Se tiver 50 músicas com o mesmo nome, mas IDs diferentes, processa as 50.
-    """
     drive_files = []
 
     for f in files:
@@ -717,31 +738,31 @@ def run_remotion_overlay(
     style: str = "default",
     song_name: str = "",
 ) -> str:
-    """
-    Renderiza o vídeo final pelo Remotion.
-
-    Fluxo correto:
-    - Copia o vídeo base do FFmpeg para remotion/public/input.mp4
-    - Copia o audio_data.json para remotion/public/audio_data.json
-    - Copia a logo para remotion/public/logo.png
-    - Roda o Remotion
-    - Retorna o vídeo final com ícone/overlay
-    """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
         return base_video_path
 
-    if not os.path.exists(base_video_path):
-        raise FileNotFoundError(f"Vídeo base não encontrado: {base_video_path}")
+    base_video_abs = Path(base_video_path).resolve()
+    output_abs = Path(output_path).resolve()
 
-    remotion_dir = Path("remotion")
+    if not base_video_abs.exists():
+        raise FileNotFoundError(f"Vídeo base não encontrado: {base_video_abs}")
+
+    remotion_dir = Path("remotion").resolve()
     public_dir = remotion_dir / "public"
 
     if not remotion_dir.exists():
         log("Pasta remotion não encontrada — usando vídeo base sem overlay.")
         return base_video_path
 
-    entry_path = remotion_dir / REMOTION_ENTRY
+    entry_env = str(REMOTION_ENTRY).replace("\\", "/").strip()
+    if entry_env.startswith("remotion/"):
+        entry_for_cli = entry_env.replace("remotion/", "", 1)
+    else:
+        entry_for_cli = entry_env
+
+    entry_path = remotion_dir / entry_for_cli
+
     if not entry_path.exists():
         log(f"Entrada do Remotion não encontrada: {entry_path}")
         log("Usando vídeo base sem overlay do Remotion.")
@@ -749,41 +770,40 @@ def run_remotion_overlay(
 
     public_dir.mkdir(parents=True, exist_ok=True)
 
-    # O Composition.tsx usa staticFile("input.mp4")
     input_video_dest = public_dir / "input.mp4"
-    shutil.copy(base_video_path, input_video_dest)
+    shutil.copy(str(base_video_abs), str(input_video_dest))
     log(f"Vídeo base copiado para Remotion: {input_video_dest}")
 
-    # O Composition.tsx usa staticFile("audio_data.json")
     audio_dest = public_dir / "audio_data.json"
     if audio_data_path and os.path.exists(audio_data_path):
-        shutil.copy(audio_data_path, audio_dest)
+        shutil.copy(audio_data_path, str(audio_dest))
         log(f"audio_data.json copiado para Remotion: {audio_dest}")
     else:
-        # Cria um fallback mínimo para não quebrar o fetch no Remotion.
         audio_dest.write_text("[]", encoding="utf-8")
         log("audio_data.json não encontrado — criado fallback vazio.")
 
-    # O Composition.tsx usa staticFile("logo.png")
     logo_dest = public_dir / "logo.png"
     if logo_path and os.path.exists(logo_path):
-        shutil.copy(logo_path, logo_dest)
+        shutil.copy(logo_path, str(logo_dest))
         log(f"Logo copiada para Remotion: {logo_dest}")
     elif os.path.exists("assets/logo.png"):
-        shutil.copy("assets/logo.png", logo_dest)
+        shutil.copy("assets/logo.png", str(logo_dest))
         log(f"Logo copiada de assets/logo.png para Remotion: {logo_dest}")
+    elif os.path.exists("assets/logo_darkmark.png"):
+        shutil.copy("assets/logo_darkmark.png", str(logo_dest))
+        log(f"Logo copiada de assets/logo_darkmark.png para Remotion: {logo_dest}")
     else:
         log("logo.png não encontrada — o ícone pode não aparecer.")
 
-    Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    output_abs.parent.mkdir(parents=True, exist_ok=True)
 
     cmd = [
         "npx",
         "remotion",
         "render",
-        REMOTION_ENTRY,
+        entry_for_cli,
         REMOTION_COMPOSITION_ID,
-        output_path,
+        str(output_abs),
         "--overwrite",
     ]
 
@@ -801,13 +821,15 @@ def run_remotion_overlay(
         log("Usando vídeo base sem overlay do Remotion para não quebrar o upload.")
         return base_video_path
 
-    if not os.path.exists(output_path):
+    if not output_abs.exists():
         log("Remotion terminou, mas o arquivo final não apareceu.")
+        log(f"Arquivo esperado: {output_abs}")
         log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
 
-    log(f"Vídeo final Remotion pronto: {output_path}")
-    return output_path
+    log(f"Vídeo final Remotion pronto: {output_abs}")
+    return str(output_abs)
+
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
@@ -964,7 +986,6 @@ def main():
             thumbnail_path   = None
             audio_data_path  = None
 
-        # Fallback para o caminho padrão que seu sistema de análise costuma gerar.
         if not audio_data_path:
             possible_audio_data = Path("temp") / "audio_data.json"
             if possible_audio_data.exists():
@@ -987,9 +1008,6 @@ def main():
         description = build_description(title_base, style, short_num)
         log(f"Título  : {title}")
 
-        # IMPORTANTE:
-        # A partir daqui usa video_path, que agora é o arquivo final do Remotion
-        # quando o render do Remotion funciona.
         results = publish(video_path, title, description)
 
         if DRIVE_BACKUP_FOLDER_ID:
