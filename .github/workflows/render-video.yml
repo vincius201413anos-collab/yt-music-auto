@@ -1,68 +1,88 @@
 name: Render Video
 on:
   workflow_dispatch:
-    inputs:
-      audio_file:
-        description: "Caminho do áudio (ex: temp/musica.mp3)"
-        required: false
-        default: ""
 
 jobs:
   render:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PYTHONUNBUFFERED: "1"
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
 
-      - name: Install Python dependencies
-        run: pip install librosa numpy scipy
-
-      - uses: actions/setup-node@v4
+      - name: Setup Node 18
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
-      - name: Install FFmpeg
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
+      - name: Install FFmpeg + fonts
+        run: |
+          sudo apt-get update -y -q
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
+            ffmpeg fonts-dejavu-core fonts-liberation
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Prepare folders
+        run: |
+          mkdir -p temp output remotion/public assets/backgrounds
+          test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
 
       - name: Install Remotion dependencies
         run: |
           cd remotion
           npm install
 
-      - name: Prepare folders
+      - name: Download audio from Drive + generate audio_data.json
+        env:
+          GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-          mkdir -p remotion/public
-          mkdir -p temp
+          python - <<'EOF'
+          import os, json
+          from pathlib import Path
+          from drive_service import get_drive_service, find_folder_id, list_audio_files_in_folder, download_drive_file
 
-      - name: Find audio file
-        id: find_audio
-        run: |
-          INPUT="${{ github.event.inputs.audio_file }}"
-          if [ -n "$INPUT" ] && [ -f "$INPUT" ]; then
-            echo "audio=$INPUT" >> $GITHUB_OUTPUT
-            echo "Usando áudio: $INPUT"
-          else
-            FOUND=$(find temp assets -name "*.mp3" -o -name "*.wav" -o -name "*.flac" 2>/dev/null | head -1)
-            if [ -n "$FOUND" ]; then
-              echo "audio=$FOUND" >> $GITHUB_OUTPUT
-              echo "Áudio encontrado: $FOUND"
-            else
-              echo "audio=" >> $GITHUB_OUTPUT
-              echo "Nenhum áudio encontrado — Remotion vai rodar sem sync"
-            fi
-          fi
+          service   = get_drive_service()
+          inbox_id  = find_folder_id(service, os.environ["DRIVE_FOLDER_ID"], "inbox")
+          files     = list_audio_files_in_folder(service, inbox_id)
+
+          if not files:
+              print("Nenhum áudio encontrado no Drive.")
+              exit(0)
+
+          # Pega a primeira música disponível
+          f = files[0]
+          ext = Path(f["name"]).suffix or ".mp3"
+          dest = f"temp/render_audio{ext}"
+          download_drive_file(service, f["id"], dest)
+          print(f"Áudio baixado: {dest}")
+
+          # Salva o caminho pro próximo step
+          with open("temp/audio_path.txt", "w") as fp:
+              fp.write(dest)
+          EOF
 
       - name: Generate audio_data.json
         run: |
-          AUDIO="${{ steps.find_audio.outputs.audio }}"
-          if [ -n "$AUDIO" ]; then
-            python audio_to_remotion.py "$AUDIO" remotion/public/audio_data.json
-          else
-            echo "Sem áudio — gerando audio_data.json vazio"
+          AUDIO=$(cat temp/audio_path.txt 2>/dev/null || echo "")
+          if [ -z "$AUDIO" ] || [ ! -f "$AUDIO" ]; then
+            echo "Sem áudio — gerando JSON vazio"
             echo '{"rms":[],"bpm":120,"duration":0,"beats":[],"bass_hits":[],"snare_hits":[],"hihat_hits":[],"drop_time":null,"beat_intensities":[],"energy_curve":[],"sections":{},"song_profile":"medium"}' > remotion/public/audio_data.json
+          else
+            python audio_to_remotion.py "$AUDIO" remotion/public/audio_data.json
           fi
 
       - name: Render with Remotion
@@ -70,7 +90,8 @@ jobs:
           cd remotion
           npx remotion render src/index.ts MyComp out.mp4
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
           name: video
           path: remotion/out.mp4
