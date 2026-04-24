@@ -158,9 +158,9 @@
       "name": "This song feels like a cyberpunk dream 🖤🌆 _ Velvet Darkness.mp3",
       "key": "1DQmh0aWmIqMGxwU9EF2q4to6fabhjLYy",
       "name_key": "this song feels like a cyberpunk dream 🖤🌆 velvet darkness",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1tWdSkn3zH7_xzR6kpN0gz3MXp_4RVzIf",
