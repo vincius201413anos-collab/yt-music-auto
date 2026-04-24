@@ -79,9 +79,9 @@ LOGO_PATH = "assets/logo_darkmark.png"
 # Tamanho base da logo: 22% da largura do vídeo (~237px em 1080p)
 LOGO_BASE_WIDTH_RATIO = 0.22
 
-# Posição vertical: centro + pequeno offset pra baixo (52% do frame)
-# Mantém a logo longe do título (topo) e do progress bar (fundo)
-LOGO_CENTER_Y_RATIO = 0.52
+# Posição vertical: centro exato (50% do frame)
+# Logo no centro real do Short
+LOGO_CENTER_Y_RATIO = 0.50
 
 # Opacidade da logo principal
 LOGO_OPACITY = 0.92
