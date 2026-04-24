@@ -1,5 +1,16 @@
 """
-video_generator.py — Elite Music Shorts Generator v5.0
+video_generator.py — Elite Music Shorts Generator v6.0
+=======================================================
+MUDANÇAS v6.0 (LOGO BEAT-REACTIVE):
+- Logo movida para o CENTRO do frame (posição premium)
+- Sistema de pulse da logo sincronizado com o áudio:
+    · Beat fraco  → logo pulsa +6%  (sutil)
+    · Bass/kick   → logo cresce +20% + halo de glow
+    · Drop        → logo explode +38% + glow máximo
+- Glow animado: camada de brilho ao redor da logo que
+  também pulsa porque é derivada do tamanho beat-reactive
+- Zoom de fundo mais hipnótico (drift senoidal multi-axis)
+- Todas as outras features da v5 mantidas intactas
 """
 
 from __future__ import annotations
@@ -40,6 +51,7 @@ def setup_logging(log_dir: str = "logs", level: int = logging.INFO) -> None:
 setup_logging()
 logger = logging.getLogger("video_generator")
 
+# ── Parâmetros gerais ──────────────────────────────────────────────────────
 MIN_DURATION        = 38
 MAX_DURATION        = 58
 VIDEO_FADE_OUT_DUR  = 0.7
@@ -61,11 +73,38 @@ FFMPEG_PRESET        = "medium"
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
 
-LOGO_PATH           = "assets/logo_darkmark.png"
-LOGO_RELATIVE_WIDTH = 0.10
-LOGO_MARGIN_X       = 22
-LOGO_MARGIN_Y       = 110
-LOGO_OPACITY        = 0.88
+# ── Logo — sistema v6.0 (centralizada + beat-reactive) ─────────────────────
+LOGO_PATH = "assets/logo_darkmark.png"
+
+# Tamanho base da logo: 22% da largura do vídeo (~237px em 1080p)
+LOGO_BASE_WIDTH_RATIO = 0.22
+
+# Posição vertical: centro + pequeno offset pra baixo (52% do frame)
+# Mantém a logo longe do título (topo) e do progress bar (fundo)
+LOGO_CENTER_Y_RATIO = 0.52
+
+# Opacidade da logo principal
+LOGO_OPACITY = 0.92
+
+# Glow — camada de brilho ao redor da logo
+LOGO_GLOW_SCALE      = 1.45   # glow é 45% maior que a logo
+LOGO_GLOW_BLUR       = 14     # raio do blur do glow (pixels)
+LOGO_GLOW_OPACITY    = 0.52   # opacidade do glow (0-1)
+LOGO_GLOW_BRIGHTNESS = 3.2    # multiplicador de brilho do glow
+
+# Intensidade do pulse por tipo de evento
+LOGO_PULSE_BEAT_STRENGTH = 0.06   # beat fraco:  +6%
+LOGO_PULSE_BASS_STRENGTH = 0.20   # kick/baixo:  +20%
+LOGO_PULSE_DROP_STRENGTH = 0.38   # drop:        +38%
+
+# Velocidade de decaimento do pulse (segundos)
+LOGO_PULSE_BEAT_DECAY = 0.10
+LOGO_PULSE_BASS_DECAY = 0.08
+LOGO_PULSE_DROP_DECAY = 0.30
+
+# Limites máximos de batidas para expressões (performance)
+LOGO_MAX_BEATS     = 50
+LOGO_MAX_BASS_HITS = 50
 
 THUMB_DIR       = "thumbnails"
 THUMB_TIMESTAMP = 1.5
@@ -76,6 +115,7 @@ RETRY_DELAY_S   = 3
 MIN_FILE_SIZE_MB = 0.5
 MAX_FILE_SIZE_MB = 200.0
 
+# ── Grading de cor por gênero ──────────────────────────────────────────────
 GENRE_COLOR_GRADE = {
     "phonk": (
         "colorbalance=rs=0.28:gs=-0.12:bs=-0.18,"
@@ -182,6 +222,10 @@ GENRE_ENERGY_RGBA = {
 }
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# UTILITÁRIOS
+# ══════════════════════════════════════════════════════════════════════════════
+
 def get_duration(path: str) -> float:
     cmd = [
         "ffprobe", "-v", "error",
@@ -259,6 +303,118 @@ def clean_song_name(audio_path: str, override: str = "") -> str:
 def logo_exists() -> bool:
     return os.path.exists(LOGO_PATH)
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# SISTEMA DE LOGO BEAT-REACTIVE v6.0
+# ══════════════════════════════════════════════════════════════════════════════
+
+def build_logo_pulse_expr(analysis: dict, base_width: int) -> str:
+    """
+    Constrói a expressão FFmpeg de largura da logo que reage ao beat.
+
+    A expressão usa `t` (tempo em segundos) para calcular a distância
+    até cada batida e aplica um envelope de decaimento linear.
+
+    Mapa de intensidade:
+        Beat fraco   → +6%  scale  (pulse sutil, sempre presente)
+        Bass / kick  → +20% scale  (impacto visível)
+        Drop         → +38% scale  (máximo impacto, glow explode)
+    """
+    beats     = analysis.get("beats", [])
+    bass_hits = analysis.get("bass_hits", [])
+    drop_time = analysis.get("drop_time")
+
+    parts = []
+
+    # ── Beats fracos ──────────────────────────────────────────────────
+    for t in beats[:LOGO_MAX_BEATS]:
+        parts.append(
+            f"{LOGO_PULSE_BEAT_STRENGTH:.3f}"
+            f"*max(0,1-abs(t-{t:.4f})/{LOGO_PULSE_BEAT_DECAY:.3f})"
+        )
+
+    # ── Bass / kick ────────────────────────────────────────────────────
+    for t in bass_hits[:LOGO_MAX_BASS_HITS]:
+        parts.append(
+            f"{LOGO_PULSE_BASS_STRENGTH:.3f}"
+            f"*max(0,1-abs(t-{t:.4f})/{LOGO_PULSE_BASS_DECAY:.3f})"
+        )
+
+    # ── Drop ───────────────────────────────────────────────────────────
+    if drop_time is not None:
+        parts.append(
+            f"{LOGO_PULSE_DROP_STRENGTH:.3f}"
+            f"*max(0,1-abs(t-{drop_time:.4f})/{LOGO_PULSE_DROP_DECAY:.3f})"
+        )
+
+    if parts:
+        pulse_sum = "+".join(parts)
+        return f"({base_width}*(1+{pulse_sum}))"
+
+    return str(base_width)
+
+
+def build_logo_center_overlay_filter(analysis: dict) -> str:
+    """
+    Gera os segmentos do filter_complex para a logo centralizada
+    com pulse beat-reactive e camada de glow animada.
+
+    Grafo de filtros:
+        [1:v]
+          └─ scale(w=beat_expr, eval=frame)   ← tamanho pulsa com o beat
+          └─ format(rgba) + opacity
+          └─ split ─────────────────────────────┐
+               ├─ [ls_sharp]                    │  (logo nítida, centro)
+               └─ [ls_glow_src]                 │
+                    └─ scale(iw*1.45)            │  ← glow maior (e também pulsa!)
+                    └─ boxblur(14)               │
+                    └─ colorchannelmixer(brilho) │
+                    └─ [logo_glow] (centro, sob a sharp)
+        [base][logo_glow] overlay(center) → [bg_glow]
+        [bg_glow][ls_sharp] overlay(center) → [vout]
+    
+    Nota: como o glow é derivado do ls_glow_src (que já veio do split
+    pós-scale), ele TAMBÉM pulsa com o beat → glow reativo automático.
+    """
+    base_w     = int(1080 * LOGO_BASE_WIDTH_RATIO)
+    pulse_expr = build_logo_pulse_expr(analysis, base_w)
+
+    # Posição central (ligeiramente abaixo do meio)
+    cx = "(W-w)/2"
+    cy = f"H*{LOGO_CENTER_Y_RATIO:.2f}-h/2"
+
+    return (
+        # ── 1. Scale beat-reactive + opacidade ────────────────────────
+        f"[1:v]"
+        f"scale=w='{pulse_expr}':h=-1:eval=frame,"
+        f"format=rgba,"
+        f"colorchannelmixer=aa={LOGO_OPACITY:.2f}"
+        f"[logo_scaled];"
+
+        # ── 2. Split: sharp + fonte do glow ───────────────────────────
+        f"[logo_scaled]split=2[ls_sharp][ls_glow_src];"
+
+        # ── 3. Criar camada de glow ────────────────────────────────────
+        #    iw*GLOW_SCALE usa a largura já beat-reactive → glow reativo!
+        f"[ls_glow_src]"
+        f"scale=iw*{LOGO_GLOW_SCALE:.2f}:-1,"
+        f"boxblur={LOGO_GLOW_BLUR}:2,"
+        f"colorchannelmixer="
+        f"rr={LOGO_GLOW_BRIGHTNESS:.1f}:"
+        f"gg={LOGO_GLOW_BRIGHTNESS:.1f}:"
+        f"bb={LOGO_GLOW_BRIGHTNESS:.1f}:"
+        f"aa={LOGO_GLOW_OPACITY:.2f}"
+        f"[logo_glow];"
+
+        # ── 4. Compositing: glow embaixo, logo nítida em cima ─────────
+        f"[base][logo_glow]overlay=x='{cx}':y='{cy}':format=auto[bg_glow];"
+        f"[bg_glow][ls_sharp]overlay=x='{cx}':y='{cy}':format=auto[vout]"
+    )
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# FILTROS DE ÁUDIO E VÍDEO
+# ══════════════════════════════════════════════════════════════════════════════
 
 def build_audio_filter(duration: float) -> str:
     fo_start = max(0.0, duration - AUDIO_FADE_OUT)
@@ -414,15 +570,9 @@ def build_watermark(font: str) -> str:
     )
 
 
-def build_logo_overlay_filter() -> str:
-    logo_w = int(1080 * LOGO_RELATIVE_WIDTH)
-    return (
-        f"[1:v]scale={logo_w}:-1,format=rgba,"
-        f"colorchannelmixer=aa={LOGO_OPACITY}[logo];"
-        f"[base][logo]overlay="
-        f"x=W-w-{LOGO_MARGIN_X}:y=H-h-{LOGO_MARGIN_Y}:format=auto[vout]"
-    )
-
+# ══════════════════════════════════════════════════════════════════════════════
+# ZOOM HIPNÓTICO DO FUNDO
+# ══════════════════════════════════════════════════════════════════════════════
 
 def build_elite_zoom(
     analysis: dict, duration: float, fps: int,
@@ -439,9 +589,16 @@ def build_elite_zoom(
     heavy = style in {"phonk", "metal", "rock", "trap", "electronic", "funk"}
     zoom_mult = 1.4 if heavy else 1.0
 
+    # ── Zoom cíclico base (movimento hipnótico) ────────────────────────────
     base  = f"(1.0 + {zoom_speed * zoom_mult}*(0.5-0.5*cos(2*PI*on/{total_frames})))"
-    drift = f"({pulse_strength * 0.6}*sin(on*0.06+0.2)*cos(on*0.028))"
 
+    # ── Drift multi-axis senoidal (mais orgânico que v5) ──────────────────
+    drift = (
+        f"({pulse_strength * 0.6}*sin(on*0.06+0.2)*cos(on*0.028)+"
+        f"{pulse_strength * 0.3}*sin(on*0.11+1.4))"
+    )
+
+    # ── Pulsos nos beats ───────────────────────────────────────────────────
     beat_pulse = "0"
     if beats:
         parts = [
@@ -450,6 +607,7 @@ def build_elite_zoom(
         ]
         beat_pulse = f"({'+'.join(parts)})"
 
+    # ── Pulso de bass / kick ───────────────────────────────────────────────
     bass_pulse = "0"
     if bass_hits:
         intensity = 0.018 if heavy else 0.011
@@ -459,6 +617,7 @@ def build_elite_zoom(
         ]
         bass_pulse = f"({'+'.join(parts)})"
 
+    # ── Punch no drop ─────────────────────────────────────────────────────
     drop_punch = DROP_ZOOM_PUNCH * (1.5 if heavy else 1.0)
     drop_expr = "0"
     if drop_time is not None:
@@ -509,10 +668,15 @@ def build_elite_shake(analysis: dict, sx: int, sy: int, style: str = "default"):
     return shake_x, shake_y
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# FILTROS COMPLETOS (sem logo — a logo é adicionada via filter_complex)
+# ══════════════════════════════════════════════════════════════════════════════
+
 def build_image_filter(
     profile: dict, analysis: dict, duration: float,
     song_name: str, style: str,
 ) -> str:
+    """Filtro para fundo estático (imagem PNG/JPG gerada por AI)."""
     fps  = profile["fps"]
     font = get_font()
     brightness_expr = build_combined_brightness(profile, analysis)
@@ -556,6 +720,7 @@ def build_video_filter(
     profile: dict, analysis: dict, duration: float,
     song_name: str, style: str,
 ) -> str:
+    """Filtro para fundo de vídeo (MP4/MOV)."""
     fps  = profile["fps"]
     font = get_font()
     brightness_expr = build_combined_brightness(profile, analysis)
@@ -588,16 +753,28 @@ def build_video_filter(
     return ",".join(parts)
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# MONTAGEM DO COMANDO FFMPEG
+# ══════════════════════════════════════════════════════════════════════════════
+
 def _build_cmd(
     inputs: list, vf_or_complex: str,
     is_complex: bool, use_logo: bool,
     audio_filter: str, dur: float, output_name: str,
+    audio_input_idx: int = 1,
 ) -> list:
+    """
+    Monta o comando FFmpeg final.
+
+    Parâmetro audio_input_idx indica qual input é o áudio:
+    - sem logo: áudio é input [1]
+    - com logo: áudio é input [2] (logo é [1])
+    """
     cmd = ["ffmpeg", "-y"] + inputs + ["-t", str(dur)]
 
     if is_complex:
         cmd += ["-filter_complex", vf_or_complex]
-        cmd += ["-map", "[vout]", "-map", f"{'2' if use_logo else '1'}:a"]
+        cmd += ["-map", "[vout]", "-map", f"{audio_input_idx}:a"]
     else:
         cmd += ["-vf", vf_or_complex, "-map", "0:v", "-map", "1:a"]
 
@@ -615,6 +792,10 @@ def _build_cmd(
     ]
     return cmd
 
+
+# ══════════════════════════════════════════════════════════════════════════════
+# VALIDAÇÃO E THUMBNAIL
+# ══════════════════════════════════════════════════════════════════════════════
 
 def validate_output(output_path: str, expected_duration: float) -> dict:
     if not os.path.exists(output_path):
@@ -673,6 +854,10 @@ def generate_thumbnail(
         return None
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# FUNÇÃO PRINCIPAL — create_short
+# ══════════════════════════════════════════════════════════════════════════════
+
 def create_short(
     audio_path: str,
     background_path: str,
@@ -695,11 +880,13 @@ def create_short(
     logger.info(f"▶ Gerando Short: '{song_name}' | estilo={style}")
     logger.info(f"  ► Energy color: {GENRE_ENERGY_COLOR.get(style, 'default')}")
 
+    # ── Análise de áudio ──────────────────────────────────────────────────
     logger.info("  ► Analisando áudio (kick isolation ativa)…")
     analysis_full = full_analysis(audio_path)
     bpm           = analysis_full.get("bpm")
     audio_dur     = get_duration(audio_path)
 
+    # ── Janela de tempo ───────────────────────────────────────────────────
     if use_smart_window:
         dur = random.randint(MIN_DURATION, min(MAX_DURATION, int(audio_dur)))
         try:
@@ -717,38 +904,76 @@ def create_short(
     kicks    = len(analysis.get("bass_hits", []))
     beats    = len(analysis.get("beats", []))
     bpm_text = f"{bpm:.1f}" if bpm else "N/A"
-    logger.info(f"  ► {kicks} | Beats: {beats} | BPM: {bpm_text}")
+    logger.info(f"  ► Kicks: {kicks} | Beats: {beats} | BPM: {bpm_text}")
+
+    # Log do drop detectado
+    drop_time = analysis.get("drop_time")
+    if drop_time is not None:
+        logger.info(f"  ► Drop detectado em: {drop_time:.2f}s")
+    else:
+        logger.info("  ► Drop: não detectado")
 
     profile      = get_profile_for_bpm(bpm, style)
     audio_filter = build_audio_filter(dur)
     use_logo     = logo_exists()
 
+    if use_logo:
+        logger.info(f"  ► Logo encontrada: {LOGO_PATH} → modo CENTRO beat-reactive")
+    else:
+        logger.info(f"  ⚠ Logo não encontrada em '{LOGO_PATH}' — renderizando sem logo")
+
     ext      = Path(background_path).suffix.lower() if background_path else ""
     is_image = ext in (".jpg", ".jpeg", ".png", ".webp", ".bmp")
     is_video = ext in (".mp4", ".mov", ".mkv", ".webm", ".gif")
 
+    # ── IMAGEM como fundo ─────────────────────────────────────────────────
     if is_image:
         base_vf = build_image_filter(profile, analysis, dur, song_name, style)
-        if use_logo:
-            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = ["-loop", "1", "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
-        else:
-            inputs = ["-loop", "1", "-i", background_path, "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
+        if use_logo:
+            # filter_complex: fundo → [base]; logo beat-reactive → [vout]
+            logo_fc = build_logo_center_overlay_filter(analysis)
+            fc = f"[0:v]{base_vf}[base];{logo_fc}"
+            inputs = [
+                "-loop", "1", "-i", background_path,   # [0] fundo
+                "-i", LOGO_PATH,                         # [1] logo
+                "-ss", str(start), "-i", audio_path,     # [2] áudio
+            ]
+            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
+                             audio_input_idx=2)
+        else:
+            inputs = [
+                "-loop", "1", "-i", background_path,   # [0] fundo
+                "-ss", str(start), "-i", audio_path,     # [1] áudio
+            ]
+            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name,
+                             audio_input_idx=1)
+
+    # ── VÍDEO como fundo ──────────────────────────────────────────────────
     elif is_video:
         bg_dur   = get_duration(background_path)
         bg_start = 0.0 if bg_dur <= dur else random.uniform(0.0, bg_dur - dur)
         base_vf  = build_video_filter(profile, analysis, dur, song_name, style)
-        if use_logo:
-            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = ["-ss", str(bg_start), "-i", background_path, "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
-        else:
-            inputs = ["-ss", str(bg_start), "-i", background_path, "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
+        if use_logo:
+            logo_fc = build_logo_center_overlay_filter(analysis)
+            fc = f"[0:v]{base_vf}[base];{logo_fc}"
+            inputs = [
+                "-ss", str(bg_start), "-i", background_path,  # [0] vídeo
+                "-i", LOGO_PATH,                                # [1] logo
+                "-ss", str(start), "-i", audio_path,            # [2] áudio
+            ]
+            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
+                             audio_input_idx=2)
+        else:
+            inputs = [
+                "-ss", str(bg_start), "-i", background_path,  # [0] vídeo
+                "-ss", str(start), "-i", audio_path,            # [1] áudio
+            ]
+            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name,
+                             audio_input_idx=1)
+
+    # ── FALLBACK: fundo preto ─────────────────────────────────────────────
     else:
         font    = get_font()
         hook    = build_hook_text(song_name, style, font, dur)
@@ -758,14 +983,26 @@ def create_short(
         energy  = build_energy_ring(analysis, dur, style, font)
         genre_g = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
         base_vf = f"{genre_g},{energy},{fade},{hook},{pbar},{wtmk}"
-        if use_logo:
-            fc     = f"[0:v]{base_vf}[base];{build_logo_overlay_filter()}"
-            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-i", LOGO_PATH, "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name)
-        else:
-            inputs = ["-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}", "-ss", str(start), "-i", audio_path]
-            cmd    = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name)
 
+        if use_logo:
+            logo_fc = build_logo_center_overlay_filter(analysis)
+            fc = f"[0:v]{base_vf}[base];{logo_fc}"
+            inputs = [
+                "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",  # [0]
+                "-i", LOGO_PATH,                                               # [1]
+                "-ss", str(start), "-i", audio_path,                          # [2]
+            ]
+            cmd = _build_cmd(inputs, fc, True, True, audio_filter, dur, output_name,
+                             audio_input_idx=2)
+        else:
+            inputs = [
+                "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",  # [0]
+                "-ss", str(start), "-i", audio_path,                          # [1]
+            ]
+            cmd = _build_cmd(inputs, base_vf, False, False, audio_filter, dur, output_name,
+                             audio_input_idx=1)
+
+    # ── Render ────────────────────────────────────────────────────────────
     logger.info("  ► Iniciando render…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
@@ -810,6 +1047,10 @@ def create_short(
     return result
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# BATCH
+# ══════════════════════════════════════════════════════════════════════════════
+
 def generate_batch(
     tasks: list[dict], output_dir: str = "output",
     auto_thumbnail: bool = True, upload: bool = False,
@@ -844,9 +1085,13 @@ def generate_batch(
     return results
 
 
+# ══════════════════════════════════════════════════════════════════════════════
+# CLI
+# ══════════════════════════════════════════════════════════════════════════════
+
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v5")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v6 — Logo Beat-Reactive")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
