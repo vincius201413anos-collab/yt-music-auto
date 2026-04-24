@@ -1,6 +1,11 @@
 """
-main.py — Bot de automação YouTube Shorts v4.2
+main.py — Bot de automação YouTube Shorts v4.3
 ===============================================
+CORREÇÃO v4.3:
+- Força upload e backup a usarem o arquivo FINAL do Remotion quando ele existir.
+- Corrige o caso em que o Remotion renderiza certo, mas o Shorts ainda sobe o vídeo base.
+- Mantém fallback no vídeo base somente se o Remotion falhar.
+
 CORREÇÃO v4.2:
 - Integra Remotion no fluxo principal.
 - O bot gera o vídeo base com FFmpeg/create_short.
@@ -907,6 +912,28 @@ def run_remotion_overlay(
     log(f"Vídeo final Remotion pronto: {output_abs}")
     return str(output_abs)
 
+
+def choose_upload_video(base_video_path: str, remotion_video_path: str) -> str:
+    """
+    Decide qual vídeo será enviado.
+
+    Regra:
+    - Se o Remotion gerou um arquivo válido, SEMPRE usa o Remotion.
+    - Se o Remotion falhou, usa o vídeo base como fallback.
+    """
+    base_abs = Path(base_video_path).resolve()
+    remotion_abs = Path(remotion_video_path).resolve()
+
+    if remotion_abs.exists() and remotion_abs.stat().st_size > 100_000:
+        log(f"OK: arquivo FINAL do Remotion encontrado: {remotion_abs}")
+        return str(remotion_abs)
+
+    log("ATENÇÃO: arquivo FINAL do Remotion não encontrado ou inválido.")
+    log(f"Fallback: usando vídeo base: {base_abs}")
+    return str(base_abs)
+
+
+
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
 
@@ -1081,7 +1108,7 @@ def main():
 
         log(f"Vídeo base pronto: {video_base_ready}")
 
-        video_path = run_remotion_overlay(
+        remotion_result_path = run_remotion_overlay(
             base_video_path=video_base_ready,
             output_path=final_video_path,
             audio_data_path=audio_data_path,
@@ -1090,11 +1117,19 @@ def main():
             song_name=title_base,
         )
 
-        if str(video_path) == str(video_base_ready):
-            log("ATENÇÃO: upload vai usar vídeo BASE. Remotion não gerou overlay final.")
+        # O upload precisa usar o arquivo FINAL do Remotion quando ele existir.
+        # Aqui validamos direto pelo caminho esperado final_video_path.
+        video_path = choose_upload_video(
+            base_video_path=video_base_ready,
+            remotion_video_path=final_video_path,
+        )
+
+        if Path(video_path).resolve() == Path(video_base_ready).resolve():
+            log("ATENÇÃO: upload vai usar vídeo BASE. Remotion não gerou overlay final válido.")
         else:
             log("OK: upload vai usar vídeo FINAL do Remotion com overlay/ícone.")
 
+        log(f"Retorno run_remotion_overlay: {remotion_result_path}")
         log(f"Vídeo que será enviado: {video_path}")
 
         title       = build_title(title_base, style, short_num)
