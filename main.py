@@ -402,19 +402,6 @@ HOOKS_IDENTIDADE = {
     ],
 }
 
-# ══════════════════════════════════════════════════════════════════════════════
-# SISTEMA DE TÍTULOS — PREFIXO DE GÊNERO SEMPRE PRIMEIRO
-# ══════════════════════════════════════════════════════════════════════════════
-#
-# Estrutura final de todo título:
-#   [GENRE PREFIX] [SEP] [HOOK] — DJ darkMark
-#
-# Exemplos:
-#   Phonk Music 😈 — você não tava preparado · DJ darkMark
-#   💎 Trap Music | as ruas já sabem — DJ darkMark
-#   Electronic Music ⚡ ✦ o drop bateu antes do cérebro — DJ darkMark
-# ══════════════════════════════════════════════════════════════════════════════
-
 GENRE_EMOJI = {
     "phonk":      "🌑",
     "trap":       "💎",
@@ -430,7 +417,6 @@ GENRE_EMOJI = {
     "default":    "🎵",
 }
 
-# Múltiplas variações de prefixo por gênero — feed sempre variado
 GENRE_PREFIXES = {
     "phonk":      ["Phonk Music 😈", "🖤 Phonk Music", "Dark Phonk 🌑", "Phonk Vibes 😈", "💀 Phonk Music", "Phonk Mode 🖤", "Drift Phonk 😈"],
     "trap":       ["Trap Music 🔥", "💎 Trap Music", "Hard Trap 🔥", "Trap Banger 💎", "🔥 Trap Vibes", "Trap Mode 😤", "Street Trap 🔥"],
@@ -446,10 +432,8 @@ GENRE_PREFIXES = {
     "default":    ["Music 🎵", "🔥 New Music", "Music Vibes 🎧", "🎧 Underground", "New Music 🔥"],
 }
 
-# Separadores rotativos — variam a cada vídeo
 TITLE_SEPARATORS = [" — ", " | ", " · ", " ✦ ", " » ", " ▸ "]
 
-# Templates: gênero SEMPRE primeiro, DJ darkMark sempre presente
 TITLE_TEMPLATES = [
     "{genre_prefix}{sep}{hook} — DJ darkMark",
     "{genre_prefix}{sep}{hook} | DJ darkMark",
@@ -469,16 +453,13 @@ def _dhash(text: str) -> int:
 def build_title(base: str, style: str, short_num: int) -> str:
     emoji = GENRE_EMOJI.get(style, "🎵")
 
-    # Prefixo de gênero — determinístico mas variado por short_num
     prefix_pool = GENRE_PREFIXES.get(style, GENRE_PREFIXES["default"])
     prefix_seed = _dhash(f"{base}|prefix|{short_num}")
     genre_prefix = prefix_pool[prefix_seed % len(prefix_pool)]
 
-    # Separador — determinístico e variado
     sep_seed = _dhash(f"{base}|sep|{short_num}")
     sep = TITLE_SEPARATORS[sep_seed % len(TITLE_SEPARATORS)]
 
-    # Hook — 3 camadas rotativas por short_num
     hook_layers = [
         HOOKS_CURIOSIDADE.get(style, HOOKS_CURIOSIDADE["default"]),
         HOOKS_EMOCIONAL.get(style, HOOKS_EMOCIONAL["default"]),
@@ -488,7 +469,6 @@ def build_title(base: str, style: str, short_num: int) -> str:
     hook_seed = _dhash(f"{base}|hook|{short_num}")
     hook = layer[hook_seed % len(layer)]
 
-    # Template — determinístico
     tmpl_seed = _dhash(f"{base}|tmpl|{short_num}")
     template = TITLE_TEMPLATES[tmpl_seed % len(TITLE_TEMPLATES)]
 
@@ -743,16 +723,6 @@ def run_remotion_overlay(
     style: str = "default",
     song_name: str = "",
 ) -> str:
-    """
-    Renderiza o vídeo final pelo Remotion.
-
-    Melhorias:
-    - Aceita REMOTION_ENTRY como index.ts ou remotion/index.ts.
-    - Usa caminhos absolutos para evitar saída no lugar errado.
-    - Copia input.mp4, audio_data.json e logo.png para remotion/public.
-    - Faz validação antes e depois do render.
-    - Se Remotion falhar, mantém fallback no vídeo base para não perder postagem.
-    """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
         return base_video_path
@@ -847,7 +817,6 @@ def run_remotion_overlay(
 
     output_abs.parent.mkdir(parents=True, exist_ok=True)
 
-    # Remove output antigo para evitar falso positivo.
     if output_abs.exists():
         try:
             output_abs.unlink()
@@ -863,7 +832,9 @@ def run_remotion_overlay(
         str(output_abs),
         "--overwrite",
         "--concurrency",
-        "2",
+        "1",
+        "--timeout",
+        "300000",
     ]
 
     log("Renderizando overlay/ícone com Remotion...")
@@ -914,13 +885,6 @@ def run_remotion_overlay(
 
 
 def choose_upload_video(base_video_path: str, remotion_video_path: str) -> str:
-    """
-    Decide qual vídeo será enviado.
-
-    Regra:
-    - Se o Remotion gerou um arquivo válido, SEMPRE usa o Remotion.
-    - Se o Remotion falhou, usa o vídeo base como fallback.
-    """
     base_abs = Path(base_video_path).resolve()
     remotion_abs = Path(remotion_video_path).resolve()
 
@@ -931,7 +895,6 @@ def choose_upload_video(base_video_path: str, remotion_video_path: str) -> str:
     log("ATENÇÃO: arquivo FINAL do Remotion não encontrado ou inválido.")
     log(f"Fallback: usando vídeo base: {base_abs}")
     return str(base_abs)
-
 
 
 def publish(video_path: str, title: str, description: str) -> dict:
@@ -1117,8 +1080,6 @@ def main():
             song_name=title_base,
         )
 
-        # O upload precisa usar o arquivo FINAL do Remotion quando ele existir.
-        # Aqui validamos direto pelo caminho esperado final_video_path.
         video_path = choose_upload_video(
             base_video_path=video_base_ready,
             remotion_video_path=final_video_path,
