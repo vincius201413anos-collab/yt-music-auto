@@ -23,6 +23,10 @@ FIX v8.2 SAFE RUNNER:
 - IMPORTANTE: este arquivo gera a base FFmpeg. Se o log travar em "Iniciando render Remotion",
   o ponto final do travamento está no arquivo que chama o Remotion depois deste gerador.
 
+V11.1 HOTFIX DRAWBOX ALPHA:
+- Corrigido alpha dinâmico no drawbox: FFmpeg do GitHub Actions não aceita @expressao com sin(t).
+- Mantida vibe hipnótica com alpha fixo seguro para não quebrar o render.
+
 V11 FINAL VIBRANT HYPNOTIC:
 - Luzes vibrantes no beat/kick com overlays neon bonitos e controlados.
 - Glitch mais forte no drop, sem pesar demais no GitHub.
@@ -679,17 +683,17 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
     # Respiração constante bem leve — evita imagem morta/parada.
     filters.append(
         f"drawbox=x=0:y=0:w=iw:h=ih:color={c2}@"
-        f"'{0.010*intensity:.4f}+{0.010*intensity:.4f}*(0.5+0.5*sin(t*1.35))':t=fill"
+        f"{0.016*intensity:.4f}:t=fill"
     )
 
     # Luzes laterais respirando, estilo palco/club.
     filters.append(
         f"drawbox=x=0:y=0:w=iw*0.10:h=ih:color={c1}@"
-        f"'{0.024*intensity:.4f}+{0.018*intensity:.4f}*(0.5+0.5*sin(t*2.10))':t=fill"
+        f"{0.030*intensity:.4f}:t=fill"
     )
     filters.append(
         f"drawbox=x=iw*0.90:y=0:w=iw*0.10:h=ih:color={c2}@"
-        f"'{0.024*intensity:.4f}+{0.018*intensity:.4f}*(0.5+0.5*sin(t*2.35+1.2))':t=fill"
+        f"{0.030*intensity:.4f}:t=fill"
     )
 
     # Beat geral: flashes curtos e suaves. Dá vida sem poluir.
@@ -783,11 +787,11 @@ def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
     # Glow fixo sutil no rosto/olhos.
     filters.append(
         f"drawbox=x=iw*0.36:y=ih*0.215:w=iw*0.28:h=ih*0.080:"
-        f"color={c1}@'0.020+0.014*(0.5+0.5*sin(t*2.2))':t=fill"
+        f"color={c1}@0.027:t=fill"
     )
     filters.append(
         f"drawbox=x=iw*0.42:y=ih*0.245:w=iw*0.16:h=ih*0.018:"
-        f"color={c2}@'0.055+0.035*(0.5+0.5*sin(t*3.4))':t=fill"
+        f"color={c2}@0.070:t=fill"
     )
 
     # Pulso de olhos no grave.
