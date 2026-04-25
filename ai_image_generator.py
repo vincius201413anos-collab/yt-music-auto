@@ -1,12 +1,11 @@
 """
-ai_image_generator.py — v10.0 VIRAL ANIME CYBERPUNK GIRLS EDITION
+ai_image_generator.py — v11.0 DARKMARK VIRAL RETENTION PACK
 ============================================================
-VERSÃO V10 VIRAL APERFEIÇOADA:
-- Mantém a inteligência do v6: variação por conceito visual A/B/C/D.
-- Mantém a força do v7: anime cyberpunk girl, neon, chuva, cidade, trap/phonk.
-- Evita repetição: não é sempre a mesma personagem igual template.
-- Mantém identidade: garotas anime bonitas, fofas/atraentes, cyberpunk neon, vibe trap/phonk.
-- Prompts mais específicos, menos genéricos, menos “AI slop”.
+FINALIDADE:
+- Gerar imagens mais parecidas com referências virais de anime dark/phonk.
+- Menos imagem genérica de IA, menos 3D, menos realismo.
+- Mais: anime edit, olhos brilhando, sombra pesada, neon roxo/rosa/vermelho/verde,
+  composição forte para Shorts, rosto/olhos impactantes e variações boas.
 - Compatível com o pipeline antigo: build_ai_prompt(...) e generate_image(...).
 """
 
@@ -32,17 +31,17 @@ logger = logging.getLogger("ai_image_generator")
 
 REPLICATE_API_TOKEN = os.environ.get("REPLICATE_API_TOKEN", "")
 
-# Mantém compatibilidade com flux-dev usado no seu bot.
 REPLICATE_MODELS = [
     "black-forest-labs/flux-dev",
 ]
 
-# Caso seu main.py use generate_background_image(), esses params entram.
+# FLUX-dev tende a responder melhor com prompt direto + steps/guidance controlados.
+# 1080x1920 mantém o pipeline Shorts sem precisar redimensionar.
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": 40,
-    "guidance_scale": 7.8,
+    "num_inference_steps": 42,
+    "guidance_scale": 8.2,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -51,425 +50,271 @@ FLUX_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════
-# IDENTIDADE VISUAL — FIXA, MAS NÃO REPETITIVA
+# IDENTIDADE VISUAL — baseada nas referências enviadas
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
-    "DJ darkMark visual identity, viral anime cyberpunk music visual, "
-    "trap and phonk energy, beautiful neon anime girl, cute but stylish, "
-    "high quality YouTube Shorts background, aesthetic and scroll-stopping"
+    "DJ darkMark visual identity, dark anime edit, viral phonk cover art, "
+    "YouTube Shorts music visualizer background, high-retention anime thumbnail"
 )
 
-# A identidade é fixa no ESTILO, não no mesmo rosto sempre.
+# Mais próximo das imagens que você mandou: dark anime, olhos neon, sombra pesada,
+# rosto marcante, composição simples e memorável. Sem realismo.
 CHARACTER_DNA = (
-    "one beautiful cyberpunk anime girl, adult woman, varied appearance, "
-    "pretty face, symmetrical features, soft but confident expression, captivating eyes, "
-    "cute attractive anime character design, clean face, glossy eyes, soft blush, "
-    "stylish futuristic streetwear, glossy black jacket or techwear outfit, platform-safe outfit, "
-    "subtle glowing neon tattoos on shoulder, arm, neck or upper back, "
-    "small cybernetic details, glowing purple or cyan eyes, clean lighting on face, "
-    "alone in frame, aesthetic, charming, visually pleasing, not scary, not ugly, "
-    "viral anime thumbnail style, high retention YouTube Shorts background"
+    "one adult anime girl, dark cute gothic cyberpunk girl, beautiful face, "
+    "large glowing eyes, hypnotic gaze, sharp anime eyes, tiny fang smile or calm mysterious expression, "
+    "black or white hair, messy bangs, twin tails or long flowing hair, "
+    "cat-ear hoodie or small demon horns optional, black techwear or gothic streetwear, "
+    "choker, oversized dark hoodie or glossy black jacket, platform-safe outfit, "
+    "clean anime face, soft blush, strong silhouette, alone in frame, no crowd"
 )
 
-CYBERPUNK_STYLE_DNA = (
-    "beautiful anime key visual, premium cel shading, clean sharp lineart, "
-    "polished modern anime illustration, soft cinematic shading, "
-    "Cyberpunk Edgerunners inspired neon color direction but prettier and cleaner, "
-    "dynamic 9:16 vertical portrait, deep black shadows, vivid neon bloom, "
-    "rain, fog, glossy reflections, soft bokeh lights"
+ANIME_STYLE_DNA = (
+    "2D anime illustration only, anime edit style, manga cover energy, phonk cover art, "
+    "sharp line art, crisp cel shading, halftone shadow texture optional, high contrast ink shadows, "
+    "glowing neon eyes, deep black background, dark purple shadows, hot pink neon, cyan rim light, "
+    "red eye glow, green toxic glow optional, intense but clean composition"
 )
 
-BACKGROUND_DNA = (
-    "cyberpunk city at night, heavy rain, wet asphalt reflections, "
-    "neon signs, holographic billboards, dark alleys, rooftop edges, "
-    "underground parking lots, drifting smoke, volumetric fog, "
-    "purple cyan magenta and blood red neon lighting, cinematic depth"
-)
-
-LIGHTING_DNA = (
-    "soft neon rim lighting, magenta backlight, cyan side light, pink highlights, "
-    "beautiful face lighting, glossy rain reflections, lens flare, bokeh neon background, "
-    "glowing particles, subtle light streaks, rain droplets catching light, reflective wet surfaces"
+RETENTION_DNA = (
+    "scroll stopping first frame, strong centered focal point, face and eyes readable on phone screen, "
+    "simple powerful composition, high contrast, not cluttered, memorable silhouette, "
+    "dark background with one dominant neon glow, space near lower center for audio waveform or DJ logo, "
+    "viral anime pfp aesthetic, album cover aesthetic, music visualizer background"
 )
 
 QUALITY_TAGS = (
-    "masterpiece, best quality, ultra-detailed anime illustration, "
-    "beautiful anime girl, polished professional anime key visual, "
-    "extremely sharp lineart, premium cel shading, soft skin shading, "
-    "cinematic composition, clean focal point, pretty face, attractive eyes, "
-    "deep rich blacks, luminous neon highlights, atmospheric depth, "
-    "volumetric neon lighting, glowing particles, wet reflections, "
-    "9:16 vertical format, viral YouTube Shorts anime background"
+    "masterpiece, best quality, high-end anime key visual, polished anime illustration, "
+    "ultra sharp lineart, clean anatomy, refined face, glossy detailed eyes, cinematic lighting, "
+    "deep blacks, luminous neon highlights, vibrant magenta, violet, red and cyan lighting, "
+    "beautiful anime girl, dark aesthetic, phonk aesthetic, 9:16 vertical"
 )
 
 NEGATIVE_PROMPT = (
-    "photorealistic, hyperrealistic, photography, 3d render, CGI, real human, "
-    "child, young teen, childish body, chibi, mascot, loli, schoolgirl, "
-    "nsfw, nude, explicit, revealing outfit, cleavage focus, fetish, lingerie, "
-    "multiple people, crowd, duplicate character, extra limbs, extra arms, extra legs, "
-    "extra fingers, missing fingers, fused fingers, bad hands, bad anatomy, broken anatomy, "
-    "deformed face, distorted face, melted face, asymmetrical eyes, lazy eye, cross eye, "
-    "ugly face, scary face, creepy smile, old face, masculine face, harsh expression, "
-    "malformed body, long neck, tiny head, huge head, plastic skin, uncanny valley, "
-    "text, watermark, signature, logo, letters, words, frame, border, username, UI, poster text, "
-    "blurry, low quality, low resolution, noisy, muddy colors, washed out colors, dull colors, "
-    "bright daylight, flat lighting, boring composition, empty background, plain studio background, "
-    "generic AI image, generic purple gradient, repetitive, forgettable, AI slop, amateur art, bad perspective, "
-    "green dominant, yellow dominant, brown dominant, orange sunset dominant"
+    "photorealistic, realistic, photography, real person, 3d render, CGI, doll, plastic skin, "
+    "child, teen, childish body, loli, schoolgirl, chibi, mascot, baby face, "
+    "nsfw, nude, explicit, lingerie, fetish, cleavage focus, overly revealing outfit, "
+    "ugly, creepy, horror monster, gore, blood splatter, deformed face, bad anatomy, bad hands, "
+    "extra fingers, missing fingers, extra arms, extra legs, fused limbs, long neck, tiny head, "
+    "asymmetrical eyes, lazy eye, crossed eyes, distorted mouth, melted face, uncanny, "
+    "multiple people, crowd, duplicate character, text, letters, watermark, logo, signature, username, UI, "
+    "low quality, blurry, low resolution, muddy, washed out, dull colors, flat lighting, plain background, "
+    "generic AI art, generic purple gradient, boring composition, messy clutter, bad crop, "
+    "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES DE PERSONAGEM
+# VARIAÇÕES VISUAIS — mais próximas das referências
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "long black hair with glossy twin tails and violet neon rim light",
-    "soft black bob haircut with glowing magenta hair clips",
-    "long dark brown hair with wet strands and pink neon highlights",
-    "silver hair with black underlayer, soft bangs, wind blown in rain",
-    "long dark purple hair with subtle cybernetic hair accessory",
-    "black ponytail with cyan and magenta light reflections",
-    "messy black hair with cute face-framing strands, neon bokeh reflections",
-    "white hair with soft magenta tips, glossy rain highlights",
+    "long black hair with heavy bangs and red neon eye glow",
+    "black twin tails with hot pink and cyan highlights",
+    "white hair with black underlayer and glowing magenta eyes",
+    "messy black bob haircut, gothic bow accessory, red eyes",
+    "long blue hair in electric purple smoke, glowing cyan rim light",
+    "dark purple hair, wet strands, violet neon reflections",
+    "short black hair under oversized cat-ear hoodie, glowing eyes",
+    "long black hair flowing in rain, crimson rim light",
 ]
 
 EYE_VARIATIONS = [
-    "large glossy violet eyes with neon reflections",
-    "large glowing magenta eyes, cute but confident look",
-    "glowing cyan eyes with soft reflective highlights",
-    "one violet eye and one cyan cybernetic eye, pretty anime gaze",
-    "soft pink anime eyes with tiny circuit pattern in the iris",
+    "glowing red eyes, intense hypnotic stare",
+    "glowing violet eyes with glossy anime reflections",
+    "bright magenta eyes, cute dangerous smile",
+    "toxic green glowing eyes with supernatural flame aura",
+    "cyan and pink heterochromia, cyberpunk iris glow",
 ]
 
 OUTFIT_VARIATIONS = [
-    "glossy oversized black cyberpunk jacket with neon pink trim",
-    "stylish dark techwear outfit with glowing cyan lines, platform-safe",
-    "black futuristic streetwear with cute neon patches and rain reflections",
-    "cropped cyberpunk jacket over platform-safe dark top, elegant and stylish",
-    "hooded glossy black jacket with subtle purple neon seams",
-    "dark biker cyberpunk jacket with reflective wet leather texture",
+    "oversized black hoodie with cat-ear hood, neon rim light",
+    "black gothic techwear jacket with choker and subtle chains",
+    "dark cyberpunk jacket with glossy wet leather reflections",
+    "black streetwear outfit with purple glowing seams",
+    "gothic anime outfit with platform-safe top, collar and silver accessories",
+    "hooded shadow cloak with neon inner glow, cute dark anime style",
 ]
 
 POSE_VARIATIONS = [
-    "looking directly at camera with soft confident smile, cute intense gaze",
-    "standing in rain, glancing over shoulder at the viewer, pretty face focus",
-    "side profile with face half in soft neon light, calm dreamy expression",
-    "walking through neon rain, city lights blurred behind, cinematic mood",
-    "sitting on rooftop edge, neon city below, hair moving in wind",
-    "close up portrait with glowing eyes, rain drops on face, soft expression",
-    "medium shot, one hand touching cybernetic earpiece, stylish pose",
-    "three quarter pose, shoulder tattoo visible, gentle cyberpunk attitude",
+    "close-up portrait, eyes dominating the frame, slight fang smile",
+    "medium portrait, looking directly at viewer, calm dangerous expression",
+    "sitting in a dark neon room holding a phone, lonely midnight vibe",
+    "standing in rain with neon city bokeh behind, hair moving in wind",
+    "hood up, face half hidden in shadow, glowing eyes visible",
+    "three-quarter portrait, one hand near face, cute gothic expression",
+    "centered album-cover pose, shoulders visible, dark aura surrounding her",
 ]
 
 CAMERA_VARIATIONS = [
-    "close up portrait, face focus, shallow depth of field",
-    "medium shot, chest to crown framing, cinematic portrait",
-    "three quarter view, strong diagonal composition",
-    "over-the-shoulder portrait, shoulder tattoo visible, city bokeh behind",
-    "low angle but elegant shot, neon rain reflections",
-    "soft close up, eyes and neon reflections dominate",
+    "tight close-up portrait, face and eyes readable on phone screen",
+    "medium close-up, chest to crown framing, centered composition",
+    "album cover composition, character centered with strong neon aura",
+    "low angle cinematic portrait, dramatic rim light",
+    "soft close-up with shallow depth of field and neon bokeh",
 ]
 
-
-# ══════════════════════════════════════════════════════════════════════
-# ESTILOS ARTÍSTICOS — rota para não parecer tudo igual
-# ══════════════════════════════════════════════════════════════════════
-
 ART_STYLES = [
-    (
-        "premium polished anime illustration, beautiful character design, "
-        "clean sharp lineart, soft skin shading, vivid neon against deep black, "
-        "viral anime YouTube thumbnail aesthetic"
-    ),
-    (
-        "modern high-end anime key visual, glossy eyes, soft cinematic lighting, "
-        "rainy cyberpunk city bokeh, magenta and cyan neon glow"
-    ),
-    (
-        "cute but stylish dark anime cyberpunk illustration, refined face details, "
-        "clean cel shading, glowing particles, wet neon reflections"
-    ),
-    (
-        "anime music visualizer background style, polished cyberpunk girl portrait, "
-        "soft glow, lens flare, rain droplets, vibrant magenta cyan palette"
-    ),
+    "dark anime edit style, sharp manga lines, glowing eyes, high contrast black shadows",
+    "viral phonk album cover art, anime girl portrait, neon aura, clean silhouette",
+    "polished anime key visual, premium cel shading, hot pink and violet neon glow",
+    "gothic cyberpunk anime illustration, halftone manga texture, red eye glow",
+    "cute dark anime pfp aesthetic, clean face, luminous eyes, deep black background",
+]
+
+AURA_VARIATIONS = [
+    "purple lightning aura wrapping around her silhouette",
+    "red neon eye bloom and black smoke tendrils around the frame",
+    "toxic green flame aura shaped like cat ears behind her",
+    "hot pink glitch branches and electric particles around her",
+    "cyan rain reflections and magenta neon haze behind her",
+    "black ink shadows with violet sparks floating in the air",
 ]
 
 
 # ══════════════════════════════════════════════════════════════════════
 # CONCEITOS VISUAIS POR GÊNERO
-# A/B/C/D = character / scene / cinematic / abstract
 # ══════════════════════════════════════════════════════════════════════
 
 VISUAL_CONCEPTS = {
     "phonk": [
         {
-            "type": "character",
-            "label": "PHONK_CYBER_GIRL",
-            "anchor": "drift car headlights cutting through purple fog behind her",
+            "label": "PHONK_RED_EYES_CLOSEUP",
             "scene": (
-                "{character}, standing in an abandoned underground parking lot at 3am, "
-                "wet concrete reflecting blood red neon, drift car headlights cutting through purple fog behind her, "
-                "cassette tape ribbon unraveling around her boots, catchy phonk night drive energy, beautiful neon mood"
+                "{character}, {camera}, {pose}, black manga shadows, glowing red eyes, "
+                "dark room, crimson neon bloom, phonk album cover energy, {aura}"
             ),
-            "palette": "blood red, neon purple, cyan rim light, deep black shadows with soft neon glow",
+            "palette": "deep black, blood red, violet, tiny cyan edge light",
         },
         {
-            "type": "scene",
-            "label": "PHONK_NIGHT_DRIVE",
-            "anchor": "empty drift road reflected in cracked rearview mirror",
+            "label": "PHONK_CAT_HOOD",
             "scene": (
-                "empty cyberpunk highway at midnight, no dominant character, wet asphalt mirror reflections, "
-                "red taillights dissolving into fog, cracked rearview mirror reflecting a neon girl silhouette, "
-                "dark city signs flickering in purple rain"
+                "{character}, oversized cat-ear hoodie, centered portrait in rainy neon alley, "
+                "blue city lights behind, eyes glowing magenta, cute dark phonk vibe, {aura}"
             ),
-            "palette": "black asphalt, blood red taillights, violet fog, cyan neon edges",
+            "palette": "black, electric blue, magenta, purple haze",
         },
         {
-            "type": "cinematic",
-            "label": "PHONK_TUNNEL_GIRL",
-            "anchor": "massive red neon circle tunnel behind her",
+            "label": "PHONK_NIGHT_ROOM",
             "scene": (
-                "{character}, walking toward camera inside a massive underground tunnel, "
-                "enormous red neon circle portal behind her, water dripping from concrete ceiling, "
-                "her shadow stretches toward viewer, cinematic phonk cover art"
+                "{character}, sitting on floor in a dark cyberpunk bedroom, giant red ventilation fan behind her, "
+                "phone glow on face, lonely 3am phonk mood, wet neon shadows, {aura}"
             ),
-            "palette": "absolute black tunnel, crimson portal, purple haze, cold cyan edge light",
+            "palette": "red fan glow, cyan shadows, hot pink highlights, black room",
         },
         {
-            "type": "abstract",
-            "label": "PHONK_BASS_SHOCKWAVE",
-            "anchor": "808 bass shockwave cracking the city floor",
+            "label": "PHONK_DEMON_GIRL",
             "scene": (
-                "808 bass wave made visible as crimson shockwave cracking wet asphalt, "
-                "neon anime girl silhouette inside the wave, glass shards floating in slow motion, "
-                "vinyl record splitting under bass pressure"
+                "{character}, small black demon horns optional, mischievous smile, violet eyes, "
+                "hot pink background glow, anime pfp aesthetic, simple high-retention composition, {aura}"
             ),
-            "palette": "blood red shockwave, electric violet cracks, black void, cyan sparks",
+            "palette": "hot pink, cyan hair glow, black outfit, violet eyes",
         },
     ],
     "trap": [
         {
-            "type": "character",
-            "label": "TRAP_LUXURY_GIRL",
-            "anchor": "rain on penthouse glass reflecting neon city grid",
+            "label": "TRAP_LUXURY_DARK",
             "scene": (
-                "{character}, standing at floor-to-ceiling penthouse window at night, "
-                "rain on glass reflecting the entire neon city grid, luxury darkness, "
-                "soft confident expression, stylish trap cyberpunk energy"
+                "{character}, {camera}, dark luxury rooftop at night, neon city bokeh, glossy black outfit, "
+                "confident look, magenta eyes, trap cover art mood, {aura}"
             ),
-            "palette": "electric violet city, cyan reflections, black luxury interior, magenta highlights",
+            "palette": "black, violet, cyan, magenta shine",
         },
         {
-            "type": "scene",
-            "label": "TRAP_ROOFTOP",
-            "anchor": "violet glowing helipad in rain",
+            "label": "TRAP_GLITCH_PORTRAIT",
             "scene": (
-                "luxury cyberpunk rooftop at night, no dominant character, "
-                "helipad H marking glowing violet in rain puddle, storm clouds above, neon city below, "
-                "two abandoned glasses on ledge catching cyan light"
+                "{character}, close-up anime portrait, glitch light strips crossing the frame, "
+                "purple smoke, cyan rim light, expensive dark streetwear, {aura}"
             ),
-            "palette": "violet rain, cyan city lights, black sky, magenta reflections",
+            "palette": "purple, cyan, black, hot pink",
         },
         {
-            "type": "cinematic",
-            "label": "TRAP_CITY_CENTER",
-            "anchor": "girl as still center of moving neon city",
+            "label": "TRAP_PENTHOUSE_RAIN",
             "scene": (
-                "{character}, overhead shot on rooftop, looking up at camera, "
-                "entire neon city grid spreading around her like a circuit board, "
-                "she is the still center of the moving city"
+                "{character}, standing by rainy penthouse window, city grid reflected in glass, "
+                "neon jewelry sparkle, calm boss energy, {aura}"
             ),
-            "palette": "electric violet grid, cyan streets, black buildings, magenta eye glow",
-        },
-        {
-            "type": "abstract",
-            "label": "TRAP_808_ARCHITECTURE",
-            "anchor": "808 waveform rendered as neon architecture",
-            "scene": (
-                "808 waveform rendered as violet neon architecture floating in black void, "
-                "gold chain links dissolving into frequency particles, cyberpunk girl silhouette reflected in glass bass waves"
-            ),
-            "palette": "violet architecture, cyan frequency lines, black void, magenta highlights",
+            "palette": "blue-black glass, violet city, pink highlights",
         },
     ],
     "dark": [
         {
-            "type": "character",
-            "label": "DARK_MIRROR_GIRL",
-            "anchor": "mirror shards reflecting different versions of her face",
+            "label": "DARK_MANGA_RED_EYES",
             "scene": (
-                "{character}, surrounded by floating shattered mirror fragments in dark void, "
-                "each mirror shard reflecting a different angle of her glowing eyes, "
-                "purple fog, calm mysterious mood, beautiful and mysterious"
+                "{character}, extreme dark manga portrait, grayscale skin shading, glowing red eyes, "
+                "black hair swallowing the frame, minimal background, hypnotic face, {aura}"
             ),
-            "palette": "near black, crimson eyes, violet mirror edges, cyan rim light",
+            "palette": "black and gray, red eyes, faint violet edge light",
         },
         {
-            "type": "scene",
-            "label": "DARK_ABANDONED_DISTRICT",
-            "anchor": "abandoned arcade machine still glowing in rain",
+            "label": "DARK_MIRROR_SHARDS",
             "scene": (
-                "abandoned cyberpunk district at night, no dominant character, "
-                "one arcade machine still running in the rain, flickering violet screen, "
-                "fog at ground level, broken neon signs, dark vines on buildings"
+                "{character}, surrounded by shattered mirror shards, each shard reflecting neon eyes, "
+                "purple fog, black void, beautiful mysterious expression, {aura}"
             ),
-            "palette": "cold black, violet arcade glow, red neon fragments, rain silver",
+            "palette": "near black, violet, crimson eyes, cyan shard edges",
         },
         {
-            "type": "cinematic",
-            "label": "DARK_FLARE_GIRL",
-            "anchor": "single red emergency flare lighting flooded underground space",
+            "label": "DARK_HOOD_GIRL",
             "scene": (
-                "{character}, tiny figure in vast flooded underground space, "
-                "holding a single red emergency flare, water at ankle level reflecting crimson light, "
-                "absolute darkness beyond the circle of light"
+                "{character}, hood up, face half in shadow, glowing eyes under the hood, "
+                "rainy alley, blue neon columns, mysterious anime edit, {aura}"
             ),
-            "palette": "single crimson light, black flood water, violet fog, pale skin glow",
-        },
-        {
-            "type": "abstract",
-            "label": "DARK_HEARTBEAT",
-            "anchor": "heartbeat line erupting into crimson pulse rings",
-            "scene": (
-                "dark melody visualized as EKG heartbeat line erupting into crimson pulse rings, "
-                "black ink spreading through neon water, cyberpunk girl silhouette barely visible inside the pulse"
-            ),
-            "palette": "black ink, crimson pulse, violet outer rings, cyan static",
+            "palette": "black hood, blue neon, magenta face glow",
         },
     ],
     "electronic": [
         {
-            "type": "character",
-            "label": "ELECTRONIC_LASER_GIRL",
-            "anchor": "horizontal red laser crossing her glowing eyes",
+            "label": "ELECTRONIC_PURPLE_POWER",
             "scene": (
-                "{character}, standing in heavy rain on cyberpunk street, "
-                "single horizontal red laser crossing her glowing eyes, holograms behind her, "
-                "digital glitch artifacts around her outline"
+                "{character}, electric purple energy exploding behind her, glowing magenta eyes, "
+                "digital particles, synthwave cyberpunk stage mood, {aura}"
             ),
-            "palette": "red laser, cyan rain, magenta holograms, black street",
+            "palette": "purple, magenta, cyan, black",
         },
         {
-            "type": "scene",
-            "label": "ELECTRONIC_EMPTY_RAVE",
-            "anchor": "empty rave stage running lasers for no audience",
+            "label": "ELECTRONIC_LASER_EYES",
             "scene": (
-                "underground rave venue empty before the crowd, no dominant character, "
-                "laser grid cutting through smoke, massive subwoofer stacks glowing red, "
-                "dust particles visible in UV purple light"
+                "{character}, horizontal neon laser crossing her glowing eyes, rain and holograms, "
+                "clean anime cyberpunk portrait, {aura}"
             ),
-            "palette": "UV purple, red lasers, cyan haze, black concrete",
-        },
-        {
-            "type": "cinematic",
-            "label": "ELECTRONIC_STAGE_GIRL",
-            "anchor": "girl silhouette controlling the drop from stage",
-            "scene": (
-                "{character}, rear silhouette on stage facing enormous dark crowd, "
-                "massive LED wall exploding with crimson and violet visuals behind her, "
-                "she controls the frequency of thousands"
-            ),
-            "palette": "crimson LED wall, violet crowd haze, cyan rim light, pure black silhouette",
-        },
-        {
-            "type": "abstract",
-            "label": "ELECTRONIC_SUPERNOVA",
-            "anchor": "bass drop as neon supernova",
-            "scene": (
-                "bass drop visualized as neon supernova expanding from center point, "
-                "frequency rings bending light, glitch anime girl silhouette in the white-hot core"
-            ),
-            "palette": "white hot center, cyan rings, magenta explosion, black void",
+            "palette": "red laser, cyan rain, purple haze",
         },
     ],
     "lofi": [
         {
-            "type": "character",
-            "label": "LOFI_RAIN_WINDOW",
-            "anchor": "she reads by the glow of her own neon eyes",
+            "label": "LOFI_MIDNIGHT_PHONE",
             "scene": (
-                "{character}, seated on windowsill in abandoned library at 3am, "
-                "reading by the glow of her own neon eyes, rain on glass beside her, "
-                "city fog outside, quiet dark cyberpunk mood"
+                "{character}, sitting alone by window at 3am, phone glow, rain outside, soft sad anime mood, "
+                "dark room with neon reflections, cute melancholic expression, {aura}"
             ),
-            "palette": "warm amber lamp, cyan rain, violet city fog, black room",
+            "palette": "black room, soft cyan rain, violet glow, warm small lamp",
         },
         {
-            "type": "scene",
-            "label": "LOFI_CLOSED_CAFE",
-            "anchor": "closed cafe with one lamp still on",
+            "label": "LOFI_TRAIN_PLATFORM",
             "scene": (
-                "small cyberpunk coffee shop after closing, no dominant character, "
-                "one pendant lamp still on, forgotten cup steaming, rain streaming down glass, "
-                "neon CLOSED sign half lit"
+                "{character}, empty subway platform at midnight, last train lights fading, headphone wire, "
+                "soft neon melancholy, rain dripping, {aura}"
             ),
-            "palette": "amber lamp, blue black outside, magenta sign, rain silver",
-        },
-        {
-            "type": "cinematic",
-            "label": "LOFI_TRAIN_GIRL",
-            "anchor": "last train leaving while she stays",
-            "scene": (
-                "{character}, standing on empty subway platform watching the last train leave, "
-                "train lights streaking into tunnel darkness, headphone wire visible, "
-                "rain dripping from ceiling grate"
-            ),
-            "palette": "yellow train streak, teal shadows, crimson eye glow, violet platform haze",
-        },
-        {
-            "type": "abstract",
-            "label": "LOFI_VINYL",
-            "anchor": "vinyl groove glowing softly",
-            "scene": (
-                "vinyl record spinning in dark room, groove glowing softly as visible melody, "
-                "dust particles suspended in amber light, neon girl reflection distorted on record surface"
-            ),
-            "palette": "black vinyl, amber dust, violet reflection, cyan edge light",
+            "palette": "teal shadows, violet platform haze, red eye glow",
         },
     ],
     "default": [
         {
-            "type": "character",
-            "label": "DEFAULT_CYBER_GIRL",
-            "anchor": "rain falls only inside the neon cone of light around her",
+            "label": "DEFAULT_DARK_ANIME",
             "scene": (
-                "{character}, standing in dark neon alley, rain falling only inside the cone of light around her, "
-                "wet pavement reflecting red and violet signs, mysterious precise energy"
+                "{character}, {camera}, {pose}, dark anime cyberpunk portrait, glowing eyes, "
+                "neon bokeh background, high contrast, {aura}"
             ),
-            "palette": "blood red, violet, cyan, absolute black",
+            "palette": "black, purple, magenta, cyan, red glow",
         },
         {
-            "type": "scene",
-            "label": "DEFAULT_CITY_GLASS",
-            "anchor": "city seen through shattered windshield",
+            "label": "DEFAULT_GREEN_AURA",
             "scene": (
-                "abandoned car interior, no dominant character, shattered windshield framing cyberpunk city skyline, "
-                "each glass shard reflecting neon differently, dashboard radio static glowing"
+                "{character}, toxic green flame aura behind her shaped like cat ears, black outfit, "
+                "glowing green eyes, cute dark anime expression, viral pfp cover art, {aura}"
             ),
-            "palette": "midnight blue, red neon shards, violet rain, cyan dashboard static",
-        },
-        {
-            "type": "cinematic",
-            "label": "DEFAULT_RAINDROP",
-            "anchor": "entire city reflected in one raindrop on her face",
-            "scene": (
-                "{character}, extreme close shot, single raindrop on cheek reflecting entire neon city skyline, "
-                "glowing eye visible behind shallow depth of field"
-            ),
-            "palette": "crimson eye, violet city reflection, cyan bokeh, pale skin",
-        },
-        {
-            "type": "abstract",
-            "label": "DEFAULT_SOUND_ARCHITECTURE",
-            "anchor": "song waveform as building you can walk into",
-            "scene": (
-                "song waveform rendered as cyberpunk architecture, bass frequencies as foundation columns, "
-                "melody as glass spire, rhythm as neon archways, girl silhouette at entrance"
-            ),
-            "palette": "red structure, violet glass, cyan windows, black sky",
+            "palette": "black, toxic green, white highlights, tiny violet shadows",
         },
     ],
 }
@@ -482,7 +327,7 @@ GENRE_MAP = {
     "dubstep": "electronic",
     "edm": "electronic",
     "lofi": "lofi",
-    "indie": "default",
+    "indie": "lofi",
     "rock": "dark",
     "metal": "dark",
     "cinematic": "dark",
@@ -502,7 +347,7 @@ def _compact(text: str, max_len: int = 3900) -> str:
 
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|v8_hybrid_cyberpunk_girls"
+    key = f"{filename}|{short_num}|darkmark_v11_retention_refs"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
@@ -521,8 +366,9 @@ def _clean_song_name(filename: str) -> str:
 def _pick_concept(style: str, filename: str, short_num: int) -> dict:
     mapped = GENRE_MAP.get(style, style)
     concepts = VISUAL_CONCEPTS.get(mapped, VISUAL_CONCEPTS["default"])
-    index = (max(1, short_num) - 1) % len(concepts)
-    return concepts[index]
+    # Para não ficar sempre A/B/C igual por short, usa música + short como seed.
+    rng = _rng(filename, short_num)
+    return concepts[rng.randrange(len(concepts))]
 
 
 def _pick_style_parts(filename: str, short_num: int) -> dict:
@@ -534,31 +380,32 @@ def _pick_style_parts(filename: str, short_num: int) -> dict:
         "pose": rng.choice(POSE_VARIATIONS),
         "camera": rng.choice(CAMERA_VARIATIONS),
         "art": rng.choice(ART_STYLES),
+        "aura": rng.choice(AURA_VARIATIONS),
     }
 
 
 def _build_character(parts: dict) -> str:
     return (
         f"{CHARACTER_DNA}, {parts['hair']}, {parts['eyes']}, "
-        f"{parts['outfit']}, {parts['pose']}, {parts['camera']}"
+        f"{parts['outfit']}"
     )
 
 
 def _song_micro_detail(song_name: str) -> str:
     clean = song_name.lower()
 
-    if any(w in clean for w in ["car", "drive", "drift", "night", "road"]):
-        return "subtle drift car silhouette and road light streaks inspired by the song title"
-    if any(w in clean for w in ["ghost", "phantom", "shadow", "dark"]):
-        return "ghostly hologram distortion and shadow doubles inspired by the song title"
+    if any(w in clean for w in ["car", "drive", "drift", "night", "road", "truck"]):
+        return "subtle night drive detail, red taillight streaks and wet road reflections"
+    if any(w in clean for w in ["ghost", "phantom", "shadow", "dark", "madrugada"]):
+        return "ghostly shadow aura, midnight darkness and glowing eyes"
     if any(w in clean for w in ["rain", "cry", "sad", "alone"]):
-        return "rain-heavy mood with lonely neon reflections inspired by the song title"
+        return "lonely rain mood, window reflections and soft melancholic neon"
     if any(w in clean for w in ["fire", "burn", "rage"]):
-        return "neon fire sparks and crimson heat haze inspired by the song title"
+        return "crimson sparks, heat haze and aggressive red neon aura"
     if any(w in clean for w in ["bass", "drop", "808"]):
-        return "visible bass shockwave rings bending neon light inspired by the song title"
+        return "visible bass shockwave rings and vibrating neon particles"
 
-    return "one unforgettable micro-detail connected to the song title"
+    return "one strong memorable visual detail connected to the song title"
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -567,57 +414,34 @@ def _song_micro_detail(song_name: str) -> str:
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
     """
-    Prompt v10 VIRAL ANIME.
-    Foco: garota anime bonita + cyberpunk neon + tatuagem sutil + imagem limpa que dá view.
-    Mantém variação por música/short para não repetir.
+    Prompt v11 DARKMARK RETENTION.
+    Foco: parecer anime edit/phonk cover viral, não imagem genérica de IA.
     """
     styles = styles or []
     song_name = _clean_song_name(filename)
 
-    mapped = GENRE_MAP.get(style, style)
     concept = _pick_concept(style, filename, short_num)
     parts = _pick_style_parts(filename, short_num)
     character = _build_character(parts)
     song_detail = _song_micro_detail(song_name)
-
     all_styles = ", ".join([style] + [s for s in styles if s and s != style])
 
-    quality_lock = (
-        "beautiful polished anime key visual, viral anime girl thumbnail style, "
-        "pretty face, symmetrical face, glossy detailed eyes, soft blush, clean nose and mouth, "
-        "correct anatomy, elegant hands if visible, clean readable silhouette, "
-        "professional character design, no clutter, no text, no watermark, "
-        "high-end anime cover art, premium cel shading, crisp lineart, refined facial details"
+    scene = concept["scene"].format(
+        character=character,
+        camera=parts["camera"],
+        pose=parts["pose"],
+        aura=parts["aura"],
     )
-
-    viral_visual = (
-        "beautiful cyberpunk anime girl background for music visualizer, "
-        "soft neon lighting, glowing particles, subtle lens flare, rain reflections, "
-        "magenta and cyan neon accents, purple glow, blurred city lights, bokeh effect, "
-        "wet asphalt reflections, glossy jacket reflections, soft cinematic face lighting, "
-        "subtle neon tattoo glowing on shoulder or neck, "
-        "space reserved near center for circular DJ logo overlay, clean composition, "
-        "visually pleasing, high retention YouTube Shorts background"
-    )
-
-    style_lock = (
-        "anime illustration only, trending anime art, modern polished anime style, "
-        "beautiful character design, clean lineart, soft shading, cyberpunk neon aesthetic, "
-        "Cyberpunk Edgerunners inspired color energy but prettier and cleaner, "
-        "NOT photorealistic, NOT 3d render, 9:16 vertical"
-    )
-
-    scene = concept["scene"].format(character=character)
 
     prompt = (
         f"{scene}, "
-        f"song mood inspired by '{song_name}', {song_detail}, "
-        f"genre mood: {all_styles}, "
-        f"{viral_visual}, "
-        f"{quality_lock}, "
-        f"{style_lock}, "
-        f"palette: deep black, neon purple, hot magenta, electric cyan, soft pink highlights, "
-        f"masterpiece, best quality, ultra detailed, aesthetic, beautiful, cute but cyberpunk, viral"
+        f"song title mood: '{song_name}', {song_detail}, genre mood: {all_styles}, "
+        f"palette: {concept.get('palette', 'deep black, neon purple, hot magenta, cyan, red glow')}, "
+        f"{parts['art']}, "
+        f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {QUALITY_TAGS}, "
+        "phone-screen readable, eyes are the main hook, strong face focal point, "
+        "clean 9:16 vertical composition, background dark enough for waveform and logo overlay, "
+        "no text, no watermark, no logo, no letters, no photorealism, no 3d"
     )
 
     return _compact(prompt, max_len=3600)
@@ -641,12 +465,13 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
+    # Reforço final para o Flux não fugir para realismo/3D.
     full_prompt = _compact(
         prompt
-        + ", beautiful anime cyberpunk illustration, cute but stylish, NOT photorealistic, NOT 3D render, "
-        + "anime key visual, pretty cyberpunk girl, perfect face, clean anatomy, sharp lineart, "
-        + "soft face lighting, glossy eyes, subtle neon tattoo, deep black shadows, neon purple cyan magenta, "
-        + "rain, wet reflections, glowing particles, bokeh city lights, cinematic high contrast, high-end anime cover art"
+        + ", 2D anime only, dark anime edit, viral phonk anime cover, glowing eyes, "
+        + "manga shadows, sharp lineart, cel shading, high contrast, deep black background, "
+        + "hot magenta violet cyan red neon, beautiful gothic cyberpunk anime girl, "
+        + "not realistic, not 3d, not photo, clean face, phone wallpaper quality, high retention"
     )
 
     headers = {
@@ -686,10 +511,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
                     if status == "succeeded":
                         output = data.get("output")
-                        if isinstance(output, list):
-                            image_url = output[0]
-                        else:
-                            image_url = output
+                        image_url = output[0] if isinstance(output, list) else output
 
                         if not image_url:
                             raise RuntimeError("Replicate retornou output vazio.")
@@ -722,9 +544,6 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 # ══════════════════════════════════════════════════════════════════════
 
 def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, str]:
-    """
-    Compatibilidade com versões que chamavam build_prompt().
-    """
     fake_filename = f"{style}_variant_{seed_variant}.mp3"
     prompt = build_ai_prompt(style=style, filename=fake_filename, styles=[style], short_num=seed_variant + 1)
     return prompt, NEGATIVE_PROMPT
@@ -736,9 +555,6 @@ def generate_background_image(
     seed_variant: int = 0,
     max_retries: int = 3,
 ) -> Optional[str]:
-    """
-    Compatibilidade com versões que chamavam generate_background_image().
-    """
     prompt, _negative = build_prompt(style=style, seed_variant=seed_variant)
 
     for attempt in range(1, max_retries + 1):
@@ -756,9 +572,6 @@ def get_or_generate_background(
     output_dir: str = "assets/backgrounds",
     force_new: bool = False,
 ) -> Optional[str]:
-    """
-    Retorna um background existente ou gera um novo.
-    """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     existing = list(Path(output_dir).glob(f"{style}_bg_*.png"))
 
@@ -777,9 +590,6 @@ def generate_background_batch(
     output_dir: str = "assets/backgrounds",
     variants_per_style: int = 2,
 ) -> dict[str, list[str]]:
-    """
-    Gera múltiplos backgrounds por estilo.
-    """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     results: dict[str, list[str]] = {}
 
@@ -807,7 +617,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator v8.0 — Hybrid Cyberpunk Girls")
+    parser = argparse.ArgumentParser(description="AI Image Generator v11.0 — DarkMark Viral Retention")
     parser.add_argument("--style", default="phonk")
     parser.add_argument("--filename", default="dark phonk.mp3")
     parser.add_argument("--short-num", type=int, default=1)
