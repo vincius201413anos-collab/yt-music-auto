@@ -33,6 +33,12 @@ V11.2 SAFE GITHUB ACTIONS:
 - Removido PI/2.5 em vignette para número fixo compatível.
 - Mantidos efeitos neon/beat, mas só com sintaxe segura para GitHub Actions.
 
+V12 FINAL MAX BEAT REAL SAFE:
+- Integração máxima de beat/kick/drop usando audio_analysis já existente.
+- Novo modo de impacto real: flash + zoom + shake + borda + scanline sincronizados.
+- Fallback total para GitHub Actions gratuito: sem filtro perigoso, sem alpha dinâmico, sem matriz par.
+- Aceita audio_analysis externo sem quebrar compatibilidade com main.py antigo.
+
 V11 FINAL VIBRANT HYPNOTIC:
 - Luzes vibrantes no beat/kick com overlays neon bonitos e controlados.
 - Glitch mais forte no drop, sem pesar demais no GitHub.
@@ -133,7 +139,7 @@ MIN_FILE_SIZE_MB = 0.5
 MAX_FILE_SIZE_MB = 350.0
 
 # Segurança contra travamento infinito no GitHub Actions / runners fracos
-FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "720"))   # 12 min
+FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "900"))   # 12 min
 FFMPEG_THUMB_TIMEOUT_S  = int(os.getenv("FFMPEG_THUMB_TIMEOUT", "120"))    # 2 min
 FINAL_GRAIN_STRENGTH  = int(os.getenv("FINAL_GRAIN_STRENGTH", "4"))
 FORCE_FPS             = int(os.getenv("FFMPEG_FPS", "30"))
@@ -145,6 +151,14 @@ HYPNOTIC_MAX_BEATS = int(os.getenv("HYPNOTIC_MAX_BEATS", "46"))
 HYPNOTIC_MAX_BASS = int(os.getenv("HYPNOTIC_MAX_BASS", "36"))
 HYPNOTIC_MAX_SNARES = int(os.getenv("HYPNOTIC_MAX_SNARES", "18"))
 EYE_GLOW_ENABLED = os.getenv("EYE_GLOW_ENABLED", "true").lower() == "true"
+
+# V12 — impacto viral seguro, sincronizado com beat/kick/drop
+BEAT_REAL_MAX_BEATS = int(os.getenv("BEAT_REAL_MAX_BEATS", "64"))
+BEAT_REAL_MAX_BASS = int(os.getenv("BEAT_REAL_MAX_BASS", "52"))
+BEAT_REAL_MAX_SNARES = int(os.getenv("BEAT_REAL_MAX_SNARES", "26"))
+DROP_IMPACT_ENABLED = os.getenv("DROP_IMPACT_ENABLED", "true").lower() == "true"
+VIRAL_SHAKE_MULT = float(os.getenv("VIRAL_SHAKE_MULT", "1.0"))
+VIRAL_ZOOM_MULT = float(os.getenv("VIRAL_ZOOM_MULT", "1.0"))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # COLOR GRADES — v8.1 CYBERPUNK MÁXIMO
@@ -395,14 +409,14 @@ def sanitize_ffmpeg_filter(vf: str) -> str:
     """
     Camada final de segurança para GitHub Actions.
     Corrige automaticamente:
-    - unsharp=4:4 / 6:6 etc. para tamanho ímpar
+    - unsharp=5:5 / 6:6 etc. para tamanho ímpar
     - alpha dinâmico em drawbox/color, que quebra no runner
     - PI/2.5 em vignette para número fixo
     """
     if not vf:
         return vf
 
-    vf = vf.replace("vignette=angle=PI/2.5:mode=forward", "vignette=angle=1.257:mode=forward")
+    vf = vf.replace("vignette=angle=1.257:mode=forward", "vignette=angle=1.257:mode=forward")
 
     def fix_unsharp(match: re.Match) -> str:
         parts = match.group(1).split(":")
@@ -899,6 +913,102 @@ def build_vignette_pulse(analysis: dict, strength: float, style: str = "default"
     return base_vig
 
 
+
+def build_v12_drop_impact(analysis: dict, style: str = "default") -> str:
+    """
+    V12 — impacto do drop seguro no FFmpeg.
+    Usa apenas drawbox com enable e alpha fixo.
+    """
+    if not DROP_IMPACT_ENABLED:
+        return ""
+
+    drop_time = analysis.get("drop_time")
+    if drop_time is None:
+        return ""
+
+    neon = GENRE_NEON.get(style, GENRE_NEON["default"])
+    c1, c2, c3 = neon["c1"], neon["c2"], neon["c3"]
+    d = float(drop_time)
+    t0 = max(0.0, d - 0.025)
+
+    return ",".join([
+        f"drawbox=enable='between(t,{t0:.4f},{d+0.030:.4f})':x=0:y=0:w=iw:h=ih:color=white@0.52:t=fill",
+        f"drawbox=enable='between(t,{d+0.030:.4f},{d+0.090:.4f})':x=0:y=0:w=iw:h=ih:color=black@0.26:t=fill",
+        f"drawbox=enable='between(t,{d+0.090:.4f},{d+0.210:.4f})':x=0:y=0:w=iw:h=ih:color={c1}@0.18:t=fill",
+        f"drawbox=enable='between(t,{d+0.100:.4f},{d+0.280:.4f})':x=iw*0.12:y=0:w=iw*0.055:h=ih:color={c2}@0.30:t=fill",
+        f"drawbox=enable='between(t,{d+0.100:.4f},{d+0.280:.4f})':x=iw*0.83:y=0:w=iw*0.055:h=ih:color={c3}@0.30:t=fill",
+        f"drawbox=enable='between(t,{d+0.020:.4f},{d+0.170:.4f})':x=0:y=ih*0.18:w=iw:h=8:color={c2}@0.42:t=fill",
+        f"drawbox=enable='between(t,{d+0.040:.4f},{d+0.210:.4f})':x=0:y=ih*0.72:w=iw:h=8:color={c3}@0.36:t=fill",
+    ])
+
+
+def build_v12_rhythm_flash(analysis: dict, style: str = "default") -> str:
+    """
+    V12 — flashes rítmicos leves no beat/kick/snare.
+    Limite controlado para não pesar no GitHub gratuito.
+    """
+    neon = GENRE_NEON.get(style, GENRE_NEON["default"])
+    c1, c2, c3 = neon["c1"], neon["c2"], neon["c3"]
+    drop_time = analysis.get("drop_time")
+
+    beats = analysis.get("beats", [])[:BEAT_REAL_MAX_BEATS]
+    bass_hits = analysis.get("bass_hits", [])[:BEAT_REAL_MAX_BASS]
+    snares = analysis.get("snares", [])[:BEAT_REAL_MAX_SNARES]
+
+    parts = []
+
+    for i, bt in enumerate(beats):
+        if drop_time is not None and abs(float(bt) - float(drop_time)) < 0.45:
+            continue
+        t0 = max(0.0, float(bt) - 0.004)
+        t1 = float(bt) + 0.030
+        color = c1 if i % 2 == 0 else c2
+        parts.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})':x=0:y=0:w=iw:h=ih:color={color}@0.022:t=fill"
+        )
+
+    for i, bt in enumerate(bass_hits):
+        t0 = max(0.0, float(bt) - 0.006)
+        t1 = float(bt) + 0.060
+        alpha = 0.070 if i < 18 else 0.046
+        parts.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})':x=0:y=ih*0.55:w=iw:h=ih*0.45:color={c1}@{alpha:.3f}:t=fill"
+        )
+        if i < 18:
+            parts.append(
+                f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})':x=0:y=0:w=9:h=ih:color={c2}@0.18:t=fill"
+            )
+            parts.append(
+                f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})':x=iw-9:y=0:w=9:h=ih:color={c3}@0.18:t=fill"
+            )
+
+    for i, st in enumerate(snares):
+        t0 = max(0.0, float(st) - 0.003)
+        t1 = float(st) + 0.022
+        y = 150 + ((i * 223) % 1500)
+        parts.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})':x=0:y={y}:w=iw:h=2:color={c3}@0.085:t=fill"
+        )
+
+    return ",".join(parts)
+
+
+def build_v12_logo_safe_overlay(song_name: str, style: str = "default") -> str:
+    """
+    Logo textual discreta no FFmpeg. Seguro e leve.
+    """
+    font = get_font()
+    safe = escape_text("DJ DARK MARK")
+    neon = GENRE_NEON.get(style, GENRE_NEON["default"])
+    c1 = neon["c1"].replace("0x", "#")
+    return (
+        "drawbox=x=34:y=34:w=300:h=58:color=black@0.35:t=fill,"
+        f"drawtext=fontfile='{font}':text='{safe}':fontsize=28:fontcolor={c1}@0.92:"
+        "borderw=2:bordercolor=black@0.75:shadowx=2:shadowy=2:shadowcolor=black@0.8:x=48:y=48"
+    )
+
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # FILTROS BASE
 # ══════════════════════════════════════════════════════════════════════════════
@@ -999,7 +1109,7 @@ def build_elite_zoom(
     intro_frames = int(0.15 * fps)
 
     heavy = style in {"phonk", "metal", "rock", "trap", "electronic", "funk", "dark"}
-    zoom_mult = 1.6 if heavy else 1.0
+    zoom_mult = (1.6 if heavy else 1.0) * max(0.4, min(VIRAL_ZOOM_MULT, 2.0))
 
     base  = f"(1.0 + {zoom_speed * zoom_mult}*(0.5-0.5*cos(2*PI*on/{total_frames})))"
     drift = (
@@ -1049,7 +1159,7 @@ def build_elite_shake(analysis: dict, sx: int, sy: int, style: str = "default"):
     bass_hits = analysis.get("bass_hits", [])
 
     heavy = style in {"phonk", "metal", "rock", "trap", "funk", "dark", "electronic"}
-    shake_mult = 1.8 if heavy else 1.0
+    shake_mult = (1.8 if heavy else 1.0) * max(0.4, min(VIRAL_SHAKE_MULT, 2.0))
 
     shake_x = f"(sin(t*3.1)*{sx*0.72*shake_mult}+sin(t*5.5)*{sx*0.28*shake_mult})"
     shake_y = f"(cos(t*2.8)*{sy*0.72*shake_mult}+cos(t*5.0)*{sy*0.28*shake_mult})"
@@ -1107,6 +1217,9 @@ def build_image_filter(
     glitch = build_glitch_slices(analysis, style)
     hypnotic_lights = build_hypnotic_beat_lights(analysis, style)
     eye_glow = build_eye_glow_hypnosis(analysis, style)
+    rhythm_flash = build_v12_rhythm_flash(analysis, style)
+    drop_impact = build_v12_drop_impact(analysis, style)
+    logo_overlay = build_v12_logo_safe_overlay(song_name, style)
 
     parts = [
         "scale=1440:2560:force_original_aspect_ratio=increase",
@@ -1130,6 +1243,12 @@ def build_image_filter(
         parts.append(hypnotic_lights)
     if eye_glow:
         parts.append(eye_glow)
+    if rhythm_flash:
+        parts.append(rhythm_flash)
+    if drop_impact:
+        parts.append(drop_impact)
+    if logo_overlay:
+        parts.append(logo_overlay)
     if neon_border:
         parts.append(neon_border)
     if drop_flash:
@@ -1167,6 +1286,9 @@ def build_video_filter(
     glitch = build_glitch_slices(analysis, style)
     hypnotic_lights = build_hypnotic_beat_lights(analysis, style)
     eye_glow = build_eye_glow_hypnosis(analysis, style)
+    rhythm_flash = build_v12_rhythm_flash(analysis, style)
+    drop_impact = build_v12_drop_impact(analysis, style)
+    logo_overlay = build_v12_logo_safe_overlay(song_name, style)
 
     parts = [
         "scale=1140:2026:force_original_aspect_ratio=increase",
@@ -1187,6 +1309,12 @@ def build_video_filter(
         parts.append(hypnotic_lights)
     if eye_glow:
         parts.append(eye_glow)
+    if rhythm_flash:
+        parts.append(rhythm_flash)
+    if drop_impact:
+        parts.append(drop_impact)
+    if logo_overlay:
+        parts.append(logo_overlay)
     if neon_border:
         parts.append(neon_border)
     if drop_flash:
@@ -1317,6 +1445,7 @@ def create_short(
     auto_thumbnail: bool = True,
     upload: bool = False,
     upload_privacy: str = "private",
+    audio_analysis: Optional[dict] = None,
 ) -> dict:
     t_start = time.time()
     result: dict = {"output_path": None, "thumbnail_path": None, "video_id": None}
@@ -1331,7 +1460,7 @@ def create_short(
 
     # ── Análise de áudio ──────────────────────────────────────────────────
     logger.info("  ► Analisando áudio…")
-    analysis_full = full_analysis(audio_path)
+    analysis_full = audio_analysis if isinstance(audio_analysis, dict) else full_analysis(audio_path)
 
     if _REMOTION_AVAILABLE:
         try:
@@ -1469,6 +1598,7 @@ def create_short(
         "duration":    dur,
         "bpm":         bpm,
         "drop_time":   analysis.get("drop_time"),
+        "audio_data_path": "temp/audio_data.json" if os.path.exists("temp/audio_data.json") else None,
     })
 
     if auto_thumbnail:
