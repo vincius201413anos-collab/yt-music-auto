@@ -81,74 +81,72 @@ export const MyComposition = () => {
   const duration = durationInFrames / fps;
   const audioIndex = Math.floor(time * 60);
 
-  // Energia geral / grave
+  // Energia forçada: mesmo música fraca fica viva.
   const rawEnergy = smooth(rms, audioIndex, 5);
-  const energy = clamp(rawEnergy * 2.35, 0, 1);
-  const bassEnergy = clamp(smooth(rms, audioIndex, 8) * 2.7, 0, 1);
+  const energy = clamp(rawEnergy * 4.15, 0.22, 1);
+  const bassEnergy = clamp(smooth(rms, audioIndex, 8) * 4.4, 0.16, 1);
 
-  // BPM seguro
   const safeBpm = Math.max(60, Math.min(190, bpm || 128));
   const beatInterval = Math.max(1, fps * (60 / safeBpm));
   const beatPhase = (frame % beatInterval) / beatInterval;
 
-  // Corrigido: 0 até 1, nunca negativo
   const bpmPulse = (Math.sin(beatPhase * Math.PI * 2) + 1) / 2;
+  const beatNear = beats.some((b) => Math.abs(time - b) < 0.065);
+  const bassNear = bassHits.some((b) => Math.abs(time - b) < 0.085);
 
-  // Usa beats reais quando existirem
-  const beatNear = beats.some((b) => Math.abs(time - b) < 0.055);
-  const bassNear = bassHits.some((b) => Math.abs(time - b) < 0.075);
+  const beatPulse = clamp(Math.max(bpmPulse * 0.9, beatNear ? 1 : 0), 0.18, 1);
+  const bassPulse = clamp(Math.max(bassEnergy, bassNear ? 1 : 0), 0.16, 1);
 
-  const beatPulse = clamp(Math.max(bpmPulse * 0.75, beatNear ? 1 : 0));
-  const bassPulse = clamp(Math.max(bassEnergy, bassNear ? 1 : 0));
-
-  // Drop
+  // Drop mais agressivo.
   const drop = dropTime ?? duration * 0.42;
   const dropDist = Math.abs(time - drop);
-  const dropImpact = clamp(1 - dropDist / 0.8, 0, 1);
-  const hardDrop = clamp(1 - dropDist / 0.22, 0, 1);
+  const dropImpact = clamp(1 - dropDist / 0.55, 0, 1);
+  const hardDrop = clamp(1 - dropDist / 0.18, 0, 1);
 
-  // Fade suave
-  const fadeIn = clamp(time / 0.6);
-  const fadeOut = clamp(1 - (time - (duration - 0.9)) / 0.9);
+  const fadeIn = clamp(time / 0.45);
+  const fadeOut = clamp(1 - (time - (duration - 0.75)) / 0.75);
   const masterOpacity = Math.min(fadeIn, fadeOut);
 
-  // Animações otimizadas
+  // Visual parecido com a imagem de prévia: logo grande, ring neon, glow pesado.
   const logoScale =
-    0.95 +
-    beatPulse * 0.08 +
-    bassPulse * 0.14 +
-    energy * 0.12 +
-    dropImpact * 0.38;
+    1.02 +
+    beatPulse * 0.12 +
+    bassPulse * 0.18 +
+    energy * 0.18 +
+    dropImpact * 0.52;
 
   const logoRotation =
-    Math.sin(frame * 0.018) * 0.8 +
-    beatPulse * 2.4 +
-    hardDrop * Math.sin(frame * 0.75) * 7;
+    Math.sin(frame * 0.022) * 1.2 +
+    beatPulse * 4.2 +
+    hardDrop * Math.sin(frame * 0.92) * 13;
 
   const glowIntensity =
-    24 +
-    energy * 48 +
-    bassPulse * 34 +
-    dropImpact * 95 +
-    hardDrop * 50;
+    75 +
+    energy * 145 +
+    bassPulse * 95 +
+    dropImpact * 260 +
+    hardDrop * 130;
 
   const ringSize =
-    Math.min(width, height) * 0.46 +
-    beatPulse * 46 +
-    energy * 76 +
-    dropImpact * 145;
+    Math.min(width, height) * 0.58 +
+    beatPulse * 82 +
+    energy * 110 +
+    dropImpact * 235;
 
-  const shake = hardDrop * 10 + bassPulse * 1.8;
-  const shakeX = Math.sin(frame * 1.13) * shake;
-  const shakeY = Math.cos(frame * 0.91) * shake;
+  const shake = hardDrop * 25 + bassPulse * 3.5;
+  const shakeX = Math.sin(frame * 1.33) * shake;
+  const shakeY = Math.cos(frame * 1.08) * shake;
 
   const cx = width / 2;
   const cy = height / 2;
 
+  const particleOpacity = clamp(0.22 + energy * 0.28 + dropImpact * 0.45, 0, 0.85);
+  const scanOpacity = clamp(0.08 + bassPulse * 0.08 + dropImpact * 0.13, 0, 0.28);
+
   return (
     <AbsoluteFill
       style={{
-        background: "#0a001f",
+        background: "#050010",
         overflow: "hidden",
         opacity: masterOpacity,
       }}
@@ -161,61 +159,105 @@ export const MyComposition = () => {
           height: "100%",
           objectFit: "cover",
           transform: `translate(${shakeX}px, ${shakeY}px) scale(${
-            1.035 + energy * 0.035 + dropImpact * 0.025
+            1.055 + energy * 0.052 + dropImpact * 0.045
           })`,
-          filter: `brightness(${0.72 + energy * 0.18}) contrast(1.12) saturate(${
-            1.08 + energy * 0.2
-          })`,
+          filter: `brightness(${0.78 + energy * 0.26 + hardDrop * 0.18}) contrast(${
+            1.18 + energy * 0.18
+          }) saturate(${1.22 + energy * 0.45 + dropImpact * 0.35})`,
         }}
       />
 
-      {/* === OVERLAY DARK + NEON === */}
+      {/* === ESCURECE BORDAS E PUXA FOCO PRA LOGO === */}
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(circle at center, transparent 34%, rgba(10,0,40,0.62) 66%, rgba(0,0,0,0.92) 100%)",
+            "radial-gradient(circle at center, transparent 24%, rgba(18,0,48,0.50) 58%, rgba(0,0,0,0.94) 100%)",
         }}
       />
 
-      {/* === AMBIENTE NEON SUAVE === */}
+      {/* === NEON ATMOSFERA CENTRAL === */}
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(circle at 50% 46%, rgba(195,0,255,0.18) 0%, rgba(0,240,255,0.08) 35%, transparent 68%)",
+            "radial-gradient(circle at 50% 49%, rgba(255,0,255,0.32) 0%, rgba(0,240,255,0.18) 30%, rgba(80,0,255,0.10) 52%, transparent 72%)",
           mixBlendMode: "screen",
-          opacity: 0.32 + energy * 0.18 + dropImpact * 0.25,
+          opacity: 0.55 + energy * 0.22 + dropImpact * 0.28,
         }}
       />
 
-      {/* === FLASH NO DROP === */}
-      {dropImpact > 0.18 && (
+      {/* === SCANLINES CYBERPUNK === */}
+      <AbsoluteFill
+        style={{
+          background:
+            "repeating-linear-gradient(to bottom, transparent 0px, transparent 5px, rgba(0,240,255,0.12) 5px, rgba(0,240,255,0.12) 6px)",
+          opacity: scanOpacity,
+          mixBlendMode: "screen",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* === PARTÍCULAS / FAÍSCAS SIMULADAS === */}
+      <AbsoluteFill
+        style={{
+          background: `
+            radial-gradient(circle at ${50 + Math.sin(frame * 0.07) * 22}% ${38 + Math.cos(frame * 0.05) * 18}%, rgba(255,0,255,0.95) 0px, transparent 2px),
+            radial-gradient(circle at ${38 + Math.cos(frame * 0.09) * 25}% ${57 + Math.sin(frame * 0.06) * 20}%, rgba(0,240,255,0.95) 0px, transparent 2px),
+            radial-gradient(circle at ${62 + Math.sin(frame * 0.11) * 24}% ${64 + Math.cos(frame * 0.08) * 16}%, rgba(255,255,255,0.85) 0px, transparent 2px),
+            repeating-radial-gradient(circle at center, rgba(255,0,255,0.18) 0px, rgba(255,0,255,0.18) 1px, transparent 2px, transparent 38px)
+          `,
+          opacity: particleOpacity,
+          mixBlendMode: "screen",
+          transform: `scale(${1 + beatPulse * 0.06 + dropImpact * 0.18}) rotate(${frame * 0.05}deg)`,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* === LINHAS DE ENERGIA SAINDO DO LOGO === */}
+      {(beatPulse > 0.55 || dropImpact > 0.12) && (
         <AbsoluteFill
           style={{
             background:
-              "radial-gradient(circle at center, rgba(255,255,255,0.95) 0%, rgba(0,240,255,0.45) 22%, transparent 62%)",
-            opacity: dropImpact * 0.38,
+              "conic-gradient(from 0deg at 50% 50%, transparent 0deg, rgba(255,0,255,0.55) 7deg, transparent 12deg, transparent 40deg, rgba(0,240,255,0.55) 48deg, transparent 55deg, transparent 92deg, rgba(255,255,255,0.36) 98deg, transparent 103deg, transparent 145deg, rgba(255,0,255,0.50) 153deg, transparent 160deg, transparent 220deg, rgba(0,240,255,0.42) 228deg, transparent 236deg, transparent 360deg)",
+            opacity: (0.16 + beatPulse * 0.16 + dropImpact * 0.42),
             mixBlendMode: "screen",
+            filter: `blur(${0.6 + dropImpact * 1.4}px)`,
+            transform: `scale(${0.92 + beatPulse * 0.08 + dropImpact * 0.2}) rotate(${frame * 0.6}deg)`,
+            pointerEvents: "none",
           }}
         />
       )}
 
-      {/* === AURA DO LOGO LEVE === */}
+      {/* === FLASH BRANCO/CYAN NO DROP === */}
+      {dropImpact > 0.12 && (
+        <AbsoluteFill
+          style={{
+            background:
+              "radial-gradient(circle at center, rgba(255,255,255,1) 0%, rgba(0,240,255,0.62) 18%, rgba(255,0,255,0.32) 34%, transparent 66%)",
+            opacity: dropImpact * 0.58,
+            mixBlendMode: "screen",
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* === AURA GRANDE DO LOGO === */}
       <Img
         src={staticFile("logo_darkmark.png")}
         style={{
           position: "absolute",
           left: cx,
           top: cy,
-          width: 500 * logoScale,
+          width: Math.min(width, height) * 0.72 * logoScale,
           transform: "translate(-50%, -50%)",
-          filter: `blur(${7 + energy * 7 + dropImpact * 11}px) brightness(2.35)`,
-          opacity: 0.18 + bassPulse * 0.05 + dropImpact * 0.18,
+          filter: `blur(${14 + energy * 16 + dropImpact * 24}px) brightness(3.35) saturate(1.4)`,
+          opacity: 0.32 + bassPulse * 0.08 + dropImpact * 0.32,
           mixBlendMode: "screen",
           pointerEvents: "none",
+          zIndex: 2,
         }}
       />
 
-      {/* === RING PRINCIPAL === */}
+      {/* === RING MAGENTA PRINCIPAL === */}
       <div
         style={{
           position: "absolute",
@@ -224,32 +266,54 @@ export const MyComposition = () => {
           width: ringSize,
           height: ringSize,
           borderRadius: "50%",
-          border: `${1.8 + bassPulse * 1.1 + hardDrop * 3}px solid #c300ff`,
-          transform: `translate(-50%, -50%) rotate(${frame * 0.12}deg)`,
-          opacity: 0.36 + beatPulse * 0.22 + dropImpact * 0.25,
-          boxShadow: `0 0 ${glowIntensity * 0.72}px #c300ff, inset 0 0 ${
-            glowIntensity * 0.26
-          }px #00f0ff`,
+          border: `${3.2 + bassPulse * 1.8 + hardDrop * 6}px solid #ff00ff`,
+          transform: `translate(-50%, -50%) rotate(${frame * 0.18}deg)`,
+          opacity: 0.62 + beatPulse * 0.18 + dropImpact * 0.18,
+          boxShadow: `
+            0 0 ${glowIntensity * 0.72}px #ff00ff,
+            0 0 ${glowIntensity * 0.32}px #00f0ff,
+            inset 0 0 ${glowIntensity * 0.30}px #00f0ff
+          `,
           zIndex: 4,
         }}
       />
 
-      {/* === RING SECUNDÁRIO CIANO === */}
+      {/* === RING CIANO SECUNDÁRIO === */}
       <div
         style={{
           position: "absolute",
           left: cx,
           top: cy,
-          width: ringSize * 0.84 + beatPulse * 26,
-          height: ringSize * 0.84 + beatPulse * 26,
+          width: ringSize * 0.82 + beatPulse * 44,
+          height: ringSize * 0.82 + beatPulse * 44,
           borderRadius: "50%",
-          border: "1.4px solid #00f0ff",
-          transform: `translate(-50%, -50%) rotate(${-frame * 0.16}deg)`,
-          opacity: 0.22 + bassPulse * 0.16 + dropImpact * 0.22,
-          boxShadow: `0 0 ${glowIntensity * 0.45}px #00f0ff`,
-          zIndex: 4,
+          border: `${1.8 + hardDrop * 2.2}px solid #00f0ff`,
+          transform: `translate(-50%, -50%) rotate(${-frame * 0.24}deg)`,
+          opacity: 0.35 + bassPulse * 0.18 + dropImpact * 0.32,
+          boxShadow: `0 0 ${glowIntensity * 0.55}px #00f0ff`,
+          zIndex: 5,
         }}
       />
+
+      {/* === IMPACT WAVE EXPANDINDO === */}
+      {(beatPulse > 0.62 || bassPulse > 0.55 || dropImpact > 0.14) && (
+        <div
+          style={{
+            position: "absolute",
+            left: cx,
+            top: cy,
+            width: ringSize + beatPulse * 110 + dropImpact * 250,
+            height: ringSize + beatPulse * 110 + dropImpact * 250,
+            borderRadius: "50%",
+            border: `${1.5 + hardDrop * 2.8}px solid #ffffff`,
+            transform: "translate(-50%, -50%)",
+            opacity: (0.18 + bassPulse * 0.18 + dropImpact * 0.34) * (1 - beatPhase * 0.42),
+            boxShadow: `0 0 ${glowIntensity * 0.45}px #ffffff`,
+            mixBlendMode: "screen",
+            zIndex: 3,
+          }}
+        />
+      )}
 
       {/* === LOGO PRINCIPAL === */}
       <Img
@@ -258,54 +322,72 @@ export const MyComposition = () => {
           position: "absolute",
           left: cx,
           top: cy,
-          width: Math.min(width, height) * 0.39,
+          width: Math.min(width, height) * 0.44,
           transform: `translate(-50%, -50%) scale(${logoScale}) rotate(${logoRotation}deg)`,
           filter: `
-            drop-shadow(0 0 ${glowIntensity * 0.75}px #c300ff)
-            drop-shadow(0 0 ${glowIntensity * 0.5}px #00f0ff)
-            brightness(${1.05 + energy * 0.18 + hardDrop * 0.24})
-            contrast(${1.08 + beatPulse * 0.08})
+            drop-shadow(0 0 ${glowIntensity * 0.92}px #ff00ff)
+            drop-shadow(0 0 ${glowIntensity * 0.72}px #00f0ff)
+            drop-shadow(0 0 ${glowIntensity * 0.26}px #ffffff)
+            brightness(${1.22 + energy * 0.28 + hardDrop * 0.40})
+            contrast(${1.18 + beatPulse * 0.14})
           `,
           zIndex: 10,
           pointerEvents: "none",
         }}
       />
 
-      {/* === IMPACT WAVE NO BEAT/DROP === */}
-      {(beatPulse > 0.72 || bassPulse > 0.62 || dropImpact > 0.2) && (
-        <div
-          style={{
-            position: "absolute",
-            left: cx,
-            top: cy,
-            width: ringSize + dropImpact * 190,
-            height: ringSize + dropImpact * 190,
-            borderRadius: "50%",
-            border: `${1 + hardDrop * 2}px solid #00f0ff`,
-            transform: "translate(-50%, -50%)",
-            opacity: (0.18 + bassPulse * 0.14 + dropImpact * 0.28) * (1 - beatPhase * 0.5),
-            boxShadow: `0 0 ${glowIntensity * 0.38}px #00f0ff`,
-            zIndex: 3,
-          }}
-        />
+      {/* === GLITCH/CHROMA NO DROP === */}
+      {dropImpact > 0.28 && (
+        <>
+          <Img
+            src={staticFile("logo_darkmark.png")}
+            style={{
+              position: "absolute",
+              left: cx - 7 * dropImpact,
+              top: cy,
+              width: Math.min(width, height) * 0.44,
+              transform: `translate(-50%, -50%) scale(${logoScale}) rotate(${logoRotation}deg)`,
+              opacity: dropImpact * 0.18,
+              filter: "drop-shadow(0 0 45px #ff003c)",
+              zIndex: 9,
+              pointerEvents: "none",
+            }}
+          />
+          <Img
+            src={staticFile("logo_darkmark.png")}
+            style={{
+              position: "absolute",
+              left: cx + 7 * dropImpact,
+              top: cy,
+              width: Math.min(width, height) * 0.44,
+              transform: `translate(-50%, -50%) scale(${logoScale}) rotate(${logoRotation}deg)`,
+              opacity: dropImpact * 0.18,
+              filter: "drop-shadow(0 0 45px #00f0ff)",
+              zIndex: 9,
+              pointerEvents: "none",
+            }}
+          />
+        </>
       )}
 
-      {/* === VINHETA FINAL === */}
+      {/* === VINHETA PESADA === */}
       <AbsoluteFill
         style={{
           background:
-            "radial-gradient(circle, transparent 48%, rgba(0,0,0,0.78) 100%)",
-          opacity: 0.72,
+            "radial-gradient(circle, transparent 44%, rgba(0,0,0,0.82) 100%)",
+          opacity: 0.78,
           pointerEvents: "none",
+          zIndex: 20,
         }}
       />
 
-      {/* === FADE FINAL === */}
+      {/* === FADE FINAL LIMPO === */}
       <AbsoluteFill
         style={{
           background: "#000",
-          opacity: time > duration - 0.9 ? clamp((time - (duration - 0.9)) / 0.9) : 0,
+          opacity: time > duration - 0.75 ? clamp((time - (duration - 0.75)) / 0.75) : 0,
           pointerEvents: "none",
+          zIndex: 30,
         }}
       />
     </AbsoluteFill>
