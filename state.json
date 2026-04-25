@@ -536,9 +536,9 @@
       "name": "I Hate Myself.mp3",
       "key": "1j--g5mvNyzUHmc4ntuXxUy4_93QhDSfo",
       "name_key": "i hate myself",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1fdBaJXfqVqH1qOdvInqe1CZneMxS-MIx",
