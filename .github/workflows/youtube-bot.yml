@@ -11,7 +11,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 55  # job inteiro: 55min (deixa 5min pro cleanup)
     env:
       PYTHONUNBUFFERED: "1"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
@@ -36,7 +36,7 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install FFmpeg + fonts + Xvfb
+      - name: Install system dependencies
         run: |
           sudo apt-get update -y -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
@@ -44,12 +44,21 @@ jobs:
             fonts-dejavu-core \
             fonts-liberation \
             xvfb \
+            chromium-browser \
             libnss3 \
+            libatk1.0-0 \
             libatk-bridge2.0-0 \
+            libcups2 \
             libdrm2 \
             libxkbcommon0 \
-            libgbm1
+            libxcomposite1 \
+            libxdamage1 \
+            libxrandr2 \
+            libgbm1 \
+            libasound2 \
+            libpangocairo-1.0-0
           ffmpeg -version | head -n 1
+          chromium-browser --version || echo "chromium não instalado (não crítico)"
 
       - name: Install Python dependencies
         run: |
@@ -78,12 +87,18 @@ jobs:
         run: |
           Xvfb :99 -screen 0 1280x720x24 &
           echo "DISPLAY=:99" >> $GITHUB_ENV
-          sleep 2
+          sleep 3
 
       - name: Run Bot
+        timeout-minutes: 48  # step do bot: 48min (sobra tempo pro Commit state.json)
         env:
           DISPLAY: ":99"
+          # Força Chromium headless a usar renderer de software (sem GPU)
           REMOTION_GL: "swiftshader"
+          # Aponta pro chromium do sistema em vez do bundled do Remotion
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+          # Flags extras do Chrome para CI headless
+          CHROME_FLAGS: "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
@@ -100,6 +115,7 @@ jobs:
           ENABLE_REMOTION: "true"
           REMOTION_COMPOSITION_ID: "MyComposition"
           REMOTION_ENTRY: "index.ts"
+          REMOTION_CONCURRENCY: "1"
           SHORTS_PER_TRACK: "1"
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
