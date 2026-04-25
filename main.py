@@ -1,6 +1,12 @@
 """
 main.py — Bot de automação YouTube Shorts v4.4
 ===============================================
+CORREÇÃO v4.6 (TÍTULO + GÊNERO MAIS LIMPO):
+- Títulos agora incluem o nome real da música.
+- Descrição reforça o nome da música no começo.
+- Gênero em cache é rechecado por padrão para não manter phonk errado no state.json.
+- Correção leve de gênero por nome/estilos secundários para evitar trap/electronic saindo como phonk quando o arquivo indica outra vibe.
+
 CORREÇÃO v4.5 (ANTI-TRAVA GITHUB/REMOTION):
 - GitHub Actions: Remotion fica DESATIVADO automaticamente por padrão para nunca travar.
 - Para forçar Remotion no GitHub, use FORCE_REMOTION_GITHUB=true.
@@ -62,6 +68,7 @@ from ai_image_generator import generate_image, build_ai_prompt
 STATE_FILE = Path("state.json")
 
 SHORTS_PER_TRACK = int(os.getenv("SHORTS_PER_TRACK", "1"))
+RECHECK_GENRE_EACH_RUN = os.getenv("RECHECK_GENRE_EACH_RUN", "true").lower() == "true"
 
 DRIVE_FOLDER_ID        = os.getenv("DRIVE_FOLDER_ID")
 DRIVE_BACKUP_FOLDER_ID = os.getenv("DRIVE_BACKUP_FOLDER_ID", "").strip()
@@ -464,15 +471,54 @@ GENRE_PREFIXES = {
 TITLE_SEPARATORS = [" — ", " | ", " · ", " ✦ ", " » ", " ▸ "]
 
 TITLE_TEMPLATES = [
-    "{genre_prefix}{sep}{hook} — DJ darkMark",
-    "{genre_prefix}{sep}{hook} | DJ darkMark",
-    "{genre_prefix}{sep}DJ darkMark · {hook}",
-    "{genre_prefix}{sep}{hook} {emoji} DJ darkMark",
-    "{genre_prefix}{sep}DJ darkMark 🎧 {hook}",
-    "{genre_prefix}{sep}{hook} — DJ darkMark {emoji}",
-    "{genre_prefix}{sep}DJ darkMark: {hook}",
-    "{genre_prefix}{sep}{hook} · DJ darkMark {emoji}",
+    "{base} — {genre_prefix}{sep}{hook} | DJ darkMark",
+    "{base} | {genre_prefix}{sep}{hook} — DJ darkMark",
+    "{base} · DJ darkMark{sep}{hook}",
+    "{base} {emoji} — {genre_prefix} | DJ darkMark",
+    "{genre_prefix}{sep}{base} — DJ darkMark",
+    "{base} — DJ darkMark{sep}{hook}",
+    "{base} | DJ darkMark 🎧 {genre_prefix}",
+    "{base} · {hook} — DJ darkMark {emoji}",
 ]
+
+
+def normalize_detected_style(style: str, styles: list, filename: str) -> str:
+    """
+    Correção leve para não rotular tudo como phonk.
+    A detecção principal continua no genre_detector.py, mas aqui limpamos casos óbvios
+    pelo nome do arquivo e pelos gêneros secundários.
+    """
+    base = clean_title(filename).lower()
+    secondary = [str(s).lower() for s in (styles or [])]
+
+    electronic_words = [
+        "electronic", "eletronic", "edm", "techno", "house", "rave", "synth",
+        "synthwave", "dubstep", "future", "cyber", "laser", "club", "dance"
+    ]
+    trap_words = [
+        "trap", "808", "drill", "street", "gang", "plug", "rage", "carti",
+        "atl", "hood", "luxury", "flex"
+    ]
+    phonk_words = [
+        "phonk", "drift", "cowbell", "memphis", "murder", "ghostface"
+    ]
+
+    if any(w in base for w in electronic_words):
+        return "electronic"
+    if any(w in base for w in trap_words):
+        return "trap"
+    if any(w in base for w in phonk_words):
+        return "phonk"
+
+    # Se a IA/heurística chamou de phonk mas os secundários apontam forte pra trap/electronic,
+    # evita título/hashtag errado demais. Prioriza electronic > trap quando aparecem.
+    if style == "phonk":
+        if "electronic" in secondary or "edm" in secondary or "dubstep" in secondary:
+            return "electronic"
+        if "trap" in secondary and "dark" not in secondary:
+            return "trap"
+
+    return style or "default"
 
 
 def _dhash(text: str) -> int:
@@ -502,11 +548,16 @@ def build_title(base: str, style: str, short_num: int) -> str:
     template = TITLE_TEMPLATES[tmpl_seed % len(TITLE_TEMPLATES)]
 
     title = template.format(
+        base=base,
         genre_prefix=genre_prefix,
         sep=sep,
         hook=hook,
         emoji=emoji,
     )
+
+    # Garante que o nome da música nunca suma mesmo se template futuro quebrar.
+    if base.lower() not in title.lower():
+        title = f"{base} — {title}"
 
     return title[:100]
 
@@ -1093,14 +1144,24 @@ def main():
         log("Download completo.")
 
         cached_genre = track.get("genre")
-        if cached_genre:
-            style  = cached_genre
+        if cached_genre and not RECHECK_GENRE_EACH_RUN:
+            style = cached_genre
             styles = detect_genre_multi(audio_path)
-            log(f"Gênero (cache): {style}")
+            corrected_style = normalize_detected_style(style, styles, name)
+            if corrected_style != style:
+                log(f"Gênero corrigido por contexto: {style} -> {corrected_style}")
+                style = corrected_style
+                track["genre"] = style
+                save_state(state)
+            else:
+                log(f"Gênero (cache): {style}")
         else:
             log("Detectando gênero...")
-            style  = detect_genre(audio_path)
+            raw_style = detect_genre(audio_path)
             styles = detect_genre_multi(audio_path)
+            style = normalize_detected_style(raw_style, styles, name)
+            if style != raw_style:
+                log(f"Gênero ajustado: {raw_style} -> {style}")
             track["genre"] = style
             save_state(state)
             log(f"Gênero: {style} | Secundários: {', '.join(styles[1:] or ['nenhum'])}")
