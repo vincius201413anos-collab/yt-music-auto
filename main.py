@@ -1,6 +1,12 @@
 """
 main.py — Bot de automação YouTube Shorts v4.4
 ===============================================
+CORREÇÃO v4.5 (ANTI-TRAVA GITHUB/REMOTION):
+- GitHub Actions: Remotion fica DESATIVADO automaticamente por padrão para nunca travar.
+- Para forçar Remotion no GitHub, use FORCE_REMOTION_GITHUB=true.
+- Timeout do Remotion agora vem de REMOTION_SUBPROCESS_TIMEOUT/REMOTION_TIMEOUT e padrão é 300s.
+- Processo do Remotion agora é morto em grupo se estourar timeout, evitando Chrome/npx preso.
+
 CORREÇÃO v4.4 (OTIMIZAÇÃO GITHUB ACTIONS):
 - Remotion: adicionado --gl=swiftshader (fix crítico para Chromium headless).
 - Remotion: concurrency baixado de 2 → 1 (evita OOM no runner gratuito).
@@ -34,6 +40,7 @@ import time
 import hashlib
 import subprocess
 import shutil
+import signal
 from pathlib import Path
 from datetime import datetime
 
@@ -67,6 +74,14 @@ ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE",  "true").lower()  == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 
 ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
+RUNNING_IN_GITHUB = os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+FORCE_REMOTION_GITHUB = os.getenv("FORCE_REMOTION_GITHUB", "false").lower() == "true"
+
+# Anti-trava: no GitHub Actions, Remotion/Chromium é a parte que mais prende o job.
+# Por padrão, GitHub usa o vídeo base FFmpeg. No PC/VPS, Remotion continua ativo.
+if RUNNING_IN_GITHUB and ENABLE_REMOTION and not FORCE_REMOTION_GITHUB:
+    ENABLE_REMOTION = False
+
 REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
 REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "index.ts")
 
@@ -75,7 +90,7 @@ REMOTION_CONCURRENCY  = int(os.getenv("REMOTION_CONCURRENCY", "1"))   # 1 = segu
 REMOTION_SCALE        = os.getenv("REMOTION_SCALE", "0.6")
 REMOTION_CRF          = os.getenv("REMOTION_CRF", "28")
 REMOTION_TIMEOUT_MS   = os.getenv("REMOTION_TIMEOUT_MS", "300000")
-REMOTION_SUBPROCESS_TIMEOUT = 840  # segundos — 14 min, dentro do job de 60 min
+REMOTION_SUBPROCESS_TIMEOUT = int(os.getenv("REMOTION_SUBPROCESS_TIMEOUT", os.getenv("REMOTION_TIMEOUT", "300")))  # padrão: 5 min
 
 
 def log(msg: str):
@@ -729,6 +744,39 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
     raise FileNotFoundError("Nenhum background disponível.")
 
 
+
+
+def run_process_kill_tree(cmd: list[str], cwd: str, timeout: int) -> subprocess.CompletedProcess:
+    """Roda comando com timeout real e mata filhos do Chrome/Remotion se travar."""
+    proc = subprocess.Popen(
+        cmd,
+        cwd=cwd,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        start_new_session=True,
+    )
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired as exc:
+        try:
+            os.killpg(proc.pid, signal.SIGTERM)
+            time.sleep(2)
+            if proc.poll() is None:
+                os.killpg(proc.pid, signal.SIGKILL)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+        raise subprocess.TimeoutExpired(cmd, timeout, output=exc.output, stderr=exc.stderr)
+
+    result = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
+    if proc.returncode != 0:
+        raise subprocess.CalledProcessError(proc.returncode, cmd, output=stdout, stderr=stderr)
+    return result
+
+
 def run_remotion_overlay(
     base_video_path: str,
     output_path: str,
@@ -740,10 +788,11 @@ def run_remotion_overlay(
     """
     Renderiza o vídeo final pelo Remotion.
 
-    FIX v4.4:
-    - --gl=swiftshader: permite Chromium rodar sem GPU real (headless CI).
-    - --concurrency 1: evita OOM nos runners gratuitos do GitHub Actions.
-    - timeout subprocess limitado a REMOTION_SUBPROCESS_TIMEOUT segundos.
+    FIX v4.5:
+    - No GitHub Actions, Remotion é pulado por padrão para evitar travar.
+    - Timeout padrão 300s, configurável por REMOTION_SUBPROCESS_TIMEOUT.
+    - Se travar, mata o processo inteiro do Remotion/Chrome e usa o vídeo base.
+    - Para forçar Remotion no GitHub: FORCE_REMOTION_GITHUB=true.
     """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
@@ -867,12 +916,9 @@ def run_remotion_overlay(
     log(f"▶ Iniciando render Remotion (concurrency={REMOTION_CONCURRENCY}, gl=swiftshader)...")
 
     try:
-        result = subprocess.run(
+        result = run_process_kill_tree(
             cmd,
             cwd=str(remotion_dir),
-            check=True,
-            text=True,
-            capture_output=True,
             timeout=REMOTION_SUBPROCESS_TIMEOUT,
         )
 
@@ -982,6 +1028,8 @@ def main():
     log(f"  Facebook : {'ATIVO' if ENABLE_FACEBOOK else 'DESATIVADO'}")
     log(f"  Backup   : {'ATIVO' if DRIVE_BACKUP_FOLDER_ID else 'DESATIVADO'}")
     log(f"  Remotion : {'ATIVO' if ENABLE_REMOTION else 'DESATIVADO'}")
+    if RUNNING_IN_GITHUB and not ENABLE_REMOTION:
+        log("  Modo seguro GitHub: Remotion pulado para evitar travamento.")
     log(f"  Shorts/faixa: {SHORTS_PER_TRACK}")
     log("=" * 55)
 
