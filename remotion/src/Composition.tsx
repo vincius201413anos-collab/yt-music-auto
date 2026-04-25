@@ -5,6 +5,7 @@ import {
   staticFile,
   useVideoConfig,
   Img,
+  Video,
 } from "remotion";
 
 const clamp = (v: number, min = 0, max = 1) =>
@@ -151,13 +152,9 @@ export const MyComposition = () => {
         opacity: masterOpacity,
       }}
     >
-      {/* === FUNDO CYBERPUNK === */}
-      <Img
-        src={staticFile("background.png")}
+      {/* === VIDEO BASE FFmpeg === */}
+      <AbsoluteFill
         style={{
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
           transform: `translate(${shakeX}px, ${shakeY}px) scale(${
             1.055 + energy * 0.052 + dropImpact * 0.045
           })`,
@@ -165,7 +162,16 @@ export const MyComposition = () => {
             1.18 + energy * 0.18
           }) saturate(${1.22 + energy * 0.45 + dropImpact * 0.35})`,
         }}
-      />
+      >
+        <Video
+          src={staticFile("input.mp4")}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover",
+          }}
+        />
+      </AbsoluteFill>
 
       {/* === ESCURECE BORDAS E PUXA FOCO PRA LOGO === */}
       <AbsoluteFill
