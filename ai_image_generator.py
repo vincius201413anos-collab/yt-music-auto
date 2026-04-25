@@ -563,51 +563,46 @@ def _song_micro_detail(song_name: str) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
-    """
-    Função principal usada pelo bot.
-    Retorna prompt pronto para gerar imagem.
-
-    style: gênero principal detectado
-    filename: nome do áudio
-    styles: gêneros secundários
-    short_num: número do short da faixa
-    """
     styles = styles or []
     song_name = _clean_song_name(filename)
-    all_styles = ", ".join([style] + [s for s in styles if s and s != style])
 
-    concept = _pick_concept(style, filename, short_num)
-    parts = _pick_style_parts(filename, short_num)
-    character = _build_character(parts)
-    song_detail = _song_micro_detail(song_name)
+    rng = _rng(filename, short_num)
 
-    scene = concept["scene"].format(character=character)
-    anchor = concept.get("anchor", "")
-    palette = concept.get("palette", "")
-    art_style = parts["art"]
+    poses = [
+        "looking at camera",
+        "side profile",
+        "walking forward in rain",
+        "standing still in neon fog",
+        "low angle dominant pose"
+    ]
+
+    moods = [
+        "aggressive",
+        "mysterious",
+        "dark seductive",
+        "emotionless",
+        "melancholic"
+    ]
+
+    scenes = [
+        "cyberpunk city at night with heavy rain",
+        "underground parking lot with neon reflections",
+        "dark alley with flickering lights",
+        "cosmic void with floating particles",
+        "rooftop with neon skyline"
+    ]
+
+    pose = rng.choice(poses)
+    mood = rng.choice(moods)
+    scene = rng.choice(scenes)
 
     prompt = (
-        f"{scene}, "
-        f"anchor detail: {anchor}, "
-        f"{song_detail}, "
-        f"genre mood: {style} music, {all_styles}, "
-        f"{CHANNEL_IDENTITY}, "
-        f"{CYBERPUNK_STYLE_DNA}, "
-        f"{BACKGROUND_DNA}, "
-        f"{LIGHTING_DNA}, "
-        f"color palette: {palette}, "
-        f"{art_style}, "
-        f"{QUALITY_TAGS}"
+        f"{mood} cyberpunk anime girl, {pose}, "
+        f"{scene}, glowing neon eyes, black hoodie, "
+        f"purple cyan magenta lighting, volumetric fog, rain reflections, "
+        f"high contrast, cinematic composition, phonk trap aesthetic, "
+        f"ultra detailed, masterpiece, best quality, 8k, 9:16 vertical"
     )
-
-    # Reforço final para trap/phonk, que são os principais do seu canal.
-    mapped = GENRE_MAP.get(style, style)
-    if mapped in ("phonk", "trap"):
-        prompt += (
-            ", aggressive dark anime cyberpunk girl aesthetic, "
-            "phonk trap visualizer background, neon bloom, bass energy, "
-            "scroll-stopping YouTube Shorts look, dark seductive power, platform-safe"
-        )
 
     return _compact(prompt)
 
