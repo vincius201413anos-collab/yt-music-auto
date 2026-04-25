@@ -1,54 +1,38 @@
 """
-main.py — Bot de automação YouTube Shorts v4.4
-===============================================
-CORREÇÃO v4.6 (TÍTULO + GÊNERO MAIS LIMPO):
-- Títulos agora incluem o nome real da música.
-- Descrição reforça o nome da música no começo.
-- Gênero em cache é rechecado por padrão para não manter phonk errado no state.json.
-- Correção leve de gênero por nome/estilos secundários para evitar trap/electronic saindo como phonk quando o arquivo indica outra vibe.
+main.py — DJ DARK MARK YouTube Shorts Bot v7.1 FINAL MERGE
+=========================================================
+Merge v7 (audio_analysis real, beat sync) + v4.6 (títulos, gênero, GitHub safe).
 
-CORREÇÃO v4.5 (ANTI-TRAVA GITHUB/REMOTION):
-- GitHub Actions: Remotion fica DESATIVADO automaticamente por padrão para nunca travar.
-- Para forçar Remotion no GitHub, use FORCE_REMOTION_GITHUB=true.
-- Timeout do Remotion agora vem de REMOTION_SUBPROCESS_TIMEOUT/REMOTION_TIMEOUT e padrão é 300s.
-- Processo do Remotion agora é morto em grupo se estourar timeout, evitando Chrome/npx preso.
+MELHORIAS DESTA VERSÃO:
+- Títulos incluem o nome real da música (fix v4.6).
+- Gênero rechecado por padrão (evita phonk errado no state.json).
+- Correção de gênero por nome do arquivo e estilos secundários.
+- audio_analysis.py Elite v2.1: snare/hihat/seções/perfil/curva de energia.
+- Remotion desligado por padrão no GitHub Actions (anti-trava).
+- Backup no Drive quando DRIVE_BACKUP_FOLDER_ID existir.
+- Suporte a Facebook Reels (ENABLE_FACEBOOK=true).
 
-CORREÇÃO v4.4 (OTIMIZAÇÃO GITHUB ACTIONS):
-- Remotion: adicionado --gl=swiftshader (fix crítico para Chromium headless).
-- Remotion: concurrency baixado de 2 → 1 (evita OOM no runner gratuito).
-- Remotion: timeout subprocess reduzido para 840s (14min), dentro do job de 60min.
-- Limpeza de temp mais agressiva no finally.
-- Log do comando Remotion mascarado para não poluir saída.
-
-CORREÇÃO v4.3:
-- Força upload e backup a usarem o arquivo FINAL do Remotion quando ele existir.
-- Corrige o caso em que o Remotion renderiza certo, mas o Shorts ainda sobe o vídeo base.
-- Mantém fallback no vídeo base somente se o Remotion falhar.
-
-CORREÇÃO v4.2:
-- Integra Remotion no fluxo principal.
-- O bot gera o vídeo base com FFmpeg/create_short.
-- Depois renderiza o overlay/ícone pelo Remotion.
-- Upload e backup usam o vídeo FINAL do Remotion.
-
-CORREÇÃO v4.1:
-- NÃO ignora mais músicas com nome duplicado.
-- Cada música agora é tratada pelo ID único do Google Drive.
-- Resolve o problema de músicas diferentes com nomes iguais/parecidos.
-- Mantém o ciclo, estado, upload e títulos do bot.
+GARANTIAS GITHUB ACTIONS FREE:
+- Sem Remotion por padrão (trava o runner).
+- FFmpeg com timeout configurável.
+- librosa/scipy opcionais — fallback automático.
+- Limpeza agressiva de temp no finally.
 """
 
-import os
-import json
-import re
-import random
-import time
+from __future__ import annotations
+
 import hashlib
-import subprocess
+import json
+import os
+import random
+import re
 import shutil
 import signal
-from pathlib import Path
+import subprocess
+import time
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Optional
 
 from drive_service import (
     get_drive_service,
@@ -65,6 +49,7 @@ from youtube_service import upload_video
 from facebook_service import upload_to_facebook
 from ai_image_generator import generate_image, build_ai_prompt
 
+
 STATE_FILE = Path("state.json")
 
 SHORTS_PER_TRACK = int(os.getenv("SHORTS_PER_TRACK", "1"))
@@ -73,36 +58,41 @@ RECHECK_GENRE_EACH_RUN = os.getenv("RECHECK_GENRE_EACH_RUN", "true").lower() == 
 DRIVE_FOLDER_ID        = os.getenv("DRIVE_FOLDER_ID")
 DRIVE_BACKUP_FOLDER_ID = os.getenv("DRIVE_BACKUP_FOLDER_ID", "").strip()
 
-SPOTIFY_LINK  = "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy"
-TIKTOK_LINK   = "https://www.tiktok.com/@darkmrkedit"
-CHANNEL_NAME  = "DJ darkMark"
+SPOTIFY_LINK  = os.getenv("SPOTIFY_LINK", "https://open.spotify.com/intl-pt/artist/1zyM1Pyi4YLAQgrSVRAYEy")
+TIKTOK_LINK   = os.getenv("TIKTOK_LINK", "https://www.tiktok.com/@darkmrkedit")
+CHANNEL_NAME  = os.getenv("CHANNEL_NAME", "DJ darkMark")
 
 ENABLE_YOUTUBE  = os.getenv("ENABLE_YOUTUBE",  "true").lower()  == "true"
 ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 
-ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
-RUNNING_IN_GITHUB = os.getenv("GITHUB_ACTIONS", "").lower() == "true"
+ENABLE_REMOTION       = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
+RUNNING_IN_GITHUB     = os.getenv("GITHUB_ACTIONS", "").lower() == "true"
 FORCE_REMOTION_GITHUB = os.getenv("FORCE_REMOTION_GITHUB", "false").lower() == "true"
 
-# Anti-trava: no GitHub Actions, Remotion/Chromium é a parte que mais prende o job.
-# Por padrão, GitHub usa o vídeo base FFmpeg. No PC/VPS, Remotion continua ativo.
+# Anti-trava: no GitHub Actions, Remotion/Chromium trava o job por padrão.
 if RUNNING_IN_GITHUB and ENABLE_REMOTION and not FORCE_REMOTION_GITHUB:
     ENABLE_REMOTION = False
 
-REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
-REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "index.ts")
+REMOTION_COMPOSITION_ID      = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
+REMOTION_ENTRY               = os.getenv("REMOTION_ENTRY", "index.ts")
+REMOTION_CONCURRENCY         = int(os.getenv("REMOTION_CONCURRENCY", "1"))
+REMOTION_SCALE               = os.getenv("REMOTION_SCALE", "0.6")
+REMOTION_CRF                 = os.getenv("REMOTION_CRF", "28")
+REMOTION_TIMEOUT_MS          = os.getenv("REMOTION_TIMEOUT_MS", "300000")
+REMOTION_SUBPROCESS_TIMEOUT  = int(os.getenv("REMOTION_SUBPROCESS_TIMEOUT", os.getenv("REMOTION_TIMEOUT", "300")))
 
-# ── Remotion tunables ────────────────────────────────────────────────────────
-REMOTION_CONCURRENCY  = int(os.getenv("REMOTION_CONCURRENCY", "1"))   # 1 = seguro no runner gratuito
-REMOTION_SCALE        = os.getenv("REMOTION_SCALE", "0.6")
-REMOTION_CRF          = os.getenv("REMOTION_CRF", "28")
-REMOTION_TIMEOUT_MS   = os.getenv("REMOTION_TIMEOUT_MS", "300000")
-REMOTION_SUBPROCESS_TIMEOUT = int(os.getenv("REMOTION_SUBPROCESS_TIMEOUT", os.getenv("REMOTION_TIMEOUT", "300")))  # padrão: 5 min
 
+# ══════════════════════════════════════════════════════════════════════
+# LOG
+# ══════════════════════════════════════════════════════════════════════
 
 def log(msg: str):
     print(f"[{datetime.utcnow().strftime('%H:%M:%S')}] {msg}")
 
+
+# ══════════════════════════════════════════════════════════════════════
+# UTILITÁRIOS DE TEXTO
+# ══════════════════════════════════════════════════════════════════════
 
 def clean_title(filename: str) -> str:
     name = Path(filename).stem
@@ -118,8 +108,7 @@ def safe_filename(text: str) -> str:
 
 def canonical_track_key(filename: str) -> str:
     base = clean_title(filename).lower()
-    base = re.sub(r"\s+", " ", base).strip()
-    return base
+    return re.sub(r"\s+", " ", base).strip()
 
 
 def track_key_from_drive_file(file_obj: dict) -> str:
@@ -130,6 +119,55 @@ def human_delay():
     secs = random.randint(15, 45)
     log(f"Aguardando {secs}s antes do upload...")
     time.sleep(secs)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# CORREÇÃO DE GÊNERO
+# ══════════════════════════════════════════════════════════════════════
+
+def normalize_detected_style(style: str, styles: list, filename: str) -> str:
+    """
+    Correção leve para não rotular tudo como phonk.
+    A detecção principal continua no genre_detector.py.
+    Aqui limpamos casos óbvios pelo nome do arquivo e gêneros secundários.
+    """
+    base = clean_title(filename).lower()
+    secondary = [str(s).lower() for s in (styles or [])]
+
+    electronic_words = [
+        "electronic", "eletronic", "edm", "techno", "house", "rave", "synth",
+        "synthwave", "dubstep", "future", "cyber", "laser", "club", "dance"
+    ]
+    trap_words = [
+        "trap", "808", "drill", "street", "gang", "plug", "rage", "carti",
+        "atl", "hood", "luxury", "flex"
+    ]
+    phonk_words = [
+        "phonk", "drift", "cowbell", "memphis", "murder", "ghostface"
+    ]
+
+    if any(w in base for w in electronic_words):
+        return "electronic"
+    if any(w in base for w in trap_words):
+        return "trap"
+    if any(w in base for w in phonk_words):
+        return "phonk"
+
+    if style == "phonk":
+        if "electronic" in secondary or "edm" in secondary or "dubstep" in secondary:
+            return "electronic"
+        if "trap" in secondary and "dark" not in secondary:
+            return "trap"
+
+    return style or "default"
+
+
+# ══════════════════════════════════════════════════════════════════════
+# HOOKS E TÍTULOS
+# ══════════════════════════════════════════════════════════════════════
+
+def _dhash(text: str) -> int:
+    return int(hashlib.md5(text.encode()).hexdigest(), 16)
 
 
 HOOKS_CURIOSIDADE = {
@@ -482,59 +520,13 @@ TITLE_TEMPLATES = [
 ]
 
 
-def normalize_detected_style(style: str, styles: list, filename: str) -> str:
-    """
-    Correção leve para não rotular tudo como phonk.
-    A detecção principal continua no genre_detector.py, mas aqui limpamos casos óbvios
-    pelo nome do arquivo e pelos gêneros secundários.
-    """
-    base = clean_title(filename).lower()
-    secondary = [str(s).lower() for s in (styles or [])]
-
-    electronic_words = [
-        "electronic", "eletronic", "edm", "techno", "house", "rave", "synth",
-        "synthwave", "dubstep", "future", "cyber", "laser", "club", "dance"
-    ]
-    trap_words = [
-        "trap", "808", "drill", "street", "gang", "plug", "rage", "carti",
-        "atl", "hood", "luxury", "flex"
-    ]
-    phonk_words = [
-        "phonk", "drift", "cowbell", "memphis", "murder", "ghostface"
-    ]
-
-    if any(w in base for w in electronic_words):
-        return "electronic"
-    if any(w in base for w in trap_words):
-        return "trap"
-    if any(w in base for w in phonk_words):
-        return "phonk"
-
-    # Se a IA/heurística chamou de phonk mas os secundários apontam forte pra trap/electronic,
-    # evita título/hashtag errado demais. Prioriza electronic > trap quando aparecem.
-    if style == "phonk":
-        if "electronic" in secondary or "edm" in secondary or "dubstep" in secondary:
-            return "electronic"
-        if "trap" in secondary and "dark" not in secondary:
-            return "trap"
-
-    return style or "default"
-
-
-def _dhash(text: str) -> int:
-    return int(hashlib.md5(text.encode()).hexdigest(), 16)
-
-
 def build_title(base: str, style: str, short_num: int) -> str:
     emoji = GENRE_EMOJI.get(style, "🎵")
-
     prefix_pool = GENRE_PREFIXES.get(style, GENRE_PREFIXES["default"])
     prefix_seed = _dhash(f"{base}|prefix|{short_num}")
     genre_prefix = prefix_pool[prefix_seed % len(prefix_pool)]
-
     sep_seed = _dhash(f"{base}|sep|{short_num}")
     sep = TITLE_SEPARATORS[sep_seed % len(TITLE_SEPARATORS)]
-
     hook_layers = [
         HOOKS_CURIOSIDADE.get(style, HOOKS_CURIOSIDADE["default"]),
         HOOKS_EMOCIONAL.get(style, HOOKS_EMOCIONAL["default"]),
@@ -543,10 +535,8 @@ def build_title(base: str, style: str, short_num: int) -> str:
     layer = hook_layers[(short_num - 1) % len(hook_layers)]
     hook_seed = _dhash(f"{base}|hook|{short_num}")
     hook = layer[hook_seed % len(layer)]
-
     tmpl_seed = _dhash(f"{base}|tmpl|{short_num}")
     template = TITLE_TEMPLATES[tmpl_seed % len(TITLE_TEMPLATES)]
-
     title = template.format(
         base=base,
         genre_prefix=genre_prefix,
@@ -554,11 +544,9 @@ def build_title(base: str, style: str, short_num: int) -> str:
         hook=hook,
         emoji=emoji,
     )
-
-    # Garante que o nome da música nunca suma mesmo se template futuro quebrar.
+    # Garante que o nome da música nunca suma
     if base.lower() not in title.lower():
         title = f"{base} — {title}"
-
     return title[:100]
 
 
@@ -567,7 +555,7 @@ STYLE_HASHTAGS = {
     "trap":       "#trap #trapmusic #808s #trapbeats #undergroundbr #trapvibes #djdarkmark",
     "rock":       "#rock #rockmusic #guitarmusic #hardrock #rockbr #rockalternativo #djdarkmark",
     "metal":      "#metal #heavymetal #metalhead #metalcore #metalbr #músicapesada #djdarkmark",
-    "lofi":       "#lofi #lofihiphop #músicaparaestudas #chillvibes #lofibeats #relaxar #djdarkmark",
+    "lofi":       "#lofi #lofihiphop #músicaparaestudar #chillvibes #lofibeats #relaxar #djdarkmark",
     "indie":      "#indie #indiemusic #músicaalternativa #indiepop #indierock #djdarkmark",
     "electronic": "#electronic #edm #synthwave #eletrônica #techno #músicaeletrônica #djdarkmark",
     "cinematic":  "#cinematic #músicacinematográfica #epicmusic #trilhasonora #djdarkmark",
@@ -583,8 +571,7 @@ UNIVERSAL = "#shorts #youtubeshorts #viral #fyp #trending #musicshorts #djdarkma
 def build_description(base: str, style: str, short_num: int) -> str:
     tags  = STYLE_HASHTAGS.get(style, STYLE_HASHTAGS["default"])
     emoji = GENRE_EMOJI.get(style, "🎵")
-
-    idx = (short_num - 1) % 5
+    idx   = (short_num - 1) % 5
 
     openers = [
         f"{emoji} {base}\n\nEssa aqui chegou no momento certo.\nDJ darkMark traz o melhor do underground todo dia — antes de chegar pra todo mundo.",
@@ -593,7 +580,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
         f"{emoji} {base} — DJ darkMark\n\nNem tudo que é bom viraliza. DJ darkMark garante que você ache de qualquer forma.",
         f"{emoji} {base}\n\nCedo nessa. DJ darkMark — música nova todo dia, essa que você não ia achar no rádio.",
     ]
-
     ctas = [
         "Inscreva-se no DJ darkMark pra não perder nenhum drop.",
         "Siga o DJ darkMark — música nova todo dia sem falta.",
@@ -601,7 +587,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
         "Salva essa. Você vai querer ela de volta.",
         "Comenta se bateu do jeito certo.",
     ]
-
     spotify_lines = [
         f"🎧 Música completa:\n{SPOTIFY_LINK}",
         f"🎵 Ouça na íntegra:\n{SPOTIFY_LINK}",
@@ -609,7 +594,6 @@ def build_description(base: str, style: str, short_num: int) -> str:
         f"📻 No Spotify:\n{SPOTIFY_LINK}",
         f"🎧 Ouve aqui:\n{SPOTIFY_LINK}",
     ]
-
     return (
         f"{openers[idx]}\n\n"
         f"{ctas[idx]}\n\n"
@@ -619,39 +603,35 @@ def build_description(base: str, style: str, short_num: int) -> str:
     )
 
 
+# ══════════════════════════════════════════════════════════════════════
+# STATE
+# ══════════════════════════════════════════════════════════════════════
+
 def load_state() -> dict:
     if not STATE_FILE.exists():
         return {"tracks": [], "alpha_index": 0}
-
     with STATE_FILE.open("r", encoding="utf-8") as f:
         state = json.load(f)
-
     state.pop("queue_index", None)
     state.pop("index", None)
     state.setdefault("tracks", [])
     state.setdefault("alpha_index", 0)
-
     normalized_tracks = []
     seen_ids = set()
-
     for t in state["tracks"]:
         t.setdefault("done", 0)
         t.setdefault("is_new", False)
         t.setdefault("genre", None)
-
         drive_id = t.get("id")
         if drive_id:
             t["key"] = str(drive_id)
         else:
             t.setdefault("key", canonical_track_key(t["name"]))
-
         unique_id = t.get("id") or t.get("key")
         if unique_id in seen_ids:
             continue
-
         seen_ids.add(unique_id)
         normalized_tracks.append(t)
-
     state["tracks"] = normalized_tracks
     n = len(state["tracks"])
     state["alpha_index"] = state.get("alpha_index", 0) % n if n else 0
@@ -667,31 +647,24 @@ def save_state(state: dict):
 
 def sync_tracks(state: dict, files: list):
     drive_files = []
-
     for f in files:
         key = track_key_from_drive_file(f)
         name_key = canonical_track_key(f["name"])
-
         drive_files.append({
             "id": f["id"],
             "name": f["name"],
             "key": key,
             "name_key": name_key,
         })
-
     existing = {}
-
     for t in state["tracks"]:
         if t.get("id"):
             existing[str(t["id"])] = t
         else:
             existing[t.get("key", canonical_track_key(t["name"]))] = t
-
     new_tracks = []
-
     for f in drive_files:
         key = f["key"]
-
         if key not in existing:
             log(f"Nova faixa: {f['name']}")
             track = {
@@ -714,20 +687,16 @@ def sync_tracks(state: dict, files: list):
             track.setdefault("done", 0)
             track.setdefault("is_new", False)
             track.setdefault("genre", None)
-
     ordered_tracks = []
     for f in drive_files:
         track = existing.get(f["key"])
         if track:
             ordered_tracks.append(track)
-
     state["tracks"] = ordered_tracks
-
     n = len(state["tracks"])
     if n == 0:
         state["alpha_index"] = 0
         return
-
     if new_tracks:
         state["alpha_index"] = 0
     else:
@@ -738,7 +707,6 @@ def get_next_track(state: dict) -> dict | None:
     tracks = state["tracks"]
     if not tracks:
         return None
-
     new_tracks = [t for t in tracks if t.get("is_new") and t.get("done", 0) < SHORTS_PER_TRACK]
     if new_tracks:
         chosen = new_tracks[0]
@@ -746,29 +714,28 @@ def get_next_track(state: dict) -> dict | None:
         chosen["is_new"] = False
         state["alpha_index"] = 0
         return chosen
-
     n = len(tracks)
     idx = state.get("alpha_index", 0) % n
-
     for i in range(n):
         pos = (idx + i) % n
         t = tracks[pos]
         if t.get("done", 0) < SHORTS_PER_TRACK:
             state["alpha_index"] = (pos + 1) % n
             return t
-
     log("Ciclo completo — resetando contadores e voltando ao topo da inbox.")
     for t in tracks:
         t["done"] = 0
         t["is_new"] = False
-
     state["alpha_index"] = 0
     return tracks[0]
 
 
+# ══════════════════════════════════════════════════════════════════════
+# BACKGROUND
+# ══════════════════════════════════════════════════════════════════════
+
 def resolve_background(style: str, filename: str, short_num: int, styles: list) -> str:
     os.makedirs("temp", exist_ok=True)
-
     try:
         prompt = build_ai_prompt(style, filename, styles, short_num=short_num)
         dest   = f"temp/{Path(filename).stem}_{short_num}.png"
@@ -778,7 +745,6 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
             return img
     except Exception as e:
         log(f"Imagem AI falhou, tentando fallback local: {e}")
-
     try:
         bg = get_random_background(style, filename)
         if bg and not str(bg).startswith("__AUTO"):
@@ -786,19 +752,18 @@ def resolve_background(style: str, filename: str, short_num: int, styles: list) 
             return bg
     except Exception as e:
         log(f"Background local falhou: {e}")
-
     fallback = "assets/backgrounds/default.jpg"
     if os.path.exists(fallback):
         log("Usando background padrão de fallback")
         return fallback
-
     raise FileNotFoundError("Nenhum background disponível.")
 
 
-
+# ══════════════════════════════════════════════════════════════════════
+# REMOTION (desativado por padrão no GitHub Actions)
+# ══════════════════════════════════════════════════════════════════════
 
 def run_process_kill_tree(cmd: list[str], cwd: str, timeout: int) -> subprocess.CompletedProcess:
-    """Roda comando com timeout real e mata filhos do Chrome/Remotion se travar."""
     proc = subprocess.Popen(
         cmd,
         cwd=cwd,
@@ -821,7 +786,6 @@ def run_process_kill_tree(cmd: list[str], cwd: str, timeout: int) -> subprocess.
             except Exception:
                 pass
         raise subprocess.TimeoutExpired(cmd, timeout, output=exc.output, stderr=exc.stderr)
-
     result = subprocess.CompletedProcess(cmd, proc.returncode, stdout, stderr)
     if proc.returncode != 0:
         raise subprocess.CalledProcessError(proc.returncode, cmd, output=stdout, stderr=stderr)
@@ -836,21 +800,12 @@ def run_remotion_overlay(
     style: str = "default",
     song_name: str = "",
 ) -> str:
-    """
-    Renderiza o vídeo final pelo Remotion.
-
-    FIX v4.5:
-    - No GitHub Actions, Remotion é pulado por padrão para evitar travar.
-    - Timeout padrão 300s, configurável por REMOTION_SUBPROCESS_TIMEOUT.
-    - Se travar, mata o processo inteiro do Remotion/Chrome e usa o vídeo base.
-    - Para forçar Remotion no GitHub: FORCE_REMOTION_GITHUB=true.
-    """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
         return base_video_path
 
     base_video_abs = Path(base_video_path).resolve()
-    output_abs = Path(output_path).resolve()
+    output_abs     = Path(output_path).resolve()
 
     if not base_video_abs.exists():
         log(f"ERRO: Vídeo base não encontrado: {base_video_abs}")
@@ -864,15 +819,14 @@ def run_remotion_overlay(
     public_dir = remotion_dir / "public"
     public_dir.mkdir(parents=True, exist_ok=True)
 
-    # ── Copia vídeo base ────────────────────────────────────────────────────
+    # Copia vídeo base
     input_video_dest = public_dir / "input.mp4"
     shutil.copy(str(base_video_abs), str(input_video_dest))
     log(f"✅ Vídeo base copiado para Remotion: {input_video_dest}")
 
-    # ── Copia audio_data.json ───────────────────────────────────────────────
-    audio_dest = public_dir / "audio_data.json"
+    # Copia audio_data.json
+    audio_dest  = public_dir / "audio_data.json"
     copied_audio = False
-
     possible_audio_paths = []
     if audio_data_path:
         possible_audio_paths.append(Path(audio_data_path))
@@ -881,7 +835,6 @@ def run_remotion_overlay(
         Path("audio_data.json"),
         Path("remotion/public/audio_data.json"),
     ])
-
     for candidate in possible_audio_paths:
         try:
             if candidate and candidate.exists() and candidate.stat().st_size > 5:
@@ -892,12 +845,11 @@ def run_remotion_overlay(
                 break
         except Exception:
             pass
-
     if not copied_audio:
         audio_dest.write_text("[]", encoding="utf-8")
-        log("audio_data.json não encontrado — fallback vazio. Efeitos menos reativos.")
+        log("audio_data.json não encontrado — fallback vazio.")
 
-    # ── Copia logo ──────────────────────────────────────────────────────────
+    # Copia logo
     copied_logo = False
     possible_logo_paths = [
         Path("assets/logo_darkmark.png"),
@@ -905,12 +857,6 @@ def run_remotion_overlay(
     ]
     if logo_path:
         possible_logo_paths.insert(0, Path(logo_path))
-    possible_logo_paths.extend([
-        Path("logo.png"),
-        Path("remotion/public/logo.png"),
-        Path("remotion/public/logo_darkmark.png"),
-    ])
-
     for candidate in possible_logo_paths:
         try:
             if candidate and candidate.exists() and candidate.stat().st_size > 0:
@@ -919,38 +865,32 @@ def run_remotion_overlay(
                     if candidate.resolve() != dest.resolve():
                         shutil.copy(str(candidate), str(dest))
                 copied_logo = True
-                log(f"🔥 LOGO USADA: {candidate}")
+                log(f"🔥 LOGO: {candidate}")
                 break
         except Exception:
             pass
-
     if not copied_logo:
         log("Logo não encontrada — ícone não vai aparecer no Remotion.")
 
-    # ── Valida entry point ──────────────────────────────────────────────────
-    entry_env = str(REMOTION_ENTRY).replace("\\", "/").strip()
-    entry_for_cli = entry_env.replace("remotion/", "", 1) if entry_env.startswith("remotion/") else entry_env
-    entry_path = remotion_dir / entry_for_cli
+    # Valida entry
+    entry_env      = str(REMOTION_ENTRY).replace("\\", "/").strip()
+    entry_for_cli  = entry_env.replace("remotion/", "", 1) if entry_env.startswith("remotion/") else entry_env
+    entry_path     = remotion_dir / entry_for_cli
 
     if not entry_path.exists():
         log(f"Entry do Remotion não encontrado: {entry_path} — usando vídeo base.")
         return base_video_path
-
     if not (remotion_dir / "package.json").exists():
         log("remotion/package.json não encontrado — usando vídeo base.")
         return base_video_path
 
     output_abs.parent.mkdir(parents=True, exist_ok=True)
-
     if output_abs.exists():
         try:
             output_abs.unlink()
         except Exception:
             pass
 
-    # ── Comando Remotion — FIX v4.4 ─────────────────────────────────────────
-    # --gl=swiftshader : renderer de software do Chrome, funciona sem GPU
-    # --concurrency 1  : evita OOM no runner de 7GB do GitHub Actions
     cmd = [
         "npx", "remotion", "render",
         entry_for_cli,
@@ -961,44 +901,28 @@ def run_remotion_overlay(
         "--timeout", REMOTION_TIMEOUT_MS,
         "--scale", REMOTION_SCALE,
         "--crf", REMOTION_CRF,
-        "--gl=swiftshader",   # ← FIX CRÍTICO: habilita Chromium headless sem GPU
+        "--gl=swiftshader",
     ]
 
     log(f"▶ Iniciando render Remotion (concurrency={REMOTION_CONCURRENCY}, gl=swiftshader)...")
 
     try:
-        result = run_process_kill_tree(
-            cmd,
-            cwd=str(remotion_dir),
-            timeout=REMOTION_SUBPROCESS_TIMEOUT,
-        )
-
-        # Mostra apenas as últimas linhas pra não poluir o log
+        result = run_process_kill_tree(cmd, cwd=str(remotion_dir), timeout=REMOTION_SUBPROCESS_TIMEOUT)
         if result.stdout and result.stdout.strip():
             tail = result.stdout.strip().splitlines()[-20:]
             log("Remotion stdout (tail):\n" + "\n".join(tail))
-
         if result.stderr and result.stderr.strip():
             tail = result.stderr.strip().splitlines()[-10:]
             log("Remotion stderr (tail):\n" + "\n".join(tail))
-
         log("✅ Remotion finalizado com sucesso!")
-
     except FileNotFoundError:
-        log("npx não encontrado — Node/Remotion não instalado no runner. Usando vídeo base.")
+        log("npx não encontrado — Node/Remotion não instalado. Usando vídeo base.")
         return base_video_path
     except subprocess.TimeoutExpired:
         log(f"❌ Remotion passou do limite ({REMOTION_SUBPROCESS_TIMEOUT}s) — usando vídeo base.")
         return base_video_path
     except subprocess.CalledProcessError as e:
-        log(f"❌ Remotion falhou com código {e.returncode}.")
-        if e.stdout:
-            tail = e.stdout.strip().splitlines()[-30:]
-            log("Remotion stdout:\n" + "\n".join(tail))
-        if e.stderr:
-            tail = e.stderr.strip().splitlines()[-20:]
-            log("Remotion stderr:\n" + "\n".join(tail))
-        log("Usando vídeo base sem overlay do Remotion.")
+        log(f"❌ Remotion falhou com código {e.returncode}. Usando vídeo base.")
         return base_video_path
     except Exception as e:
         log(f"❌ Remotion falhou: {e} — usando vídeo base.")
@@ -1014,19 +938,19 @@ def run_remotion_overlay(
 
 def choose_upload_video(base_video_path: str, remotion_video_path: str) -> str:
     remotion_abs = Path(remotion_video_path).resolve()
-    base_abs = Path(base_video_path).resolve()
-
     if remotion_abs.exists() and remotion_abs.stat().st_size > 100_000:
         log(f"OK: usando vídeo FINAL do Remotion: {remotion_abs}")
         return str(remotion_abs)
-
     log("ATENÇÃO: Remotion não gerou arquivo válido — fallback para vídeo base.")
-    return str(base_abs)
+    return str(Path(base_video_path).resolve())
 
+
+# ══════════════════════════════════════════════════════════════════════
+# UPLOAD
+# ══════════════════════════════════════════════════════════════════════
 
 def publish(video_path: str, title: str, description: str) -> dict:
     results = {}
-
     if ENABLE_YOUTUBE:
         try:
             log("Fazendo upload pro YouTube...")
@@ -1060,8 +984,11 @@ def publish(video_path: str, title: str, description: str) -> dict:
     return results
 
 
+# ══════════════════════════════════════════════════════════════════════
+# CLEANUP
+# ══════════════════════════════════════════════════════════════════════
+
 def _cleanup_temp(*paths):
-    """Remove arquivos temporários com segurança."""
     for path in paths:
         try:
             if path and isinstance(path, str) and os.path.exists(path):
@@ -1071,6 +998,10 @@ def _cleanup_temp(*paths):
         except Exception:
             pass
 
+
+# ══════════════════════════════════════════════════════════════════════
+# MAIN
+# ══════════════════════════════════════════════════════════════════════
 
 def main():
     log("=" * 55)
@@ -1198,7 +1129,7 @@ def main():
             thumbnail_path   = None
             audio_data_path  = None
 
-        # ── Resolve audio_data.json ─────────────────────────────────────────
+        # Resolve audio_data.json
         if not audio_data_path:
             for candidate in [
                 Path("temp/audio_data.json"),
@@ -1216,7 +1147,7 @@ def main():
 
         log(f"Vídeo base pronto: {video_base_ready}")
 
-        # ── Remotion overlay ────────────────────────────────────────────────
+        # Remotion overlay (desativado por padrão no GitHub)
         run_remotion_overlay(
             base_video_path=video_base_ready,
             output_path=final_video_path,
