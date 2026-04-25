@@ -64,9 +64,9 @@ CHARACTER_DNA = (
     "one cyberpunk anime girl, adult woman, varied appearance, "
     "sharp edgy anime features, cold confident expression, intense gaze, "
     "dark futuristic streetwear or tactical cyberpunk outfit with neon accents, "
-    "subtle cybernetic implants glowing cyan or magenta, "
+    "visible glowing cybernetic implants and neon tattoos across arms, neck and chest, "
     "glowing neon eyes, high contrast face lighting, alone in frame, "
-    "not cute, not childish, not generic waifu"
+    "not cute, not childish, not generic waifu, slightly unhinged expression, crazy confident vibe"
 )
 
 CYBERPUNK_STYLE_DNA = (
@@ -584,7 +584,7 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
     # Controle de composição: evita imagem feia, rosto torto e cena bagunçada.
     quality_lock = (
         "beautiful polished anime key visual, clean readable silhouette, "
-        "perfect face structure, symmetrical sharp anime eyes, clean nose and mouth, "
+        "perfect face structure, symmetrical sharp anime eyes, clean nose and mouth, glowing neon tattoos integrated with anatomy, "
         "correct anatomy, elegant hands if visible, professional character design, "
         "centered strong composition, clear focal point, no clutter, no text, no watermark, "
         "high-end anime cover art, premium cel shading, crisp lineart, refined facial details"
@@ -594,7 +594,7 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
     viral_visual = (
         "dark cyberpunk anime girl background for music visualizer, "
         "space reserved in center for circular DJ logo overlay, "
-        "subject slightly behind or around center, not covering the center logo area, "
+        "subject slightly behind center, framing space for central DJ logo, strong composition focus, "
         "neon magenta and cyan rim light, purple glow, rain reflections, wet asphalt, "
         "glowing particles, volumetric fog, high contrast black shadows, "
         "cinematic depth, intense mood, scroll stopping YouTube Shorts visual"
