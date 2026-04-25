@@ -24,15 +24,20 @@ jobs:
         with:
           fetch-depth: 0
           token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: "pip"
+
       - name: Setup Node 18
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: "npm"
+          cache-dependency-path: remotion/package-lock.json
+
       - name: Install FFmpeg + fonts
         run: |
           sudo apt-get update -y -q
@@ -41,20 +46,30 @@ jobs:
             fonts-dejavu-core \
             fonts-liberation
           ffmpeg -version | head -n 1
-          echo "Fontes disponíveis:"
-          fc-list | grep -i "bold" | head -5 || true
+
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Cache Remotion node_modules
+        uses: actions/cache@v4
+        with:
+          path: remotion/node_modules
+          key: remotion-${{ hashFiles('remotion/package-lock.json') }}
+          restore-keys: |
+            remotion-
+
       - name: Install Remotion dependencies
         run: |
           cd remotion
-          npm install
+          npm ci --prefer-offline
+
       - name: Prepare folders
         run: |
           mkdir -p output temp assets/backgrounds assets/source_videos remotion/public
           test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
+
       - name: Run Bot
         env:
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
@@ -78,6 +93,7 @@ jobs:
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
           echo "=== END $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
+
       - name: Commit state.json
         if: always()
         run: |
