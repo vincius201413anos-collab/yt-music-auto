@@ -472,9 +472,9 @@
       "id": "1I62KqttCW20OJh_ZXKDy1Kvn6afrm2Hy",
       "name": "Falling Down Again (3).mp3",
       "key": "1I62KqttCW20OJh_ZXKDy1Kvn6afrm2Hy",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "falling down again"
     },
     {
