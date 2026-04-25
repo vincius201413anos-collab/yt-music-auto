@@ -41,8 +41,8 @@ REPLICATE_MODELS = [
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": 50,
-    "guidance_scale": 7.5,
+    "num_inference_steps": 40,
+    "guidance_scale": 8.5,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -100,15 +100,17 @@ QUALITY_TAGS = (
 
 NEGATIVE_PROMPT = (
     "photorealistic, hyperrealistic, photography, 3d render, CGI, real human, "
-    "child, young teen, childish face, chibi, kawaii, cute mascot, "
-    "nsfw, nude, explicit, revealing outfit, fetish, "
-    "multiple people, crowd, extra limbs, extra fingers, bad hands, bad anatomy, "
-    "deformed face, distorted face, asymmetrical eyes, malformed body, "
-    "text, watermark, signature, logo, frame, border, username, "
-    "blurry, low quality, muddy colors, washed out colors, pastel colors, "
-    "bright daylight, warm cozy aesthetic, cheerful mood, "
+    "child, young teen, childish face, chibi, kawaii, cute mascot, loli, schoolgirl, "
+    "nsfw, nude, explicit, revealing outfit, cleavage focus, fetish, "
+    "multiple people, crowd, duplicate character, extra limbs, extra arms, extra legs, "
+    "extra fingers, missing fingers, fused fingers, bad hands, bad anatomy, broken anatomy, "
+    "deformed face, distorted face, melted face, asymmetrical eyes, lazy eye, cross eye, "
+    "malformed body, long neck, tiny head, huge head, plastic skin, uncanny valley, "
+    "text, watermark, signature, logo, letters, words, frame, border, username, UI, poster text, "
+    "blurry, low quality, low resolution, noisy, muddy colors, washed out colors, pastel colors, "
+    "bright daylight, warm cozy aesthetic, cheerful mood, cute vibe, soft pastel, "
     "generic anime waifu, generic purple gradient, empty background, plain studio background, "
-    "boring composition, repetitive, forgettable, AI slop, plastic skin, uncanny valley, "
+    "boring composition, repetitive, forgettable, AI slop, amateur art, bad perspective, "
     "green dominant, yellow dominant, brown dominant, orange sunset dominant"
 )
 
@@ -563,48 +565,69 @@ def _song_micro_detail(song_name: str) -> str:
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
+    """
+    Prompt v9 QUALITY LOCK.
+    Foco: imagem bonita, anime cyberpunk forte, rosto consistente, visual menos genérico.
+    Mantém variação controlada por música/short para não repetir.
+    """
     styles = styles or []
     song_name = _clean_song_name(filename)
 
-    rng = _rng(filename, short_num)
+    mapped = GENRE_MAP.get(style, style)
+    concept = _pick_concept(style, filename, short_num)
+    parts = _pick_style_parts(filename, short_num)
+    character = _build_character(parts)
+    song_detail = _song_micro_detail(song_name)
 
-    poses = [
-        "looking at camera",
-        "side profile",
-        "walking forward in rain",
-        "standing still in neon fog",
-        "low angle dominant pose"
-    ]
+    all_styles = ", ".join([style] + [s for s in styles if s and s != style])
 
-    moods = [
-        "aggressive",
-        "mysterious",
-        "dark seductive",
-        "emotionless",
-        "melancholic"
-    ]
-
-    scenes = [
-        "cyberpunk city at night with heavy rain",
-        "underground parking lot with neon reflections",
-        "dark alley with flickering lights",
-        "cosmic void with floating particles",
-        "rooftop with neon skyline"
-    ]
-
-    pose = rng.choice(poses)
-    mood = rng.choice(moods)
-    scene = rng.choice(scenes)
-
-    prompt = (
-        f"{mood} cyberpunk anime girl, {pose}, "
-        f"{scene}, glowing neon eyes, black hoodie, "
-        f"purple cyan magenta lighting, volumetric fog, rain reflections, "
-        f"high contrast, cinematic composition, phonk trap aesthetic, "
-        f"ultra detailed, masterpiece, best quality, 8k, 9:16 vertical"
+    # Controle de composição: evita imagem feia, rosto torto e cena bagunçada.
+    quality_lock = (
+        "beautiful polished anime key visual, clean readable silhouette, "
+        "perfect face structure, symmetrical sharp anime eyes, clean nose and mouth, "
+        "correct anatomy, elegant hands if visible, professional character design, "
+        "centered strong composition, clear focal point, no clutter, no text, no watermark, "
+        "high-end anime cover art, premium cel shading, crisp lineart, refined facial details"
     )
 
-    return _compact(prompt)
+    # Direção visual que combina com o visualizer da logo.
+    viral_visual = (
+        "dark cyberpunk anime girl background for music visualizer, "
+        "space reserved in center for circular DJ logo overlay, "
+        "subject slightly behind or around center, not covering the center logo area, "
+        "neon magenta and cyan rim light, purple glow, rain reflections, wet asphalt, "
+        "glowing particles, volumetric fog, high contrast black shadows, "
+        "cinematic depth, intense mood, scroll stopping YouTube Shorts visual"
+    )
+
+    # Evita realismo e força anime.
+    style_lock = (
+        "NOT photorealistic, NOT 3d render, anime illustration only, "
+        "trending dark anime art, cyberpunk edgerunners color energy, "
+        "studio anime key visual, sharp line art, dramatic lighting, 9:16 vertical"
+    )
+
+    if mapped in ("phonk", "trap", "dark"):
+        scene = concept["scene"].format(character=character)
+        prompt = (
+            f"{scene}, "
+            f"song mood inspired by '{song_name}', {song_detail}, "
+            f"genre mood: {all_styles}, "
+            f"{viral_visual}, "
+            f"{quality_lock}, "
+            f"{style_lock}, "
+            f"palette: deep black, neon purple, hot magenta, electric cyan, blood red accents, "
+            f"masterpiece, best quality, ultra detailed, dramatic, aggressive, mysterious"
+        )
+    else:
+        prompt = (
+            f"{character}, {parts['pose']}, {parts['camera']}, "
+            f"dark neon city at night, heavy rain, cinematic cyberpunk atmosphere, "
+            f"{viral_visual}, {quality_lock}, {style_lock}, "
+            f"masterpiece, best quality, ultra detailed"
+        )
+
+    return _compact(prompt, max_len=3600)
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -628,8 +651,9 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     full_prompt = _compact(
         prompt
         + ", dark anime cyberpunk illustration, NOT photorealistic, NOT 3D render, "
-        + "anime key visual, cyberpunk girl, deep black shadows, neon purple cyan magenta red, "
-        + "rain, wet reflections, volumetric fog, cinematic high contrast, not generic AI image"
+        + "anime key visual, cyberpunk girl, perfect face, clean anatomy, sharp lineart, "
+        + "deep black shadows, neon purple cyan magenta red, rain, wet reflections, "
+        + "volumetric fog, cinematic high contrast, high-end anime cover art, not generic AI image"
     )
 
     headers = {
