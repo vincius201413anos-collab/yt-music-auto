@@ -554,9 +554,9 @@
       "name": "Vai no Batidão.mp3",
       "key": "1vYVY3XsrqJDVyACE7JVp57tRJaM1az8e",
       "name_key": "vai no batidão",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1sgtujvzVnmhMMP5ZJHcWAinESVrQY0Fc",
