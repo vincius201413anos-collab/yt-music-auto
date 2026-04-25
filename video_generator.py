@@ -1,5 +1,5 @@
 """
-video_generator.py — Elite Music Shorts Generator v8.0 VIRAL CONTROL
+video_generator.py — Elite Music Shorts Generator v9 FINAL FFmpeg MAX
 =========================================================================
 MUDANÇAS v8.0 (VIRAL CONTROL — 15M STYLE):
 - FFmpeg agora gera uma base cyberpunk LIMPA e forte, sem brigar com o Remotion.
@@ -77,7 +77,7 @@ AUDIO_FADE_IN       = 0.03
 AUDIO_FADE_OUT      = 0.7
 MAX_SHAKE_X         = 10
 MAX_SHAKE_Y         = 10
-DROP_ZOOM_PUNCH     = 0.18
+DROP_ZOOM_PUNCH     = 0.28
 
 FONT_PATHS = [
     "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -86,8 +86,8 @@ FONT_PATHS = [
 ]
 
 FFMPEG_VIDEO_CODEC   = "libx264"
-FFMPEG_CRF           = "23"
-FFMPEG_PRESET        = "ultrafast"
+FFMPEG_CRF           = os.getenv("FFMPEG_CRF", "20")
+FFMPEG_PRESET        = os.getenv("FFMPEG_PRESET", "veryfast")
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
 
@@ -116,8 +116,10 @@ MIN_FILE_SIZE_MB = 0.5
 MAX_FILE_SIZE_MB = 350.0
 
 # Segurança contra travamento infinito no GitHub Actions / runners fracos
-FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "900"))   # 15 min
+FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "720"))   # 12 min
 FFMPEG_THUMB_TIMEOUT_S  = int(os.getenv("FFMPEG_THUMB_TIMEOUT", "120"))    # 2 min
+FINAL_GRAIN_STRENGTH  = int(os.getenv("FINAL_GRAIN_STRENGTH", "4"))
+FORCE_FPS             = int(os.getenv("FFMPEG_FPS", "30"))
 
 # ══════════════════════════════════════════════════════════════════════════════
 # COLOR GRADES — v8.1 CYBERPUNK MÁXIMO
@@ -255,19 +257,19 @@ GENRE_NEON = {
 
 WATER_FX_ENABLED = True
 WATER_FX_START_Y_RATIO = 0.54
-WATER_FX_BASE_ALPHA = 0.025
-WATER_FX_LINE_ALPHA = 0.10
-WATER_FX_BASS_ALPHA = 0.08
+WATER_FX_BASE_ALPHA = 0.020
+WATER_FX_LINE_ALPHA = 0.075
+WATER_FX_BASS_ALPHA = 0.055
 WATER_FX_MAX_BASS_HITS = 22
 
 # Controle viral: efeitos de FFmpeg servem como base, não como protagonista.
 # O protagonista final é o Remotion.
 VIRAL_FX_MODE = True
 KEEP_FFMPEG_PROGRESS_BAR = False
-SCANLINE_BASE_ALPHA = 0.025
-SCANLINE_BASS_ALPHA = 0.10
-GLITCH_MAX_HITS = 10
-BORDER_MAX_HITS = 16
+SCANLINE_BASE_ALPHA = 0.016
+SCANLINE_BASS_ALPHA = 0.065
+GLITCH_MAX_HITS = 7
+BORDER_MAX_HITS = 12
 
 
 
@@ -728,6 +730,14 @@ def build_progress_bar(duration: float, style: str = "default") -> str:
     )
 
 
+
+def build_final_texture() -> str:
+    """Textura final v9: grain leve para tirar cara de imagem parada/IA lisa."""
+    if FINAL_GRAIN_STRENGTH <= 0:
+        return ""
+    strength = max(1, min(FINAL_GRAIN_STRENGTH, 10))
+    return f"noise=alls={strength}:allf=t+u"
+
 def build_hook_text(song_name: str, style: str, font: str, duration: float) -> str:
     """Texto fica no Remotion — FFmpeg mantém base limpa."""
     return ""
@@ -789,7 +799,10 @@ def build_elite_zoom(
             f"0.06*max(0,({int(0.5*fps)}-abs(on-{df+int(0.08*fps)}))/{int(0.5*fps)}))"
         )
 
-    full = f"{base}+{drift}+{beat_pulse}+{bass_pulse}+{drop_expr}"
+    hook_frames = max(1, int(1.8 * fps))
+    hook_boost = f"(0.055*max(0,1-on/{hook_frames}))"
+
+    full = f"{base}+{drift}+{hook_boost}+{beat_pulse}+{bass_pulse}+{drop_expr}"
     return (
         f"if(lte(on,{intro_frames}),"
         f"1.0,"
@@ -838,7 +851,7 @@ def build_image_filter(
     profile: dict, analysis: dict, duration: float,
     song_name: str, style: str,
 ) -> str:
-    fps  = profile["fps"]
+    fps  = FORCE_FPS or profile["fps"]
     font = get_font()
     brightness_expr = build_combined_brightness(profile, analysis)
 
@@ -884,6 +897,10 @@ def build_image_filter(
     if vig:
         parts.append(vig)
 
+    texture = build_final_texture()
+    if texture:
+        parts.append(texture)
+
     parts += [fades, f"fps={fps}", pbar]
     return join_filters(parts)
 
@@ -892,7 +909,7 @@ def build_video_filter(
     profile: dict, analysis: dict, duration: float,
     song_name: str, style: str,
 ) -> str:
-    fps  = profile["fps"]
+    fps  = FORCE_FPS or profile["fps"]
     font = get_font()
     brightness_expr = build_combined_brightness(profile, analysis)
     sx = min(profile.get("shake_x", 6), MAX_SHAKE_X)
@@ -930,6 +947,10 @@ def build_video_filter(
         parts.append(drop_flash)
     if vig:
         parts.append(vig)
+
+    texture = build_final_texture()
+    if texture:
+        parts.append(texture)
 
     parts += [fades, f"fps={fps}", pbar]
     return join_filters(parts)
@@ -1157,10 +1178,10 @@ def create_short(
                          audio_input_idx=1)
 
     # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Iniciando render v8.0 (Viral Control)…")
+    logger.info("  ► Iniciando render v9 FINAL (FFmpeg Max)…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            run_cmd_safe(cmd, "Render FFmpeg base v8.2", FFMPEG_RENDER_TIMEOUT_S, capture=True)
+            run_cmd_safe(cmd, "Render FFmpeg base v9 FINAL", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
         except subprocess.TimeoutExpired:
@@ -1254,7 +1275,7 @@ def generate_batch(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v8.0 — Viral Control")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v9 FINAL — FFmpeg Max")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
