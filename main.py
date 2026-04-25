@@ -1,6 +1,13 @@
 """
-main.py — Bot de automação YouTube Shorts v4.3
+main.py — Bot de automação YouTube Shorts v4.4
 ===============================================
+CORREÇÃO v4.4 (OTIMIZAÇÃO GITHUB ACTIONS):
+- Remotion: adicionado --gl=swiftshader (fix crítico para Chromium headless).
+- Remotion: concurrency baixado de 2 → 1 (evita OOM no runner gratuito).
+- Remotion: timeout subprocess reduzido para 840s (14min), dentro do job de 60min.
+- Limpeza de temp mais agressiva no finally.
+- Log do comando Remotion mascarado para não poluir saída.
+
 CORREÇÃO v4.3:
 - Força upload e backup a usarem o arquivo FINAL do Remotion quando ele existir.
 - Corrige o caso em que o Remotion renderiza certo, mas o Shorts ainda sobe o vídeo base.
@@ -62,6 +69,13 @@ ENABLE_FACEBOOK = os.getenv("ENABLE_FACEBOOK", "false").lower() == "true"
 ENABLE_REMOTION = os.getenv("ENABLE_REMOTION", "true").lower() == "true"
 REMOTION_COMPOSITION_ID = os.getenv("REMOTION_COMPOSITION_ID", "MyComposition")
 REMOTION_ENTRY = os.getenv("REMOTION_ENTRY", "index.ts")
+
+# ── Remotion tunables ────────────────────────────────────────────────────────
+REMOTION_CONCURRENCY  = int(os.getenv("REMOTION_CONCURRENCY", "1"))   # 1 = seguro no runner gratuito
+REMOTION_SCALE        = os.getenv("REMOTION_SCALE", "0.6")
+REMOTION_CRF          = os.getenv("REMOTION_CRF", "28")
+REMOTION_TIMEOUT_MS   = os.getenv("REMOTION_TIMEOUT_MS", "300000")
+REMOTION_SUBPROCESS_TIMEOUT = 840  # segundos — 14 min, dentro do job de 60 min
 
 
 def log(msg: str):
@@ -724,7 +738,12 @@ def run_remotion_overlay(
     song_name: str = "",
 ) -> str:
     """
-    Renderiza o vídeo final pelo Remotion - versão corrigida e otimizada.
+    Renderiza o vídeo final pelo Remotion.
+
+    FIX v4.4:
+    - --gl=swiftshader: permite Chromium rodar sem GPU real (headless CI).
+    - --concurrency 1: evita OOM nos runners gratuitos do GitHub Actions.
+    - timeout subprocess limitado a REMOTION_SUBPROCESS_TIMEOUT segundos.
     """
     if not ENABLE_REMOTION:
         log("Remotion desativado — usando vídeo base.")
@@ -745,10 +764,12 @@ def run_remotion_overlay(
     public_dir = remotion_dir / "public"
     public_dir.mkdir(parents=True, exist_ok=True)
 
+    # ── Copia vídeo base ────────────────────────────────────────────────────
     input_video_dest = public_dir / "input.mp4"
     shutil.copy(str(base_video_abs), str(input_video_dest))
     log(f"✅ Vídeo base copiado para Remotion: {input_video_dest}")
 
+    # ── Copia audio_data.json ───────────────────────────────────────────────
     audio_dest = public_dir / "audio_data.json"
     copied_audio = False
 
@@ -767,26 +788,24 @@ def run_remotion_overlay(
                 if candidate.resolve() != audio_dest.resolve():
                     shutil.copy(str(candidate), str(audio_dest))
                 copied_audio = True
-                log(f"✅ audio_data.json copiado para Remotion: {candidate} -> {audio_dest}")
+                log(f"✅ audio_data.json copiado: {candidate} -> {audio_dest}")
                 break
         except Exception:
             pass
 
     if not copied_audio:
         audio_dest.write_text("[]", encoding="utf-8")
-        log("audio_data.json real não encontrado — criado fallback vazio. Efeitos ficarão menos reativos.")
+        log("audio_data.json não encontrado — fallback vazio. Efeitos menos reativos.")
 
+    # ── Copia logo ──────────────────────────────────────────────────────────
     copied_logo = False
-
     possible_logo_paths = [
         Path("assets/logo_darkmark.png"),
         Path("assets/logo.png"),
     ]
     if logo_path:
-        possible_logo_paths.append(Path(logo_path))
+        possible_logo_paths.insert(0, Path(logo_path))
     possible_logo_paths.extend([
-        Path("assets/logo.png"),
-        Path("assets/logo_darkmark.png"),
         Path("logo.png"),
         Path("remotion/public/logo.png"),
         Path("remotion/public/logo_darkmark.png"),
@@ -795,36 +814,30 @@ def run_remotion_overlay(
     for candidate in possible_logo_paths:
         try:
             if candidate and candidate.exists() and candidate.stat().st_size > 0:
-                logo_png_dest = public_dir / "logo.png"
-                logo_darkmark_dest = public_dir / "logo_darkmark.png"
-
-                if candidate.resolve() != logo_png_dest.resolve():
-                    shutil.copy(str(candidate), str(logo_png_dest))
-                if candidate.resolve() != logo_darkmark_dest.resolve():
-                    shutil.copy(str(candidate), str(logo_darkmark_dest))
-
+                for dest_name in ("logo.png", "logo_darkmark.png"):
+                    dest = public_dir / dest_name
+                    if candidate.resolve() != dest.resolve():
+                        shutil.copy(str(candidate), str(dest))
                 copied_logo = True
-                log(f"🔥 LOGO USADA: {candidate} -> logo aplicada no Remotion")
+                log(f"🔥 LOGO USADA: {candidate}")
                 break
         except Exception:
             pass
 
     if not copied_logo:
-        log("Logo não encontrada — o ícone NÃO vai aparecer no Remotion.")
+        log("Logo não encontrada — ícone não vai aparecer no Remotion.")
 
+    # ── Valida entry point ──────────────────────────────────────────────────
     entry_env = str(REMOTION_ENTRY).replace("\\", "/").strip()
     entry_for_cli = entry_env.replace("remotion/", "", 1) if entry_env.startswith("remotion/") else entry_env
     entry_path = remotion_dir / entry_for_cli
 
     if not entry_path.exists():
-        log(f"Entrada do Remotion não encontrada: {entry_path}")
-        log("Usando vídeo base sem overlay do Remotion.")
+        log(f"Entry do Remotion não encontrado: {entry_path} — usando vídeo base.")
         return base_video_path
 
-    package_json = remotion_dir / "package.json"
-    if not package_json.exists():
-        log("remotion/package.json não encontrado — npm/remotion pode não estar configurado.")
-        log("Usando vídeo base sem overlay do Remotion.")
+    if not (remotion_dir / "package.json").exists():
+        log("remotion/package.json não encontrado — usando vídeo base.")
         return base_video_path
 
     output_abs.parent.mkdir(parents=True, exist_ok=True)
@@ -835,22 +848,23 @@ def run_remotion_overlay(
         except Exception:
             pass
 
+    # ── Comando Remotion — FIX v4.4 ─────────────────────────────────────────
+    # --gl=swiftshader : renderer de software do Chrome, funciona sem GPU
+    # --concurrency 1  : evita OOM no runner de 7GB do GitHub Actions
     cmd = [
-        "npx",
-        "remotion",
-        "render",
+        "npx", "remotion", "render",
         entry_for_cli,
         REMOTION_COMPOSITION_ID,
         str(output_abs),
         "--overwrite",
-        "--concurrency", "2",
-        "--timeout", "300000",
-        "--scale", "0.6",
-        "--crf", "28",
+        "--concurrency", str(REMOTION_CONCURRENCY),
+        "--timeout", REMOTION_TIMEOUT_MS,
+        "--scale", REMOTION_SCALE,
+        "--crf", REMOTION_CRF,
+        "--gl=swiftshader",   # ← FIX CRÍTICO: habilita Chromium headless sem GPU
     ]
 
-    log("▶ Iniciando render Remotion otimizado...")
-    log("Comando Remotion: " + " ".join(cmd))
+    log(f"▶ Iniciando render Remotion (concurrency={REMOTION_CONCURRENCY}, gl=swiftshader)...")
 
     try:
         result = subprocess.run(
@@ -859,59 +873,57 @@ def run_remotion_overlay(
             check=True,
             text=True,
             capture_output=True,
-            timeout=900,
+            timeout=REMOTION_SUBPROCESS_TIMEOUT,
         )
 
-        if result.stdout:
-            log("Remotion stdout:")
-            print(result.stdout[-3000:])
+        # Mostra apenas as últimas linhas pra não poluir o log
+        if result.stdout and result.stdout.strip():
+            tail = result.stdout.strip().splitlines()[-20:]
+            log("Remotion stdout (tail):\n" + "\n".join(tail))
 
-        if result.stderr:
-            log("Remotion stderr:")
-            print(result.stderr[-3000:])
+        if result.stderr and result.stderr.strip():
+            tail = result.stderr.strip().splitlines()[-10:]
+            log("Remotion stderr (tail):\n" + "\n".join(tail))
 
         log("✅ Remotion finalizado com sucesso!")
 
     except FileNotFoundError:
-        log("npx não encontrado — Node/Remotion não está instalado no runner.")
-        log("Usando vídeo base sem overlay do Remotion.")
+        log("npx não encontrado — Node/Remotion não instalado no runner. Usando vídeo base.")
         return base_video_path
     except subprocess.TimeoutExpired:
-        log("❌ Remotion passou do tempo limite — usando vídeo base.")
+        log(f"❌ Remotion passou do limite ({REMOTION_SUBPROCESS_TIMEOUT}s) — usando vídeo base.")
         return base_video_path
     except subprocess.CalledProcessError as e:
         log(f"❌ Remotion falhou com código {e.returncode}.")
         if e.stdout:
-            log("Remotion stdout:")
-            print(e.stdout[-4000:])
+            tail = e.stdout.strip().splitlines()[-30:]
+            log("Remotion stdout:\n" + "\n".join(tail))
         if e.stderr:
-            log("Remotion stderr:")
-            print(e.stderr[-4000:])
-        log("Usando vídeo base sem overlay do Remotion para não quebrar o upload.")
+            tail = e.stderr.strip().splitlines()[-20:]
+            log("Remotion stderr:\n" + "\n".join(tail))
+        log("Usando vídeo base sem overlay do Remotion.")
         return base_video_path
     except Exception as e:
-        log(f"❌ Remotion falhou: {e}")
-        log("Usando vídeo base sem overlay do Remotion.")
+        log(f"❌ Remotion falhou: {e} — usando vídeo base.")
         return base_video_path
 
     if output_abs.exists() and output_abs.stat().st_size > 100_000:
         log(f"✅ Vídeo FINAL do Remotion pronto: {output_abs}")
         return str(output_abs)
 
-    log("⚠️ Remotion não gerou arquivo válido — usando base.")
+    log("⚠️ Remotion não gerou arquivo válido — usando vídeo base.")
     return base_video_path
 
 
 def choose_upload_video(base_video_path: str, remotion_video_path: str) -> str:
-    base_abs = Path(base_video_path).resolve()
     remotion_abs = Path(remotion_video_path).resolve()
+    base_abs = Path(base_video_path).resolve()
 
     if remotion_abs.exists() and remotion_abs.stat().st_size > 100_000:
-        log(f"OK: arquivo FINAL do Remotion encontrado: {remotion_abs}")
+        log(f"OK: usando vídeo FINAL do Remotion: {remotion_abs}")
         return str(remotion_abs)
 
-    log("ATENÇÃO: arquivo FINAL do Remotion não encontrado ou inválido.")
-    log(f"Fallback: usando vídeo base: {base_abs}")
+    log("ATENÇÃO: Remotion não gerou arquivo válido — fallback para vídeo base.")
     return str(base_abs)
 
 
@@ -951,6 +963,18 @@ def publish(video_path: str, title: str, description: str) -> dict:
     return results
 
 
+def _cleanup_temp(*paths):
+    """Remove arquivos temporários com segurança."""
+    for path in paths:
+        try:
+            if path and isinstance(path, str) and os.path.exists(path):
+                if path.startswith("temp/") or "/temp/" in path:
+                    os.remove(path)
+                    log(f"Temp removido: {path}")
+        except Exception:
+            pass
+
+
 def main():
     log("=" * 55)
     log(f"BOT INICIANDO — {CHANNEL_NAME} | YouTube Shorts + Facebook Reels")
@@ -964,15 +988,10 @@ def main():
     if not DRIVE_FOLDER_ID:
         raise ValueError("DRIVE_FOLDER_ID não configurado.")
 
-    service  = get_drive_service()
+    service = get_drive_service()
 
     log("Sincronizando assets (logo/efeitos) do Drive...")
-
-    assets_result = download_assets_from_drive(
-        service,
-        DRIVE_FOLDER_ID,
-    )
-
+    assets_result = download_assets_from_drive(service, DRIVE_FOLDER_ID)
     logo_path = assets_result.get("logo_path")
 
     if logo_path:
@@ -1005,9 +1024,9 @@ def main():
         log("Nenhuma faixa disponível.")
         return
 
-    name        = track["name"]
-    short_num   = track.get("done", 0) + 1
-    title_base  = clean_title(name)
+    name       = track["name"]
+    short_num  = track.get("done", 0) + 1
+    title_base = clean_title(name)
 
     log(f"Faixa   : {name}")
     log(f"Short   : {short_num}/{SHORTS_PER_TRACK}")
@@ -1070,27 +1089,26 @@ def main():
             thumbnail_path   = None
             audio_data_path  = None
 
+        # ── Resolve audio_data.json ─────────────────────────────────────────
         if not audio_data_path:
-            log("⚠️ SEM AUDIO DATA → REMOTION SEM SINCRONIZAÇÃO REAL")
-            possible_audio_data_paths = [
-                Path("temp") / "audio_data.json",
+            for candidate in [
+                Path("temp/audio_data.json"),
                 Path("audio_data.json"),
-                Path("remotion") / "public" / "audio_data.json",
-            ]
-
-            for possible_audio_data in possible_audio_data_paths:
-                if possible_audio_data.exists() and possible_audio_data.stat().st_size > 5:
-                    audio_data_path = str(possible_audio_data)
+                Path("remotion/public/audio_data.json"),
+            ]:
+                if candidate.exists() and candidate.stat().st_size > 5:
+                    audio_data_path = str(candidate)
                     break
 
         if audio_data_path:
             log(f"Audio data para Remotion: {audio_data_path}")
         else:
-            log("Audio data para Remotion não encontrado — efeitos podem ficar menos sincronizados.")
+            log("Audio data não encontrado — efeitos menos sincronizados.")
 
         log(f"Vídeo base pronto: {video_base_ready}")
 
-        remotion_result_path = run_remotion_overlay(
+        # ── Remotion overlay ────────────────────────────────────────────────
+        run_remotion_overlay(
             base_video_path=video_base_ready,
             output_path=final_video_path,
             audio_data_path=audio_data_path,
@@ -1104,12 +1122,6 @@ def main():
             remotion_video_path=final_video_path,
         )
 
-        if Path(video_path).resolve() == Path(video_base_ready).resolve():
-            log("ATENÇÃO: upload vai usar vídeo BASE. Remotion não gerou overlay final válido.")
-        else:
-            log("OK: upload vai usar vídeo FINAL do Remotion com overlay/ícone.")
-
-        log(f"Retorno run_remotion_overlay: {remotion_result_path}")
         log(f"Vídeo que será enviado: {video_path}")
 
         title       = build_title(title_base, style, short_num)
@@ -1140,14 +1152,7 @@ def main():
         log("=" * 55)
 
     finally:
-        for path in [audio_path, bg]:
-            try:
-                if path and isinstance(path, str) and os.path.exists(path):
-                    if path.startswith("temp/"):
-                        os.remove(path)
-                        log(f"Temp removido: {path}")
-            except Exception:
-                pass
+        _cleanup_temp(audio_path, bg)
 
 
 if __name__ == "__main__":
