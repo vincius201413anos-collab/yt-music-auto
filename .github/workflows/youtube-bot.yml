@@ -1,23 +1,29 @@
 name: youtube-bot
+
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */3 * * *"
+
 permissions:
   contents: write
+
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+
     env:
       PYTHONUNBUFFERED: "1"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       ENABLE_REMOTION: "true"
       REMOTION_COMPOSITION_ID: "MyComposition"
       REMOTION_ENTRY: "index.ts"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,8 +41,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "npm"
-          cache-dependency-path: remotion/package-lock.json
 
       - name: Install FFmpeg + fonts
         run: |
@@ -56,14 +60,14 @@ jobs:
         uses: actions/cache@v4
         with:
           path: remotion/node_modules
-          key: remotion-${{ hashFiles('remotion/package-lock.json') }}
+          key: remotion-node-modules-${{ hashFiles('remotion/package.json') }}
           restore-keys: |
-            remotion-
+            remotion-node-modules-
 
       - name: Install Remotion dependencies
         run: |
           cd remotion
-          npm ci --prefer-offline
+          npm install --prefer-offline
 
       - name: Prepare folders
         run: |
@@ -99,17 +103,22 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           if [ ! -f state.json ]; then
             echo '{"tracks":[],"alpha_index":0}' > state.json
           fi
+
           cp state.json /tmp/state.json
           git fetch origin main
           git reset --hard origin/main
           cp /tmp/state.json state.json
+
           git add -f state.json
+
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
           fi
+
           git commit -m "update state [skip ci]"
           git push origin HEAD:main
