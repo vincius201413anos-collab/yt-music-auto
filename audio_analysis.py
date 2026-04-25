@@ -1,5 +1,5 @@
 """
-audio_analysis.py — Elite Audio Analysis Engine v2.0
+audio_analysis.py — Elite Audio Analysis Engine v2.1 GRAVE REAL + ALIAS KICKS
 =====================================================
 NOVO v2.0:
 - Detecção de snare / caixa (200-8000 Hz)
@@ -378,6 +378,7 @@ def full_analysis(audio_path: str) -> dict:
         "bpm":              120.0,
         "beats":            [],
         "bass_hits":        [],
+        "kicks":            [],  # alias compatível com video_generator/Remotion
         "snare_hits":       [],
         "hihat_hits":       [],
         "drop_time":        None,
@@ -400,7 +401,9 @@ def full_analysis(audio_path: str) -> dict:
         result["bpm"]   = round(bpm, 1)
         result["beats"] = beats
 
-        result["bass_hits"]  = detect_bass_hits(y, sr)
+        bass_hits = detect_bass_hits(y, sr)
+        result["bass_hits"] = bass_hits
+        result["kicks"] = bass_hits  # alias para qualquer parte antiga do bot que leia "kicks"
         result["snare_hits"] = detect_snare_hits(y, sr)
         result["hihat_hits"] = detect_hihat_hits(y, sr)
 
@@ -447,10 +450,13 @@ def crop_analysis(analysis: dict, start: float, duration: float) -> dict:
                 "drop_start", "drop_end", "calm_start", "calm_end", "outro_start"]
     new_sec = {k: max(0.0, round(sec[k] - start, 4)) for k in sec_keys if k in sec}
 
+    cropped_bass_hits = _crop(analysis.get("bass_hits") or analysis.get("kicks", []))
+
     return {
         **analysis,
         "beats":            crop_beats,
-        "bass_hits":        _crop(analysis.get("bass_hits", [])),
+        "bass_hits":        cropped_bass_hits,
+        "kicks":            cropped_bass_hits,  # alias compatível
         "snare_hits":       _crop(analysis.get("snare_hits", [])),
         "hihat_hits":       _crop(analysis.get("hihat_hits", [])),
         "beat_intensities": crop_ints,
@@ -507,7 +513,7 @@ def build_flash_expression(
     Inclui: beat (por intensidade) + kick + snare + drop.
     """
     beats      = analysis.get("beats", [])
-    bass_hits  = analysis.get("bass_hits", [])
+    bass_hits  = analysis.get("bass_hits") or analysis.get("kicks", [])
     snare_hits = analysis.get("snare_hits", [])
     drop_time  = analysis.get("drop_time")
     intensities = analysis.get("beat_intensities", [])
@@ -549,7 +555,7 @@ def build_shake_expression(
     - Hi-hat: micro-jitter rápido e sutil
     - Drop: mega-shake
     """
-    bass_hits  = analysis.get("bass_hits", [])
+    bass_hits  = analysis.get("bass_hits") or analysis.get("kicks", [])
     hihat_hits = analysis.get("hihat_hits", [])
     drop_time  = analysis.get("drop_time")
     profile    = analysis.get("song_profile", "medium")
@@ -611,7 +617,7 @@ def build_zoom_expression(
     - Profile-based scaling
     """
     beats     = analysis.get("beats", [])
-    bass_hits = analysis.get("bass_hits", [])
+    bass_hits = analysis.get("bass_hits") or analysis.get("kicks", [])
     drop_time = analysis.get("drop_time")
     sections  = analysis.get("sections", {})
     duration  = analysis.get("duration", total_frames / fps)
@@ -696,6 +702,35 @@ def _section_zoom_mod(sections: dict, fps: int) -> str:
         f"if(gte(on,{os_f}),0.45,0.80)))))"
     )
 
+
+
+def build_remotion_audio_data(analysis: dict, rms: list | None = None) -> dict:
+    """
+    Monta JSON compatível com o Composition.tsx do Remotion.
+    Mantém os nomes:
+    - rms / audio_data
+    - beats
+    - bass_hits
+    - kicks
+    - bpm
+    - drop_time
+    """
+    bass_hits = analysis.get("bass_hits") or analysis.get("kicks") or []
+    beats = analysis.get("beats") or []
+
+    return {
+        "rms": rms or analysis.get("rms") or analysis.get("audio_data") or analysis.get("energy_curve") or [],
+        "audio_data": rms or analysis.get("audio_data") or analysis.get("rms") or analysis.get("energy_curve") or [],
+        "beats": beats,
+        "bass_hits": bass_hits,
+        "kicks": bass_hits,
+        "snare_hits": analysis.get("snare_hits", []),
+        "hihat_hits": analysis.get("hihat_hits", []),
+        "bpm": analysis.get("bpm", 120.0),
+        "drop_time": analysis.get("drop_time"),
+        "duration": analysis.get("duration", 0.0),
+        "song_profile": analysis.get("song_profile", "medium"),
+    }
 
 def save_debug(data: dict, path: Optional[str] = None) -> None:
     try:
