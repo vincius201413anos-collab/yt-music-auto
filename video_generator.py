@@ -80,7 +80,7 @@ FONT_PATHS = [
 
 FFMPEG_VIDEO_CODEC   = "libx264"
 FFMPEG_CRF           = "23"
-FFMPEG_PRESET        = "medium"
+FFMPEG_PRESET        = "ultrafast"
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
 
@@ -721,7 +721,7 @@ def build_elite_zoom(
     if beats:
         parts = [
             f"0.006*max(0,1-abs(on-{int(b*fps)})/{max(1,int(0.07*fps))})"
-            for b in beats[:80]
+            for b in beats[:40]
         ]
         beat_pulse = f"({'+'.join(parts)})"
 
@@ -730,7 +730,7 @@ def build_elite_zoom(
         intensity = 0.022 if heavy else 0.013
         parts = [
             f"{intensity}*max(0,1-abs(on-{int(b*fps)})/{max(1,int(0.05*fps))})"
-            for b in bass_hits[:70]
+            for b in bass_hits[:35]
         ]
         bass_pulse = f"({'+'.join(parts)})"
 
