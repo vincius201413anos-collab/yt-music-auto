@@ -1,5 +1,5 @@
 """
-video_generator.py — Elite Music Shorts Generator v10 HYPNOTIC BEAT LIGHTS
+video_generator.py — Elite Music Shorts Generator v11 FINAL VIBRANT HYPNOTIC
 =========================================================================
 MUDANÇAS v8.0 (VIRAL CONTROL — 15M STYLE):
 - FFmpeg agora gera uma base cyberpunk LIMPA e forte, sem brigar com o Remotion.
@@ -23,10 +23,10 @@ FIX v8.2 SAFE RUNNER:
 - IMPORTANTE: este arquivo gera a base FFmpeg. Se o log travar em "Iniciando render Remotion",
   o ponto final do travamento está no arquivo que chama o Remotion depois deste gerador.
 
-V10 HYPNOTIC BEAT LIGHTS:
-- Luzes piscando no beat/kick com overlays neon controlados.
+V11 FINAL VIBRANT HYPNOTIC:
+- Luzes vibrantes no beat/kick com overlays neon bonitos e controlados.
 - Glitch mais forte no drop, sem pesar demais no GitHub.
-- Glow central/olhos simulados para dar sensação hipnótica.
+- Glow central/olhos bonito e controlado para sensação hipnótica.
 - Movimento constante mais vivo: micro pulso + respiração visual.
 - Mantém FFmpeg seguro, sem Remotion obrigatório.
 """
@@ -130,10 +130,10 @@ FORCE_FPS             = int(os.getenv("FFMPEG_FPS", "30"))
 
 # V10 — luzes hipnóticas sincronizadas no beat
 HYPNOTIC_LIGHTS_ENABLED = os.getenv("HYPNOTIC_LIGHTS_ENABLED", "true").lower() == "true"
-HYPNOTIC_LIGHT_INTENSITY = float(os.getenv("HYPNOTIC_LIGHT_INTENSITY", "1.0"))
-HYPNOTIC_MAX_BEATS = int(os.getenv("HYPNOTIC_MAX_BEATS", "52"))
-HYPNOTIC_MAX_BASS = int(os.getenv("HYPNOTIC_MAX_BASS", "42"))
-HYPNOTIC_MAX_SNARES = int(os.getenv("HYPNOTIC_MAX_SNARES", "22"))
+HYPNOTIC_LIGHT_INTENSITY = float(os.getenv("HYPNOTIC_LIGHT_INTENSITY", "0.82"))
+HYPNOTIC_MAX_BEATS = int(os.getenv("HYPNOTIC_MAX_BEATS", "46"))
+HYPNOTIC_MAX_BASS = int(os.getenv("HYPNOTIC_MAX_BASS", "36"))
+HYPNOTIC_MAX_SNARES = int(os.getenv("HYPNOTIC_MAX_SNARES", "18"))
 EYE_GLOW_ENABLED = os.getenv("EYE_GLOW_ENABLED", "true").lower() == "true"
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -144,30 +144,31 @@ EYE_GLOW_ENABLED = os.getenv("EYE_GLOW_ENABLED", "true").lower() == "true"
 # ══════════════════════════════════════════════════════════════════════════════
 GENRE_COLOR_GRADE = {
     "phonk": (
-        # Base escura + roxo profundo + vermelho sangue + grain cinematográfico
-        "colorbalance=rs=0.35:gs=-0.20:bs=-0.25,"
-        "colorbalance=rh=-0.15:gh=0.05:bh=0.40,"
-        "eq=contrast=1.48:brightness=-0.075:saturation=1.35:gamma=0.92,"
-        "curves=r='0/0 0.2/0.05 0.7/0.65 1/1':g='0/0 0.3/0.10 1/0.80':b='0/0 0.2/0.30 1/1',"
-        "unsharp=7:7:2.2:7:7:0,"
-        "noise=alls=20:allf=t+u"
+        # FINAL: roxo/rosa/vermelho vibrante sem destruir pele/rosto.
+        "colorbalance=rs=0.20:gs=-0.09:bs=0.12,"
+        "colorbalance=rh=-0.06:gh=0.04:bh=0.22,"
+        "eq=contrast=1.40:brightness=-0.045:saturation=1.30:gamma=0.95,"
+        "curves=r='0/0 0.25/0.10 1/1':g='0/0 0.30/0.08 1/0.88':b='0/0 0.18/0.23 1/1',"
+        "unsharp=5:5:1.8:5:5:0,"
+        "noise=alls=7:allf=t+u"
     ),
     "trap": (
-        # Azul gelo + ciano neon + preto profundo
-        "colorbalance=rs=-0.25:gs=0.08:bs=0.45,"
-        "colorbalance=rh=-0.10:gh=0.15:bh=0.30,"
-        "eq=contrast=1.42:brightness=-0.065:saturation=1.32:gamma=0.93,"
-        "curves=r='0/0 0.3/0.08 1/0.85':b='0/0 0.1/0.25 0.7/0.85 1/1',"
-        "unsharp=5:5:1.8:5:5:0"
+        # FINAL: ciano/roxo bonito, sem azul artificial chapado.
+        "colorbalance=rs=-0.08:gs=0.04:bs=0.18,"
+        "colorbalance=rh=-0.04:gh=0.08:bh=0.20,"
+        "eq=contrast=1.36:brightness=-0.040:saturation=1.30:gamma=0.96,"
+        "curves=r='0/0 0.3/0.10 1/0.92':b='0/0 0.2/0.20 1/1',"
+        "unsharp=4:4:1.5:4:4:0,"
+        "noise=alls=5:allf=t+u"
     ),
     "dark": (
-        # Roxo puro + quase sem luz — máximo sinistro
-        "colorbalance=rs=-0.10:gs=-0.15:bs=0.55,"
-        "colorbalance=rh=0.05:gh=-0.05:bh=0.25,"
-        "eq=contrast=1.50:brightness=-0.105:saturation=0.92:gamma=0.90,"
-        "curves=all='0/0 0.15/0.02 0.5/0.35 1/1',"
-        "unsharp=5:5:1.5:5:5:0,"
-        "vignette=angle=PI/2.2:mode=forward"
+        # FINAL: escuro, bonito, roxo/rosa controlado.
+        "colorbalance=rs=0.02:gs=-0.10:bs=0.28,"
+        "colorbalance=rh=0.10:gh=-0.04:bh=0.18,"
+        "eq=contrast=1.44:brightness=-0.075:saturation=1.12:gamma=0.93,"
+        "curves=all='0/0 0.16/0.03 0.55/0.42 1/1',"
+        "unsharp=5:5:1.45:5:5:0,"
+        "noise=alls=6:allf=t+u"
     ),
     "electronic": (
         # Ciano + magenta — bifurcação neon
@@ -678,17 +679,17 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
     # Respiração constante bem leve — evita imagem morta/parada.
     filters.append(
         f"drawbox=x=0:y=0:w=iw:h=ih:color={c2}@"
-        f"'{0.018*intensity:.4f}+{0.014*intensity:.4f}*(0.5+0.5*sin(t*1.35))':t=fill"
+        f"'{0.010*intensity:.4f}+{0.010*intensity:.4f}*(0.5+0.5*sin(t*1.35))':t=fill"
     )
 
     # Luzes laterais respirando, estilo palco/club.
     filters.append(
         f"drawbox=x=0:y=0:w=iw*0.10:h=ih:color={c1}@"
-        f"'{0.030*intensity:.4f}+{0.025*intensity:.4f}*(0.5+0.5*sin(t*2.10))':t=fill"
+        f"'{0.024*intensity:.4f}+{0.018*intensity:.4f}*(0.5+0.5*sin(t*2.10))':t=fill"
     )
     filters.append(
         f"drawbox=x=iw*0.90:y=0:w=iw*0.10:h=ih:color={c2}@"
-        f"'{0.030*intensity:.4f}+{0.025*intensity:.4f}*(0.5+0.5*sin(t*2.35+1.2))':t=fill"
+        f"'{0.024*intensity:.4f}+{0.018*intensity:.4f}*(0.5+0.5*sin(t*2.35+1.2))':t=fill"
     )
 
     # Beat geral: flashes curtos e suaves. Dá vida sem poluir.
@@ -698,7 +699,7 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
         t0 = max(0.0, bt - 0.006)
         t1 = bt + 0.045
         color = c2 if i % 2 else c1
-        alpha = 0.045 * intensity
+        alpha = 0.038 * intensity
         filters.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y=0:w=iw:h=ih:color={color}@{alpha:.3f}:t=fill"
@@ -708,7 +709,7 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
     for i, bt in enumerate(bass_hits):
         t0 = max(0.0, bt - 0.010)
         t1 = bt + 0.085
-        alpha = 0.115 * intensity if i < 18 else 0.075 * intensity
+        alpha = 0.092 * intensity if i < 18 else 0.062 * intensity
         filters.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y=ih*0.55:w=iw:h=ih*0.45:color={c1}@{alpha:.3f}:t=fill"
@@ -731,7 +732,7 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
         y = 120 + ((i * 197) % 1520)
         filters.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=0:y={y}:w=iw:h=3:color={c3}@{0.110*intensity:.3f}:t=fill"
+            f":x=0:y={y}:w=iw:h=3:color={c3}@{0.085*intensity:.3f}:t=fill"
         )
 
     # Drop: flash grande + blackout curto + túnel de luz.
@@ -739,7 +740,7 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
         t0 = max(0.0, drop_time - 0.020)
         filters.append(
             f"drawbox=enable='between(t,{t0:.4f},{drop_time+0.030:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color=white@{min(0.78*intensity,0.90):.3f}:t=fill"
+            f":x=0:y=0:w=iw:h=ih:color=white@{min(0.58*intensity,0.90):.3f}:t=fill"
         )
         filters.append(
             f"drawbox=enable='between(t,{drop_time+0.030:.4f},{drop_time+0.090:.4f})'"
@@ -747,15 +748,15 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
         )
         filters.append(
             f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.220:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color={c1}@{0.35*intensity:.3f}:t=fill"
+            f":x=0:y=0:w=iw:h=ih:color={c1}@{0.24*intensity:.3f}:t=fill"
         )
         filters.append(
             f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.280:.4f})'"
-            f":x=iw*0.18:y=0:w=iw*0.06:h=ih:color={c2}@{0.42*intensity:.3f}:t=fill"
+            f":x=iw*0.18:y=0:w=iw*0.06:h=ih:color={c2}@{0.30*intensity:.3f}:t=fill"
         )
         filters.append(
             f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.280:.4f})'"
-            f":x=iw*0.76:y=0:w=iw*0.06:h=ih:color={c3}@{0.42*intensity:.3f}:t=fill"
+            f":x=iw*0.76:y=0:w=iw*0.06:h=ih:color={c3}@{0.30*intensity:.3f}:t=fill"
         )
 
     return ",".join(filters)
@@ -782,11 +783,11 @@ def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
     # Glow fixo sutil no rosto/olhos.
     filters.append(
         f"drawbox=x=iw*0.36:y=ih*0.215:w=iw*0.28:h=ih*0.080:"
-        f"color={c1}@'0.030+0.020*(0.5+0.5*sin(t*2.2))':t=fill"
+        f"color={c1}@'0.020+0.014*(0.5+0.5*sin(t*2.2))':t=fill"
     )
     filters.append(
         f"drawbox=x=iw*0.42:y=ih*0.245:w=iw*0.16:h=ih*0.018:"
-        f"color={c2}@'0.080+0.050*(0.5+0.5*sin(t*3.4))':t=fill"
+        f"color={c2}@'0.055+0.035*(0.5+0.5*sin(t*3.4))':t=fill"
     )
 
     # Pulso de olhos no grave.
@@ -795,13 +796,13 @@ def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
         t1 = bt + 0.065
         filters.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
-            f":x=iw*0.38:y=ih*0.232:w=iw*0.24:h=ih*0.045:color={c1}@0.145:t=fill"
+            f":x=iw*0.38:y=ih*0.232:w=iw*0.24:h=ih*0.045:color={c1}@0.105:t=fill"
         )
 
     if drop_time is not None:
         filters.append(
             f"drawbox=enable='between(t,{max(0.0, drop_time-0.010):.4f},{drop_time+0.160:.4f})'"
-            f":x=iw*0.31:y=ih*0.205:w=iw*0.38:h=ih*0.105:color={c2}@0.230:t=fill"
+            f":x=iw*0.31:y=ih*0.205:w=iw*0.38:h=ih*0.105:color={c2}@0.165:t=fill"
         )
 
     return ",".join(filters)
@@ -902,11 +903,11 @@ def build_progress_bar(duration: float, style: str = "default") -> str:
 
 
 def build_final_texture() -> str:
-    """Textura final v9: grain leve para tirar cara de imagem parada/IA lisa."""
+    """Textura final v11: brilho premium + grain leve para tirar cara de imagem parada/IA lisa."""
     if FINAL_GRAIN_STRENGTH <= 0:
-        return ""
-    strength = max(1, min(FINAL_GRAIN_STRENGTH, 10))
-    return f"noise=alls={strength}:allf=t+u"
+        return "eq=gamma=1.015:saturation=1.045"
+    strength = max(1, min(FINAL_GRAIN_STRENGTH, 8))
+    return f"noise=alls={strength}:allf=t+u,eq=gamma=1.015:saturation=1.045"
 
 def build_hook_text(song_name: str, style: str, font: str, duration: float) -> str:
     """Texto fica no Remotion — FFmpeg mantém base limpa."""
@@ -1362,10 +1363,10 @@ def create_short(
                          audio_input_idx=1)
 
     # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Iniciando render v10 HYPNOTIC BEAT LIGHTS…")
+    logger.info("  ► Iniciando render v11 FINAL VIBRANT HYPNOTIC…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            run_cmd_safe(cmd, "Render FFmpeg v10 HYPNOTIC BEAT LIGHTS", FFMPEG_RENDER_TIMEOUT_S, capture=True)
+            run_cmd_safe(cmd, "Render FFmpeg v11 FINAL VIBRANT HYPNOTIC", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
         except subprocess.TimeoutExpired:
@@ -1459,7 +1460,7 @@ def generate_batch(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v10 — Hypnotic Beat Lights")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v11 — Final Vibrant Hypnotic")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
