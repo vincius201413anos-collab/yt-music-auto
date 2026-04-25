@@ -447,8 +447,8 @@
       "key": "1Jmk4VCL_ooCIhF5KnDoCK-B0CjbSSwCj",
       "name_key": "truck nights",
       "done": 0,
-      "is_new": true,
-      "genre": null
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "167_6IgAR_rhqhR3SoCc14uZvJwkBn0m_",
