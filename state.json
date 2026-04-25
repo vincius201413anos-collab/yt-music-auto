@@ -544,9 +544,9 @@
       "id": "1fdBaJXfqVqH1qOdvInqe1CZneMxS-MIx",
       "name": "Vai no Batidão (2).mp3",
       "key": "1fdBaJXfqVqH1qOdvInqe1CZneMxS-MIx",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "vai no batidão"
     },
     {
