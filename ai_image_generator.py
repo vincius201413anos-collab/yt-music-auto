@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — v11.0 DARKMARK VIRAL RETENTION PACK
+ai_image_generator.py — v12.0 DARKMARK FINAL RETENTION LOCK
 ============================================================
 FINALIDADE:
 - Gerar imagens mais parecidas com referências virais de anime dark/phonk.
@@ -40,8 +40,8 @@ REPLICATE_MODELS = [
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": 42,
-    "guidance_scale": 8.2,
+    "num_inference_steps": 38,
+    "guidance_scale": 7.2,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -66,7 +66,7 @@ CHARACTER_DNA = (
     "black or white hair, messy bangs, twin tails or long flowing hair, "
     "cat-ear hoodie or small demon horns optional, black techwear or gothic streetwear, "
     "choker, oversized dark hoodie or glossy black jacket, platform-safe outfit, "
-    "clean anime face, soft blush, strong silhouette, alone in frame, no crowd"
+    "clean anime face, natural anime skin tone, soft blush, strong silhouette, alone in frame, no crowd"
 )
 
 ANIME_STYLE_DNA = (
@@ -81,6 +81,16 @@ RETENTION_DNA = (
     "simple powerful composition, high contrast, not cluttered, memorable silhouette, "
     "dark background with one dominant neon glow, space near lower center for audio waveform or DJ logo, "
     "viral anime pfp aesthetic, album cover aesthetic, music visualizer background"
+)
+
+# FINAL LOCK: Neon é LUZ, não cor base da pele.
+# Isso evita o erro feio de rosto/corpo totalmente azul ou plástico.
+SKIN_LIGHTING_LOCK = (
+    "natural anime skin tone preserved, pale skin or soft warm anime skin, "
+    "skin is not blue, face is not fully cyan, no full blue face, no blue body, "
+    "neon colors appear only as rim light, reflected highlights and eye glow, "
+    "soft blush visible, natural face shading, beautiful readable face, "
+    "dark shadows with magenta and violet glow, cinematic anime lighting"
 )
 
 QUALITY_TAGS = (
@@ -100,7 +110,10 @@ NEGATIVE_PROMPT = (
     "multiple people, crowd, duplicate character, text, letters, watermark, logo, signature, username, UI, "
     "low quality, blurry, low resolution, muddy, washed out, dull colors, flat lighting, plain background, "
     "generic AI art, generic purple gradient, boring composition, messy clutter, bad crop, "
-    "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash"
+    "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash, "
+    "blue skin, cyan skin, fully blue face, blue face, blue body, avatar skin, smurf skin, "
+    "neon skin, skin completely tinted blue, overexposed cyan face, plastic blue shading, "
+    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face"
 )
 
 
@@ -414,7 +427,7 @@ def _song_micro_detail(song_name: str) -> str:
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
     """
-    Prompt v11 DARKMARK RETENTION.
+    Prompt v12 DARKMARK FINAL RETENTION LOCK.
     Foco: parecer anime edit/phonk cover viral, não imagem genérica de IA.
     """
     styles = styles or []
@@ -438,10 +451,10 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
         f"song title mood: '{song_name}', {song_detail}, genre mood: {all_styles}, "
         f"palette: {concept.get('palette', 'deep black, neon purple, hot magenta, cyan, red glow')}, "
         f"{parts['art']}, "
-        f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {QUALITY_TAGS}, "
+        f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {SKIN_LIGHTING_LOCK}, {QUALITY_TAGS}, "
         "phone-screen readable, eyes are the main hook, strong face focal point, "
         "clean 9:16 vertical composition, background dark enough for waveform and logo overlay, "
-        "no text, no watermark, no logo, no letters, no photorealism, no 3d"
+        "no text, no watermark, no logo, no letters, no photorealism, no 3d, no blue skin, no fully blue face"
     )
 
     return _compact(prompt, max_len=3600)
@@ -470,6 +483,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         prompt
         + ", 2D anime only, dark anime edit, viral phonk anime cover, glowing eyes, "
         + "manga shadows, sharp lineart, cel shading, high contrast, deep black background, "
+        + "natural anime skin tone preserved, face not tinted blue, neon only as rim light and eye glow, "
         + "hot magenta violet cyan red neon, beautiful gothic cyberpunk anime girl, "
         + "not realistic, not 3d, not photo, clean face, phone wallpaper quality, high retention"
     )
@@ -617,7 +631,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator v11.0 — DarkMark Viral Retention")
+    parser = argparse.ArgumentParser(description="AI Image Generator v12.0 — DarkMark Final Retention Lock")
     parser.add_argument("--style", default="phonk")
     parser.add_argument("--filename", default="dark phonk.mp3")
     parser.add_argument("--short-num", type=int, default=1)
