@@ -384,8 +384,8 @@
       "key": "1BAnyHaHvmT3sw2_eZS0goPtqqJ-MvJ4M",
       "name_key": "still alone",
       "done": 0,
-      "is_new": true,
-      "genre": null
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1HImEK5oHhg0Xngy3re9Pchg0Uyw2MSeI",
