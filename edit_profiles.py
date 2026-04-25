@@ -1,5 +1,7 @@
 """
-edit_profiles.py — Perfis de edição calibrados para o canal DjDarkMark.
+edit_profiles.py — Perfis de edição calibrados para DJ darkMark.
+================================================================
+Merge v14 (perfis completos) + estrutura segura para GitHub Actions.
 
 Foco:
 - phonk / trap / dark underground
@@ -342,9 +344,10 @@ _PROFILES: dict[str, dict] = {
 
 # Aliases
 _PROFILES["default"] = deepcopy(_DEFAULT)
-_PROFILES["edm"] = deepcopy(_PROFILES["electronic"])
-_PROFILES["hiphop"] = deepcopy(_PROFILES["trap"])
-_PROFILES["drill"] = deepcopy(_PROFILES["trap"])
+_PROFILES["edm"]     = deepcopy(_PROFILES["electronic"])
+_PROFILES["hiphop"]  = deepcopy(_PROFILES["trap"])
+_PROFILES["drill"]   = deepcopy(_PROFILES["trap"])
+_PROFILES["dubstep"] = deepcopy(_PROFILES["electronic"])
 
 
 def get_profile(style: str) -> dict:
@@ -360,7 +363,6 @@ def blend_profiles(style_a: str, style_b: str, weight: float = 0.5) -> dict:
     weight = max(0.0, min(1.0, weight))
     pa = get_profile(style_a)
     pb = get_profile(style_b)
-
     blended = {}
     for key in pa:
         va = pa[key]
@@ -369,50 +371,41 @@ def blend_profiles(style_a: str, style_b: str, weight: float = 0.5) -> dict:
             blended[key] = va * (1 - weight) + vb * weight
         else:
             blended[key] = va if weight < 0.5 else vb
-
-    # normalizações úteis
-    blended["max_zoom"] = min(max(blended["max_zoom"], 1.04), 1.28)
-    blended["zoom_speed"] = min(max(blended["zoom_speed"], 0.006), 0.05)
-    blended["beat_flash"] = min(max(blended["beat_flash"], 0.02), 0.18)
-    blended["bass_flash"] = min(max(blended["bass_flash"], 0.04), 0.26)
-    blended["drop_flash"] = min(max(blended["drop_flash"], 0.08), 0.36)
-    blended["shake_x"] = int(min(max(round(blended["shake_x"]), 0), 8))
-    blended["shake_y"] = int(min(max(round(blended["shake_y"]), 0), 8))
-    blended["fps"] = 30
+    blended["max_zoom"]    = min(max(blended["max_zoom"], 1.04), 1.28)
+    blended["zoom_speed"]  = min(max(blended["zoom_speed"], 0.006), 0.05)
+    blended["beat_flash"]  = min(max(blended["beat_flash"], 0.02), 0.18)
+    blended["bass_flash"]  = min(max(blended["bass_flash"], 0.04), 0.26)
+    blended["drop_flash"]  = min(max(blended["drop_flash"], 0.08), 0.36)
+    blended["shake_x"]     = int(min(max(round(blended["shake_x"]), 0), 8))
+    blended["shake_y"]     = int(min(max(round(blended["shake_y"]), 0), 8))
+    blended["fps"]         = 30
     return blended
 
 
 def get_profile_for_bpm(bpm: Optional[float], style_hint: str = "default") -> dict:
-    """
-    Ajuste dinâmico por BPM com foco em música dark/trap/phonk.
-    """
+    """Ajuste dinâmico por BPM com foco em música dark/trap/phonk."""
     profile = get_profile(style_hint)
     if bpm is None:
         return profile
-
     p = deepcopy(profile)
-
     if bpm < 80:
         p["zoom_speed"] *= 0.75
         p["shake_x"] = max(0, p["shake_x"] - 2)
         p["shake_y"] = max(0, p["shake_y"] - 2)
         p["beat_flash"] *= 0.85
         p["bass_flash"] *= 0.90
-
     elif bpm > 155:
         p["zoom_speed"] = min(p["zoom_speed"] * 1.20, 0.050)
-        p["max_zoom"] = min(p["max_zoom"] + 0.03, 1.28)
-        p["shake_x"] = min(p["shake_x"] + 1, 8)
-        p["shake_y"] = min(p["shake_y"] + 1, 8)
+        p["max_zoom"]   = min(p["max_zoom"] + 0.03, 1.28)
+        p["shake_x"]    = min(p["shake_x"] + 1, 8)
+        p["shake_y"]    = min(p["shake_y"] + 1, 8)
         p["beat_flash"] = min(p["beat_flash"] * 1.15, 0.18)
         p["bass_flash"] = min(p["bass_flash"] * 1.15, 0.26)
         p["drop_flash"] = min(p["drop_flash"] * 1.10, 0.36)
-
     elif bpm > 125:
         p["zoom_speed"] = min(p["zoom_speed"] * 1.10, 0.045)
         p["beat_flash"] = min(p["beat_flash"] * 1.08, 0.16)
         p["bass_flash"] = min(p["bass_flash"] * 1.08, 0.24)
-
     return p
 
 
