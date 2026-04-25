@@ -508,9 +508,9 @@
       "id": "1QwsjN1709ZmtLf3qKoZGOF_1kZ_imrOe",
       "name": "But I'm Not (1).mp3",
       "key": "1QwsjN1709ZmtLf3qKoZGOF_1kZ_imrOe",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "but i'm not"
     },
     {
