@@ -464,9 +464,9 @@
       "name": "16 Lines of Pain.mp3",
       "key": "1bco_4tERCxuFFu9xg5MMhFFaflJqI4qM",
       "name_key": "16 lines of pain",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1I62KqttCW20OJh_ZXKDy1Kvn6afrm2Hy",
