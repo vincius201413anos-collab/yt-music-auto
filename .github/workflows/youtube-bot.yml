@@ -8,16 +8,18 @@ permissions:
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 55  # job inteiro: 55min (deixa 5min pro cleanup)
+    timeout-minutes: 55
     env:
       PYTHONUNBUFFERED: "1"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       ENABLE_REMOTION: "true"
       REMOTION_COMPOSITION_ID: "MyComposition"
       REMOTION_ENTRY: "index.ts"
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -55,8 +57,9 @@ jobs:
             libxdamage1 \
             libxrandr2 \
             libgbm1 \
-            libasound2 \
+            libasound2t64 \
             libpangocairo-1.0-0
+
           ffmpeg -version | head -n 1
           chromium-browser --version || echo "chromium não instalado (não crítico)"
 
@@ -90,14 +93,11 @@ jobs:
           sleep 3
 
       - name: Run Bot
-        timeout-minutes: 48  # step do bot: 48min (sobra tempo pro Commit state.json)
+        timeout-minutes: 48
         env:
           DISPLAY: ":99"
-          # Força Chromium headless a usar renderer de software (sem GPU)
           REMOTION_GL: "swiftshader"
-          # Aponta pro chromium do sistema em vez do bundled do Remotion
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
-          # Flags extras do Chrome para CI headless
           CHROME_FLAGS: "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
@@ -127,17 +127,21 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           if [ ! -f state.json ]; then
             echo '{"tracks":[],"alpha_index":0}' > state.json
           fi
+
           cp state.json /tmp/state.json
           git fetch origin main
           git reset --hard origin/main
           cp /tmp/state.json state.json
+
           git add -f state.json
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
           fi
+
           git commit -m "update state [skip ci]"
           git push origin HEAD:main
