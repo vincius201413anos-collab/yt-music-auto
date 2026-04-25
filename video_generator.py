@@ -15,6 +15,13 @@ FIX v8.1:
 - Removido parâmetro 'shadows=enable' do filtro colorbalance (não suportado pelo FFmpeg do runner).
   Substituído por dois filtros colorbalance separados: um para sombras (rs/gs/bs baixo) e outro
   para highlights (rs/gs/bs alto), que é a forma correta e compatível.
+
+FIX v8.2 SAFE RUNNER:
+- Adicionado timeout no FFmpeg para impedir render infinito no GitHub Actions.
+- Logs de erro do FFmpeg agora aparecem com trecho final limpo.
+- Thumbnail também ganhou timeout para não prender o job.
+- IMPORTANTE: este arquivo gera a base FFmpeg. Se o log travar em "Iniciando render Remotion",
+  o ponto final do travamento está no arquivo que chama o Remotion depois deste gerador.
 """
 
 from __future__ import annotations
@@ -107,6 +114,10 @@ MAX_RETRIES     = 2
 RETRY_DELAY_S   = 3
 MIN_FILE_SIZE_MB = 0.5
 MAX_FILE_SIZE_MB = 350.0
+
+# Segurança contra travamento infinito no GitHub Actions / runners fracos
+FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "900"))   # 15 min
+FFMPEG_THUMB_TIMEOUT_S  = int(os.getenv("FFMPEG_THUMB_TIMEOUT", "120"))    # 2 min
 
 # ══════════════════════════════════════════════════════════════════════════════
 # COLOR GRADES — v8.1 CYBERPUNK MÁXIMO
@@ -346,6 +357,41 @@ def clean_song_name(audio_path: str, override: str = "") -> str:
     name = re.sub(r"\[[^\]]*\]|\([^\)]*\)", "", name)
     name = re.sub(r"[_\-]+", " ", name).strip().title()
     return name
+
+
+def _tail(text: str, limit: int = 1200) -> str:
+    """Retorna só o final do log para não poluir o GitHub Actions."""
+    if not text:
+        return ""
+    text = str(text)
+    return text[-limit:]
+
+
+def run_cmd_safe(cmd: list[str], name: str, timeout_s: int, capture: bool = True) -> subprocess.CompletedProcess:
+    """
+    Executa comando externo com timeout.
+    Isso impede o job de ficar infinito quando FFmpeg/runner trava.
+    """
+    logger.info(f"  ► {name}: timeout={timeout_s}s")
+    try:
+        return subprocess.run(
+            cmd,
+            check=True,
+            text=True,
+            stdout=subprocess.PIPE if capture else None,
+            stderr=subprocess.PIPE if capture else None,
+            timeout=timeout_s,
+        )
+    except subprocess.TimeoutExpired as e:
+        logger.error(f"  ✗ {name} travou/estourou timeout após {timeout_s}s.")
+        if getattr(e, "stderr", None):
+            logger.error(_tail(e.stderr))
+        raise
+    except subprocess.CalledProcessError as e:
+        logger.error(f"  ✗ {name} falhou com exit code {e.returncode}.")
+        if e.stderr:
+            logger.error(_tail(e.stderr))
+        raise
 
 
 def logo_exists() -> bool:
@@ -976,11 +1022,15 @@ def generate_thumbnail(
         "-vf", vf, "-q:v", "2", out,
     ]
     try:
-        subprocess.run(cmd, check=True, capture_output=True)
+        run_cmd_safe(cmd, "Thumbnail FFmpeg", FFMPEG_THUMB_TIMEOUT_S, capture=True)
         logger.info(f"  ► Thumbnail gerada: {out}")
         return out
+    except subprocess.TimeoutExpired:
+        logger.warning("  ⚠ Thumbnail travou/timeout — seguindo sem thumbnail.")
+        return None
     except subprocess.CalledProcessError as e:
-        logger.warning(f"  ⚠ Thumbnail falhou: {e.stderr.decode()[-300:] if e.stderr else ''}")
+        stderr = e.stderr if isinstance(e.stderr, str) else (e.stderr.decode(errors="ignore") if e.stderr else "")
+        logger.warning(f"  ⚠ Thumbnail falhou: {_tail(stderr, 300)}")
         return None
 
 
@@ -1110,11 +1160,20 @@ def create_short(
     logger.info("  ► Iniciando render v8.0 (Viral Control)…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            subprocess.run(cmd, check=True, capture_output=True)
+            run_cmd_safe(cmd, "Render FFmpeg base v8.2", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
+        except subprocess.TimeoutExpired:
+            err = f"Timeout de {FFMPEG_RENDER_TIMEOUT_S}s no FFmpeg base."
+            if attempt <= MAX_RETRIES:
+                logger.warning(f"  ⚠ Render travou (tentativa {attempt}): {err}")
+                time.sleep(RETRY_DELAY_S)
+            else:
+                logger.error(f"  ✗ Render travou após {MAX_RETRIES+1} tentativas. {err}")
+                raise
         except subprocess.CalledProcessError as e:
-            err = e.stderr.decode()[-600:] if e.stderr else ""
+            stderr = e.stderr if isinstance(e.stderr, str) else (e.stderr.decode(errors="ignore") if e.stderr else "")
+            err = _tail(stderr, 600)
             if attempt <= MAX_RETRIES:
                 logger.warning(f"  ⚠ Render falhou (tentativa {attempt}): {err}")
                 time.sleep(RETRY_DELAY_S)
