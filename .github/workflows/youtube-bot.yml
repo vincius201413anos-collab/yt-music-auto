@@ -1,24 +1,31 @@
 name: youtube-bot
+
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */3 * * *"
+
 permissions:
   contents: write
+
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
 
 jobs:
   run-bot:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 55
     env:
       PYTHONUNBUFFERED: "1"
-      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-      ENABLE_REMOTION: "true"
-      REMOTION_COMPOSITION_ID: "MyComposition"
-      REMOTION_ENTRY: "index.ts"
+      ENABLE_REMOTION: "false"
+      SHORTS_PER_TRACK: "1"
+      FFMPEG_CRF: "20"
+      FFMPEG_PRESET: "veryfast"
+      FFMPEG_FPS: "30"
+      FINAL_GRAIN_STRENGTH: "4"
+      FFMPEG_RENDER_TIMEOUT: "720"
+      FFMPEG_THUMB_TIMEOUT: "120"
 
     steps:
       - name: Checkout
@@ -33,72 +40,28 @@ jobs:
           python-version: "3.11"
           cache: "pip"
 
-      - name: Setup Node 18
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-
       - name: Install system dependencies
         run: |
           sudo apt-get update -y -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
             ffmpeg \
             fonts-dejavu-core \
-            fonts-liberation \
-            xvfb \
-            chromium-browser \
-            libnss3 \
-            libatk1.0-0 \
-            libatk-bridge2.0-0 \
-            libcups2 \
-            libdrm2 \
-            libxkbcommon0 \
-            libxcomposite1 \
-            libxdamage1 \
-            libxrandr2 \
-            libgbm1 \
-            libasound2t64 \
-            libpangocairo-1.0-0
-
+            fonts-liberation
           ffmpeg -version | head -n 1
-          chromium-browser --version || echo "chromium não instalado (não crítico)"
 
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Cache Remotion node_modules
-        uses: actions/cache@v4
-        with:
-          path: remotion/node_modules
-          key: remotion-node-modules-${{ hashFiles('remotion/package.json') }}
-          restore-keys: |
-            remotion-node-modules-
-
-      - name: Install Remotion dependencies
-        run: |
-          cd remotion
-          npm install --prefer-offline
-
       - name: Prepare folders
         run: |
-          mkdir -p output temp assets/backgrounds assets/source_videos remotion/public
+          mkdir -p output temp assets/backgrounds assets/source_videos
           test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
-
-      - name: Start virtual display
-        run: |
-          Xvfb :99 -screen 0 1280x720x24 &
-          echo "DISPLAY=:99" >> $GITHUB_ENV
-          sleep 3
 
       - name: Run Bot
         timeout-minutes: 48
         env:
-          DISPLAY: ":99"
-          REMOTION_GL: "swiftshader"
-          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
-          CHROME_FLAGS: "--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
@@ -112,11 +75,6 @@ jobs:
           FB_ENABLE_POSTING: ${{ secrets.FB_ENABLE_POSTING }}
           ENABLE_DRIVE_BACKUP: ${{ secrets.ENABLE_DRIVE_BACKUP }}
           DRIVE_BACKUP_FOLDER_ID: ${{ secrets.DRIVE_BACKUP_FOLDER_ID }}
-          ENABLE_REMOTION: "true"
-          REMOTION_COMPOSITION_ID: "MyComposition"
-          REMOTION_ENTRY: "index.ts"
-          REMOTION_CONCURRENCY: "1"
-          SHORTS_PER_TRACK: "1"
         run: |
           echo "=== START $(date -u '+%Y-%m-%d %H:%M:%S UTC') ==="
           python main.py
@@ -127,21 +85,17 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           if [ ! -f state.json ]; then
             echo '{"tracks":[],"alpha_index":0}' > state.json
           fi
-
           cp state.json /tmp/state.json
           git fetch origin main
           git reset --hard origin/main
           cp /tmp/state.json state.json
-
           git add -f state.json
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
           fi
-
           git commit -m "update state [skip ci]"
           git push origin HEAD:main
