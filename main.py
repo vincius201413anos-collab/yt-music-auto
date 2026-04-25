@@ -809,7 +809,7 @@ def run_remotion_overlay(
     if not copied_logo:
         log("Logo não encontrada — o ícone NÃO vai aparecer no Remotion.")
 
-    entry_env = str(REMOTION_ENTRY).replace("\", "/").strip()
+    entry_env = str(REMOTION_ENTRY).replace("\\", "/").strip()
     entry_for_cli = entry_env.replace("remotion/", "", 1) if entry_env.startswith("remotion/") else entry_env
     entry_path = remotion_dir / entry_for_cli
 
@@ -840,7 +840,7 @@ def run_remotion_overlay(
         REMOTION_COMPOSITION_ID,
         str(output_abs),
         "--overwrite",
-        "--concurrency", "1",
+        "--concurrency", "2",
         "--timeout", "300000",
         "--scale", "0.6",
         "--crf", "28",
@@ -1068,6 +1068,7 @@ def main():
             audio_data_path  = None
 
         if not audio_data_path:
+            log("⚠️ SEM AUDIO DATA → REMOTION SEM SINCRONIZAÇÃO REAL")
             possible_audio_data_paths = [
                 Path("temp") / "audio_data.json",
                 Path("audio_data.json"),
