@@ -1,29 +1,23 @@
 name: youtube-bot
-
 on:
   workflow_dispatch:
   schedule:
     - cron: "0 */3 * * *"
-
 permissions:
   contents: write
-
 concurrency:
   group: youtube-bot-main
   cancel-in-progress: false
-
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     timeout-minutes: 60
-
     env:
       PYTHONUNBUFFERED: "1"
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       ENABLE_REMOTION: "true"
       REMOTION_COMPOSITION_ID: "MyComposition"
       REMOTION_ENTRY: "index.ts"
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,13 +36,19 @@ jobs:
         with:
           node-version: 18
 
-      - name: Install FFmpeg + fonts
+      - name: Install FFmpeg + fonts + Xvfb
         run: |
           sudo apt-get update -y -q
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -q \
             ffmpeg \
             fonts-dejavu-core \
-            fonts-liberation
+            fonts-liberation \
+            xvfb \
+            libnss3 \
+            libatk-bridge2.0-0 \
+            libdrm2 \
+            libxkbcommon0 \
+            libgbm1
           ffmpeg -version | head -n 1
 
       - name: Install Python dependencies
@@ -74,8 +74,16 @@ jobs:
           mkdir -p output temp assets/backgrounds assets/source_videos remotion/public
           test -f state.json || echo '{"tracks":[],"alpha_index":0}' > state.json
 
+      - name: Start virtual display
+        run: |
+          Xvfb :99 -screen 0 1280x720x24 &
+          echo "DISPLAY=:99" >> $GITHUB_ENV
+          sleep 2
+
       - name: Run Bot
         env:
+          DISPLAY: ":99"
+          REMOTION_GL: "swiftshader"
           GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
           GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
@@ -103,22 +111,17 @@ jobs:
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           if [ ! -f state.json ]; then
             echo '{"tracks":[],"alpha_index":0}' > state.json
           fi
-
           cp state.json /tmp/state.json
           git fetch origin main
           git reset --hard origin/main
           cp /tmp/state.json state.json
-
           git add -f state.json
-
           if git diff --cached --quiet; then
             echo "state.json sem alterações."
             exit 0
           fi
-
           git commit -m "update state [skip ci]"
           git push origin HEAD:main
