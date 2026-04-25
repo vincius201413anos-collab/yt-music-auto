@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — v13.0 DARKMARK REFERENCE LOCK
+ai_image_generator.py — v14.0 DARKMARK FINAL VIBRANT BEAUTY LOCK
 ============================================================
 FINALIDADE:
 - Gerar imagens mais parecidas com referências virais de anime dark/phonk.
@@ -41,7 +41,7 @@ FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
     "num_inference_steps": 42,
-    "guidance_scale": 7.8,
+    "guidance_scale": 7.6,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -61,22 +61,25 @@ CHANNEL_IDENTITY = (
 # Mais próximo das imagens que você mandou: dark anime, olhos neon, sombra pesada,
 # rosto marcante, composição simples e memorável. Sem realismo.
 CHARACTER_DNA = (
-    "one adult anime girl only, dark cute gothic cyberpunk anime girl, beautiful face, "
-    "viral anime edit character, big glowing hypnotic eyes, sharp anime eyes, glossy pupils, "
-    "clean face, pretty face, soft blush, small nose, attractive anime expression, "
-    "black hair, white hair, purple-black hair or cyan-tipped hair, messy bangs, twin tails or long flowing hair, "
+    "one adult anime girl only, beautiful dark gothic cyberpunk anime girl, "
+    "pretty face, clean face, soft blush, natural anime skin tone, "
+    "large glowing hypnotic eyes, glossy pupils, sharp anime eyes, readable face, "
+    "varied expression: sometimes cute, sometimes evil, sometimes crazy, sometimes calm, "
+    "tiny fang smile optional, mischievous smile optional, mysterious stare optional, "
+    "black hair, white hair, dark purple hair or cyan-tipped hair, messy bangs, twin tails or long flowing hair, "
     "small demon horns, cat ears, cat-ear hoodie, gothic bow or hair clips optional, "
-    "black techwear, gothic streetwear, oversized black hoodie, glossy black jacket, choker, chains, "
+    "black techwear, gothic streetwear, oversized black hoodie, glossy black jacket, choker, subtle chains, "
     "platform-safe outfit, no nudity, no explicit outfit, alone in frame, no crowd, "
-    "strong silhouette, character centered, face and eyes are the hook"
+    "strong silhouette, centered character, face and eyes are the main hook"
 )
 
 ANIME_STYLE_DNA = (
     "2D anime illustration only, dark anime edit style, viral phonk anime cover art, "
     "anime pfp aesthetic, manga cover energy, sharp manga lineart, crisp cel shading, "
-    "deep black shadows, high contrast ink shadows, glowing neon eyes, luminous aura, "
-    "hot magenta neon, violet glow, toxic green flame, red eye glow, cyan rim light only, "
-    "simple powerful composition like viral anime phonk thumbnails, not realistic, not 3D"
+    "beautiful vibrant neon lighting, deep black shadows, high contrast ink shadows, "
+    "glowing neon eyes, luminous aura, hot magenta neon, violet glow, red eye glow, "
+    "toxic green glow sometimes, cyan rim light only, bright but tasteful light effects, "
+    "not overexposed, not messy, not realistic, not 3D"
 )
 
 RETENTION_DNA = (
@@ -116,7 +119,7 @@ NEGATIVE_PROMPT = (
     "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash, "
     "blue skin, cyan skin, fully blue face, blue face, blue body, avatar skin, smurf skin, "
     "neon skin, skin completely tinted blue, overexposed cyan face, plastic blue shading, "
-    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, random scenery, empty city without character, ugly AI face, bad crop, far away character, full body too small, generic cyberpunk city only"
+    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, overexposed neon, messy lights, random scenery, empty city without character, ugly AI face, bad crop, far away character, full body too small"
 )
 
 
@@ -191,20 +194,20 @@ AURA_VARIATIONS = [
 EXPRESSION_VARIATIONS = [
     "cute mischievous fang smile, playful but dark",
     "evil confident smile, villain anime girl energy",
-    "crazy hypnotic stare, slightly unhinged smile, glowing eyes",
+    "crazy hypnotic stare, slightly unhinged anime smile, glowing eyes",
     "calm mysterious expression, beautiful and dangerous",
-    "blank emotionless stare, creepy-cute anime edit mood",
     "soft cute face with dangerous neon eyes",
     "smirking gothic girl, chaotic phonk energy",
+    "serious cold stare, premium anime cover mood",
 ]
 
-REFERENCE_LOCKS = [
-    "looks like a viral dark anime phonk profile picture, close-up face with glowing eyes",
-    "similar vibe to gothic anime girl edits with purple neon horns and black shadows",
-    "similar vibe to hot pink demon girl anime edit, cute fang smile, cyan hair highlights",
-    "similar vibe to toxic green cat aura anime edit, glowing green eyes, black background",
-    "similar vibe to purple lightning anime girl, dark face, glowing magenta eyes",
-    "similar vibe to black and pink anime edit with branches, glow, and heavy shadows",
+REFERENCE_STYLE_LOCKS = [
+    "close-up viral dark anime phonk profile picture style",
+    "gothic anime girl edit with purple neon horns and black shadows",
+    "hot pink demon girl anime edit, cute fang smile, cyan highlights",
+    "toxic green cat aura anime edit with glowing green eyes",
+    "purple lightning anime girl, dark face, glowing magenta eyes",
+    "black and pink anime edit with branches, glow, and heavy shadows",
 ]
 
 
@@ -218,15 +221,15 @@ VISUAL_CONCEPTS = {
             "label": "PHONK_PURPLE_HORNS",
             "scene": (
                 "{character}, tight close-up portrait, small glowing purple horns, black hair with bangs, "
-                "leaning in dark alley wall, violet eyes, gothic cyberpunk girl, {aura}, {reference_lock}"
+                "dark alley wall, violet eyes, glossy neon highlights, {aura}, {reference_lock}"
             ),
             "palette": "deep black, violet neon, hot magenta, tiny cyan rim light",
         },
         {
             "label": "PHONK_PINK_DEMON_CUTE",
             "scene": (
-                "{character}, cute demon anime girl, fang smile, hot pink background glow, "
-                "cyan hair tips, black jacket, playful evil expression, anime pfp cover art, {aura}, {reference_lock}"
+                "{character}, cute demon anime girl, tiny fang smile, hot pink glow behind her, "
+                "cyan hair highlights, black jacket, playful evil expression, anime pfp cover art, {aura}, {reference_lock}"
             ),
             "palette": "hot pink, cyan highlights, black outfit, violet eyes",
         },
@@ -241,18 +244,10 @@ VISUAL_CONCEPTS = {
         {
             "label": "PHONK_PURPLE_LIGHTNING",
             "scene": (
-                "{character}, dark face in shadow, glowing magenta eyes, purple lightning aura around body, "
+                "{character}, dark face in shadow, glowing magenta eyes, purple lightning aura around her, "
                 "album cover portrait, hypnotic phonk energy, {aura}, {reference_lock}"
             ),
             "palette": "near black, neon purple, magenta eye glow, cyan edge light",
-        },
-        {
-            "label": "PHONK_MADRUGADA_MONO",
-            "scene": (
-                "{character}, grayscale dark anime girl, moonlit night, black car silhouette behind, "
-                "white blue audio-wave mood without text, red or violet glowing eyes, {aura}, {reference_lock}"
-            ),
-            "palette": "black and white, violet glow, cold blue highlights",
         },
     ],
     "trap": [
@@ -267,8 +262,8 @@ VISUAL_CONCEPTS = {
         {
             "label": "TRAP_BLUE_PURPLE_AURA",
             "scene": (
-                "{character}, blue hair with purple smoke, glowing magenta eyes, dark outfit, "
-                "centered album cover pose, cyber trap aesthetic, {aura}, {reference_lock}"
+                "{character}, blue or black hair with purple smoke, glowing magenta eyes, dark outfit, "
+                "centered album cover pose, vibrant cyber trap aesthetic, {aura}, {reference_lock}"
             ),
             "palette": "deep black, electric purple, cyan hair glow, magenta eyes",
         },
@@ -285,8 +280,8 @@ VISUAL_CONCEPTS = {
         {
             "label": "DARK_RED_EYES_MANGA",
             "scene": (
-                "{character}, extreme dark manga portrait, black hair swallowing the frame, "
-                "glowing red eyes, grayscale skin shading, hypnotic face, minimal background, {aura}, {reference_lock}"
+                "{character}, extreme dark manga portrait, black hair framing the face, "
+                "glowing red eyes, grayscale shadow shading, hypnotic face, minimal background, {aura}, {reference_lock}"
             ),
             "palette": "black and gray, red eyes, faint violet edge light",
         },
@@ -312,14 +307,14 @@ VISUAL_CONCEPTS = {
             "label": "ELECTRONIC_NEON_CRAZY",
             "scene": (
                 "{character}, crazy cute anime expression, glowing magenta eyes, digital particles, "
-                "purple and cyan neon explosion, clean pfp composition, {aura}, {reference_lock}"
+                "purple and cyan neon burst, clean pfp composition, {aura}, {reference_lock}"
             ),
             "palette": "purple, magenta, cyan, black",
         },
         {
             "label": "ELECTRONIC_LASER_EYES",
             "scene": (
-                "{character}, horizontal neon laser crossing glowing eyes, rain and holograms, "
+                "{character}, horizontal neon laser reflection across glowing eyes, rain and holograms, "
                 "clean anime cyberpunk portrait, {aura}, {reference_lock}"
             ),
             "palette": "red laser, cyan rain, purple haze",
@@ -391,7 +386,7 @@ def _compact(text: str, max_len: int = 3900) -> str:
 
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|darkmark_v13_reference_lock"
+    key = f"{filename}|{short_num}|darkmark_v14_final_vibrant_beauty_lock"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
@@ -426,7 +421,7 @@ def _pick_style_parts(filename: str, short_num: int) -> dict:
         "art": rng.choice(ART_STYLES),
         "aura": rng.choice(AURA_VARIATIONS),
         "expression": rng.choice(EXPRESSION_VARIATIONS),
-        "reference_lock": rng.choice(REFERENCE_LOCKS),
+        "reference_lock": rng.choice(REFERENCE_STYLE_LOCKS),
     }
 
 
@@ -486,8 +481,8 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
         f"palette: {concept.get('palette', 'deep black, neon purple, hot magenta, cyan, red glow')}, "
         f"{parts['art']}, "
         f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {SKIN_LIGHTING_LOCK}, {QUALITY_TAGS}, "
-        "must stay close to the provided reference style: dark anime girl edit, glowing eyes, gothic phonk pfp, "
-        "sometimes cute, sometimes evil, sometimes crazy, sometimes calm, but always beautiful and on-brand, "
+        "vibrant but tasteful neon, bright clean light effects on hair and eyes, beautiful polished lighting, "
+        "sometimes cute, sometimes evil, sometimes crazy, sometimes calm, but always pretty and on-brand, "
         "phone-screen readable, eyes are the main hook, strong face focal point, "
         "clean 9:16 vertical composition, background dark enough for waveform and logo overlay, "
         "no text, no watermark, no logo, no letters, no photorealism, no 3d, no blue skin, no fully blue face"
@@ -521,7 +516,8 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         + "manga shadows, sharp lineart, cel shading, high contrast, deep black background, "
         + "natural anime skin tone preserved, face not tinted blue, neon only as rim light and eye glow, "
         + "hot magenta violet cyan red neon, toxic green aura sometimes, beautiful gothic cyberpunk anime girl, "
-        + "close-up or medium close-up, eyes dominate the image, cute/evil/crazy expression variety, "
+        + "close-up or medium close-up, eyes dominate the image, vibrant beautiful light effects, "
+        + "cute/evil/crazy/calm expression variety, polished not messy, "
         + "must look like viral dark anime phonk edit references, not generic AI art, "
         + "not realistic, not 3d, not photo, clean face, phone wallpaper quality, high retention"
     )
@@ -669,7 +665,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator v12.0 — DarkMark Final Retention Lock")
+    parser = argparse.ArgumentParser(description="AI Image Generator v14.0 — DarkMark Final Vibrant Beauty Lock")
     parser.add_argument("--style", default="phonk")
     parser.add_argument("--filename", default="dark phonk.mp3")
     parser.add_argument("--short-num", type=int, default=1)
