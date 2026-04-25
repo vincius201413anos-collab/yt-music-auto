@@ -1,14 +1,12 @@
 """
-ai_image_generator.py — DJ DARK MARK v14 FINAL VIBRANT BEAUTY LOCK
+ai_image_generator.py — DJ DARK MARK v15 FULL BODY LOCK
 ============================================================
-Merge v14 (prompts virais) + v7 (estrutura segura GitHub Actions).
-
-FINALIDADE:
-- Gerar imagens mais parecidas com referências virais de anime dark/phonk.
-- Menos imagem genérica de IA, menos 3D, menos realismo.
-- Mais: anime edit, olhos brilhando, sombra pesada, neon roxo/rosa/vermelho,
-  composição forte para Shorts, rosto/olhos impactantes e variações boas.
-- Compatível com o pipeline antigo: build_ai_prompt(...) e generate_image(...).
+v15: Foco em corpo inteiro / medium-full body como nas referências.
+- Personagem ocupa 70-90% do frame vertical
+- Sem close-up de rosto dominante
+- Roupa, silhueta e pose visíveis
+- Fundo com aura/cenário forte mas secundário ao personagem
+- Baseado nas referências: correntes, aura de fogo, gothic dress, cat ears
 """
 
 from __future__ import annotations
@@ -40,8 +38,8 @@ REPLICATE_MODELS = [
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": int(os.getenv("FLUX_STEPS", "38")),
-    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "7.2")),
+    "num_inference_steps": int(os.getenv("FLUX_STEPS", "40")),
+    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "7.5")),
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -58,22 +56,27 @@ CHANNEL_IDENTITY = (
     "YouTube Shorts music visualizer background, high-retention anime thumbnail"
 )
 
+# v15: CHARACTER_DNA reescrito para corpo inteiro visível
 CHARACTER_DNA = (
     "one adult anime girl only, beautiful dark gothic cyberpunk anime girl, "
+    "full body visible from head to feet, or at minimum from head to knees, "
+    "character takes up 75 percent of the vertical frame, "
     "pretty face, clean face, soft blush, natural anime skin tone, "
     "large glowing hypnotic eyes, glossy pupils, sharp anime eyes, readable face, "
     "varied expression: sometimes cute, sometimes evil, sometimes crazy, sometimes calm, "
     "tiny fang smile optional, mischievous smile optional, mysterious stare optional, "
     "black hair, white hair, dark purple hair or cyan-tipped hair, messy bangs, twin tails or long flowing hair, "
     "small demon horns, cat ears, cat-ear hoodie, gothic bow or hair clips optional, "
-    "black techwear, gothic streetwear, oversized black hoodie, glossy black jacket, choker, subtle chains, "
+    "full gothic outfit visible: black gothic dress, black techwear full outfit, gothic streetwear full look, "
+    "oversized black hoodie with visible torso and legs, glossy black jacket with pants or skirt, "
+    "choker, chains around waist and wrists, platform boots visible at the bottom, "
     "platform-safe outfit, no nudity, no explicit outfit, alone in frame, no crowd, "
-    "strong silhouette, centered character, face and eyes are the main hook"
+    "strong full-body silhouette, face and body both visible and in focus"
 )
 
 ANIME_STYLE_DNA = (
     "2D anime illustration only, dark anime edit style, viral phonk anime cover art, "
-    "anime pfp aesthetic, manga cover energy, sharp manga lineart, crisp cel shading, "
+    "full body anime character art, manga cover energy, sharp manga lineart, crisp cel shading, "
     "beautiful vibrant neon lighting, deep black shadows, high contrast ink shadows, "
     "glowing neon eyes, luminous aura, hot magenta neon, violet glow, red eye glow, "
     "toxic green glow sometimes, cyan rim light only, bright but tasteful light effects, "
@@ -81,13 +84,15 @@ ANIME_STYLE_DNA = (
 )
 
 RETENTION_DNA = (
-    "scroll stopping first frame, strong centered focal point, face and eyes readable on phone screen, "
-    "simple powerful composition, high contrast, not cluttered, memorable silhouette, "
-    "dark background with one dominant neon glow, space near lower center for audio waveform or DJ logo, "
-    "viral anime pfp aesthetic, album cover aesthetic, music visualizer background"
+    "scroll stopping first frame, strong full-body focal point, "
+    "character silhouette readable on phone screen from head to toe, "
+    "simple powerful composition, high contrast, not cluttered, memorable full silhouette, "
+    "dark background with one dominant neon glow emanating from behind the character, "
+    "space near lower edge for audio waveform or DJ logo overlay, "
+    "viral anime full body cover art aesthetic, album cover aesthetic, music visualizer background, "
+    "character centered in 9:16 frame with room at top and bottom"
 )
 
-# SKIN LOCK: neon é LUZ, não cor base da pele.
 SKIN_LIGHTING_LOCK = (
     "natural anime skin tone preserved, pale skin or soft warm anime skin, "
     "skin is not blue, face is not fully cyan, no full blue face, no blue body, "
@@ -98,9 +103,10 @@ SKIN_LIGHTING_LOCK = (
 
 QUALITY_TAGS = (
     "masterpiece, best quality, high-end anime key visual, polished anime illustration, "
-    "ultra sharp lineart, clean anatomy, refined face, glossy detailed eyes, cinematic lighting, "
+    "ultra sharp lineart, clean anatomy, refined face, full body anatomy correct, "
+    "detailed hands and feet, platform boots detail, glossy detailed eyes, cinematic lighting, "
     "deep blacks, luminous neon highlights, vibrant magenta, violet, red and cyan lighting, "
-    "beautiful anime girl, dark aesthetic, phonk aesthetic, 9:16 vertical"
+    "beautiful anime girl full body, dark aesthetic, phonk aesthetic, 9:16 vertical"
 )
 
 NEGATIVE_PROMPT = (
@@ -117,241 +123,273 @@ NEGATIVE_PROMPT = (
     "blue skin, cyan skin, fully blue face, blue face, blue body, avatar skin, smurf skin, "
     "neon skin, skin completely tinted blue, overexposed cyan face, plastic blue shading, "
     "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, "
-    "overexposed neon, messy lights, random scenery, empty city without character, "
-    "ugly AI face, bad crop, far away character, full body too small"
+    "overexposed neon, messy lights, random scenery, empty scene without character, "
+    "ugly AI face, portrait only, face only, head only, headshot only, bust only, "
+    "cropped body, missing legs, missing feet, missing torso, cut off at waist, "
+    "zoomed in too much, extreme close-up, macro face shot, "
+    "small character in background, character too far, character too tiny in frame"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES VISUAIS
+# VARIAÇÕES VISUAIS — v15 FULL BODY
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "long black hair with heavy bangs and red neon eye glow",
-    "black twin tails with hot pink and cyan highlights",
-    "white hair with black underlayer and glowing magenta eyes",
-    "messy black bob haircut, gothic bow accessory, red eyes",
-    "long blue hair in electric purple smoke, glowing cyan rim light",
-    "dark purple hair, wet strands, violet neon reflections",
-    "short black hair under oversized cat-ear hoodie, glowing eyes",
-    "long black hair flowing in rain, crimson rim light",
+    "long black hair flowing past waist with heavy bangs and red neon eye glow",
+    "black twin tails reaching hips with hot pink and cyan highlights",
+    "white hair falling to mid-back with black underlayer and glowing magenta eyes",
+    "messy black hair to shoulders, gothic bow accessory, red glowing eyes",
+    "long dark purple hair with wet strands and violet neon reflections reaching floor",
+    "short black hair under oversized cat-ear hoodie, glowing eyes piercing through",
+    "long black hair blowing dramatically in wind, crimson rim light all around",
+    "black and red ombre hair, very long, pooling slightly at feet",
 ]
 
 EYE_VARIATIONS = [
-    "glowing red eyes, intense hypnotic stare",
-    "glowing violet eyes with glossy anime reflections",
-    "bright magenta eyes, cute dangerous smile",
-    "toxic green glowing eyes with supernatural flame aura",
-    "cyan and pink heterochromia, cyberpunk iris glow",
+    "glowing red eyes, intense hypnotic stare, visible even from full body distance",
+    "glowing violet eyes with glossy anime reflections bright enough to light her face",
+    "bright magenta eyes, cute dangerous smile, eyes readable from full body shot",
+    "toxic green glowing eyes with supernatural flame aura matching eye color",
+    "cyan and pink heterochromia, cyberpunk iris glow, intense stare",
 ]
 
 OUTFIT_VARIATIONS = [
-    "oversized black hoodie with cat-ear hood, neon rim light",
-    "black gothic techwear jacket with choker and subtle chains",
-    "dark cyberpunk jacket with glossy wet leather reflections",
-    "black streetwear outfit with purple glowing seams",
-    "gothic anime outfit with platform-safe top, collar and silver accessories",
-    "hooded shadow cloak with neon inner glow, cute dark anime style",
+    "long black gothic dress with silver chain details at waist, platform boots visible",
+    "black techwear full outfit: jacket, cargo pants with chains, knee-high platform boots",
+    "dark cyberpunk jacket with glossy wet leather, black shorts with fishnet stockings and boots",
+    "gothic black ensemble: corseted top, layered skirt with chains, tall platform boots",
+    "oversized black cat-ear hoodie, black shorts with thigh-high stockings, chunky boots",
+    "hooded shadow cloak, full length, parted in front to show gothic outfit underneath, boots",
+    "black gothic lolita dress full length with lace trim, chains, platform mary janes",
+    "black sleeveless gothic dress with off-shoulder detail, chains around wrists and waist, boots",
 ]
 
+# v15: POSE_VARIATIONS totalmente reescrito para corpo inteiro
 POSE_VARIATIONS = [
-    "close-up portrait, eyes dominating the frame, slight fang smile",
-    "medium portrait, looking directly at viewer, calm dangerous expression",
-    "sitting in a dark neon room holding a phone, lonely midnight vibe",
-    "standing in rain with neon city bokeh behind, hair moving in wind",
-    "hood up, face half hidden in shadow, glowing eyes visible",
-    "three-quarter portrait, one hand near face, cute gothic expression",
-    "centered album-cover pose, shoulders visible, dark aura surrounding her",
+    "standing confidently facing viewer, arms at sides, full body visible head to boots",
+    "standing with one hand raised holding dark energy, other at hip, full body pose",
+    "walking toward viewer slowly, chains swinging, full body dynamic pose",
+    "standing in contrapposto pose, looking over shoulder with glowing eyes, full body",
+    "arms crossed at chest, chin slightly down, dangerous calm stare, full body centered",
+    "one knee slightly bent, hand reaching toward camera, glowing eyes intense, full body",
+    "standing with both hands in hoodie pocket, head tilted, full body relaxed but dark",
+    "dramatic cape or hair flowing behind, one arm extended, full body silhouette pose",
+    "sitting on edge of something low, legs visible, leaning forward, full body framing",
+    "back slightly turned, face looking over shoulder with glowing eyes, full body rear pose",
 ]
 
+# v15: CAMERA_VARIATIONS para corpo inteiro
 CAMERA_VARIATIONS = [
-    "tight close-up portrait, face and eyes readable on phone screen",
-    "medium close-up, chest to crown framing, centered composition",
-    "album cover composition, character centered with strong neon aura",
-    "low angle cinematic portrait, dramatic rim light",
-    "soft close-up with shallow depth of field and neon bokeh",
+    "wide full body shot, character from head to feet centered in vertical frame",
+    "full body portrait, slight low angle looking up at character, feet to crown visible",
+    "three-quarter full body shot, head to feet slightly angled, dramatic lighting",
+    "full body centered composition, 9:16 vertical, character fills 75 percent of height",
+    "dynamic full body anime cover art framing, low angle, character looming beautifully",
+    "full body shot with slight dutch angle, character centered, dark environment around",
+    "full body standing portrait, symmetrical composition, character fills the frame vertically",
 ]
 
 ART_STYLES = [
-    "dark anime edit style, sharp manga lines, glowing eyes, high contrast black shadows",
-    "viral phonk album cover art, anime girl portrait, neon aura, clean silhouette",
-    "polished anime key visual, premium cel shading, hot pink and violet neon glow",
-    "gothic cyberpunk anime illustration, halftone manga texture, red eye glow",
-    "cute dark anime pfp aesthetic, clean face, luminous eyes, deep black background",
+    "dark anime edit style, sharp manga lines, glowing eyes, high contrast black shadows, full body key visual",
+    "viral phonk album cover art, anime girl full body portrait, neon aura, clean silhouette",
+    "polished anime key visual, premium cel shading, hot pink and violet neon glow, full character art",
+    "gothic cyberpunk anime illustration, halftone manga texture, red eye glow, full body composition",
+    "cute dark anime full body art, clean face and full outfit visible, luminous eyes, deep black background",
 ]
 
 AURA_VARIATIONS = [
-    "purple lightning aura wrapping around her silhouette",
-    "red neon eye bloom and black smoke tendrils around the frame",
-    "toxic green flame aura shaped like cat ears behind her",
-    "hot pink glitch branches and electric particles around her",
-    "cyan rain reflections and magenta neon haze behind her",
-    "black ink shadows with violet sparks floating in the air",
+    "purple lightning aura erupting from the ground around her feet and silhouette",
+    "red neon eye bloom and black smoke tendrils wrapping around her entire body",
+    "toxic green flame aura burning from the ground up along her silhouette like a halo",
+    "hot pink energy cracks radiating from her feet into the ground around her",
+    "cyan and magenta neon mist pooling at her feet and rising along her sides",
+    "black ink shadows with violet sparks erupting from the floor around her boots",
+    "dark crimson chains floating and wrapping loosely around her full body",
+    "white-hot divine neon energy outlining her entire silhouette from boots to horns",
 ]
 
 EXPRESSION_VARIATIONS = [
-    "cute mischievous fang smile, playful but dark",
-    "evil confident smile, villain anime girl energy",
-    "crazy hypnotic stare, slightly unhinged anime smile, glowing eyes",
-    "calm mysterious expression, beautiful and dangerous",
-    "soft cute face with dangerous neon eyes",
-    "smirking gothic girl, chaotic phonk energy",
-    "serious cold stare, premium anime cover mood",
+    "cute mischievous fang smile, playful but dark, full body relaxed stance",
+    "evil confident smile, villain anime girl energy, powerful full body pose",
+    "crazy hypnotic stare, slightly unhinged anime smile, glowing eyes, strong pose",
+    "calm mysterious expression, beautiful and dangerous, elegant full body stance",
+    "soft cute face with dangerous neon eyes, deceptively gentle full body pose",
+    "smirking gothic girl, chaotic phonk energy, dynamic full body posture",
+    "serious cold stare, premium anime cover mood, composed full body stance",
 ]
 
+# v15: REFERENCE_STYLE_LOCKS baseados nas imagens de referência enviadas
 REFERENCE_STYLE_LOCKS = [
-    "close-up viral dark anime phonk profile picture style",
-    "gothic anime girl edit with purple neon horns and black shadows",
-    "hot pink demon girl anime edit, cute fang smile, cyan highlights",
-    "toxic green cat aura anime edit with glowing green eyes",
-    "purple lightning anime girl, dark face, glowing magenta eyes",
-    "black and pink anime edit with branches, glow, and heavy shadows",
+    "full body gothic anime girl with chains and red sky background like dark album cover art",
+    "full body purple demon anime girl with lightning aura and glowing purple eyes standing centered",
+    "full body cat-ear hooded girl with toxic green flame aura burning from ground",
+    "full body dark anime girl with pink magenta chains wrapping around her and neon background",
+    "full body gothic dress anime girl surrounded by crimson crows and broken chains in red sky",
+    "full body cyberpunk dark anime girl with electric blue-purple aura and platform boots visible",
+    "full body black techwear anime girl with violet neon glow and city rain behind her",
+    "full body white-haired demon girl with hot pink background and fang smile, full outfit visible",
 ]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CONCEITOS VISUAIS POR GÊNERO
+# CONCEITOS VISUAIS POR GÊNERO — v15 FULL BODY SCENES
 # ══════════════════════════════════════════════════════════════════════
 
 VISUAL_CONCEPTS = {
     "phonk": [
         {
-            "label": "PHONK_PURPLE_HORNS",
+            "label": "PHONK_PURPLE_CHAINS_FULLBODY",
             "scene": (
-                "{character}, tight close-up portrait, small glowing purple horns, black hair with bangs, "
-                "dark alley wall, violet eyes, glossy neon highlights, {aura}, {reference_lock}"
+                "{character}, full body standing pose, small glowing purple horns, long black hair, "
+                "dark alley wall with purple neon columns, chains floating around her full body, "
+                "violet glowing eyes, gothic full outfit visible from boots to crown, {aura}, {reference_lock}"
             ),
-            "palette": "deep black, violet neon, hot magenta, tiny cyan rim light",
+            "palette": "deep black, violet neon, hot magenta, tiny cyan rim light, chains",
         },
         {
-            "label": "PHONK_PINK_DEMON_CUTE",
+            "label": "PHONK_PINK_DEMON_FULLBODY",
             "scene": (
-                "{character}, cute demon anime girl, tiny fang smile, hot pink glow behind her, "
-                "cyan hair highlights, black jacket, playful evil expression, anime pfp cover art, {aura}, {reference_lock}"
+                "{character}, full body demon anime girl standing, tiny fang smile, hot pink explosion behind her, "
+                "cyan hair highlights, black gothic full outfit visible, platform boots, playful evil pose, "
+                "full body anime pfp cover art, {aura}, {reference_lock}"
             ),
-            "palette": "hot pink, cyan highlights, black outfit, violet eyes",
+            "palette": "hot pink background, cyan highlights, black outfit, violet eyes, platform boots",
         },
         {
-            "label": "PHONK_GREEN_CAT_AURA",
+            "label": "PHONK_GREEN_CAT_FULLBODY",
             "scene": (
-                "{character}, cat ears or cat-ear hoodie, toxic green flame aura behind her, "
-                "glowing green eyes, centered dark anime portrait, black background, {aura}, {reference_lock}"
+                "{character}, cat ears or cat-ear hoodie, full body standing centered, toxic green flame aura "
+                "burning up from floor around her feet and silhouette, glowing green eyes, black full outfit "
+                "visible from boots to head, dark background, {aura}, {reference_lock}"
             ),
-            "palette": "black, toxic green, white glow, tiny violet shadows",
+            "palette": "black, toxic green flames from ground, white glow outline, tiny violet shadows",
         },
         {
-            "label": "PHONK_PURPLE_LIGHTNING",
+            "label": "PHONK_PURPLE_LIGHTNING_FULLBODY",
             "scene": (
-                "{character}, dark face in shadow, glowing magenta eyes, purple lightning aura around her, "
-                "album cover portrait, hypnotic phonk energy, {aura}, {reference_lock}"
+                "{character}, full body standing pose, glowing magenta eyes, purple lightning aura "
+                "erupting from the ground around her feet, gothic full outfit and platform boots visible, "
+                "album cover full body portrait, hypnotic phonk energy, {aura}, {reference_lock}"
             ),
-            "palette": "near black, neon purple, magenta eye glow, cyan edge light",
+            "palette": "near black ground, neon purple lightning, magenta eye glow, cyan edge light on silhouette",
         },
     ],
     "trap": [
         {
-            "label": "TRAP_GLITCH_GIRL",
+            "label": "TRAP_GLITCH_GIRL_FULLBODY",
             "scene": (
-                "{character}, close-up anime portrait, hot pink glitch branches, black streetwear, "
-                "confident trap cover art look, neon city blur behind, {aura}, {reference_lock}"
+                "{character}, full body anime portrait, hot pink glitch branches around her silhouette, "
+                "black techwear full outfit visible, confident trap cover art stance, "
+                "neon city blur behind her, boots on wet ground, {aura}, {reference_lock}"
             ),
-            "palette": "black, hot pink, violet, cyan shine",
+            "palette": "black outfit, hot pink, violet, cyan shine, neon city bokeh",
         },
         {
-            "label": "TRAP_BLUE_PURPLE_AURA",
+            "label": "TRAP_BLUE_PURPLE_FULLBODY",
             "scene": (
-                "{character}, blue or black hair with purple smoke, glowing magenta eyes, dark outfit, "
-                "centered album cover pose, vibrant cyber trap aesthetic, {aura}, {reference_lock}"
+                "{character}, blue or dark purple hair very long flowing, glowing magenta eyes, "
+                "dark gothic full outfit visible, full body centered album cover pose, "
+                "vibrant cyber trap aesthetic, electric smoke around feet, {aura}, {reference_lock}"
             ),
-            "palette": "deep black, electric purple, cyan hair glow, magenta eyes",
+            "palette": "deep black, electric purple, cyan hair glow, magenta eyes, smoke at feet",
         },
         {
-            "label": "TRAP_LUXURY_DARK",
+            "label": "TRAP_LUXURY_DARK_FULLBODY",
             "scene": (
-                "{character}, glossy black jacket, neon city bokeh, calm boss energy, "
-                "magenta eyes, clean dark anime edit, {aura}, {reference_lock}"
+                "{character}, full body standing, glossy black jacket full outfit and boots visible, "
+                "neon city bokeh background, calm boss energy full body pose, "
+                "magenta eyes, clean dark anime key visual, {aura}, {reference_lock}"
             ),
-            "palette": "black, violet, cyan, magenta shine",
+            "palette": "black, violet, cyan, magenta shine, city lights behind",
         },
     ],
     "dark": [
         {
-            "label": "DARK_RED_EYES_MANGA",
+            "label": "DARK_RED_CHAINS_FULLBODY",
             "scene": (
-                "{character}, extreme dark manga portrait, black hair framing the face, "
-                "glowing red eyes, grayscale shadow shading, hypnotic face, minimal background, {aura}, {reference_lock}"
+                "{character}, full body standing centered, black gothic long dress with chains floating around her, "
+                "glowing red eyes, crimson red sky behind her with black crow silhouettes, "
+                "dark manga full body key visual, chains in foreground and background, {aura}, {reference_lock}"
             ),
-            "palette": "black and gray, red eyes, faint violet edge light",
+            "palette": "black dress, red sky, dark chains, glowing red eyes, crow silhouettes",
         },
         {
-            "label": "DARK_HOOD_GIRL",
+            "label": "DARK_HOOD_FULLBODY",
             "scene": (
-                "{character}, hood up, face half hidden in shadow, glowing eyes under hood, "
-                "rainy alley, blue neon columns behind, mysterious anime edit, {aura}, {reference_lock}"
+                "{character}, full body standing, hood up with cat ears on hoodie, full hooded figure visible "
+                "from boots to hood, glowing eyes under hood, rainy dark alley, "
+                "blue neon columns behind, mysterious full body anime edit, {aura}, {reference_lock}"
             ),
-            "palette": "black hood, blue neon, magenta face glow",
+            "palette": "black hood full body, blue neon columns, magenta face glow through shadow",
         },
         {
-            "label": "DARK_PURPLE_BRANCHES",
+            "label": "DARK_PURPLE_AURA_FULLBODY",
             "scene": (
-                "{character}, black branches crossing foreground, hot pink backlight, "
-                "glowing purple eyes, beautiful evil anime girl, {aura}, {reference_lock}"
+                "{character}, full body standing, black branches crossing foreground and background, "
+                "hot pink backlight outlining her full silhouette, glowing purple eyes, "
+                "beautiful evil anime girl full body, gothic dress and boots, {aura}, {reference_lock}"
             ),
-            "palette": "black, hot pink, violet, tiny cyan rim",
+            "palette": "black, hot pink backlight silhouette, violet, tiny cyan rim on edges",
         },
     ],
     "electronic": [
         {
-            "label": "ELECTRONIC_NEON_CRAZY",
+            "label": "ELECTRONIC_NEON_FULLBODY",
             "scene": (
-                "{character}, crazy cute anime expression, glowing magenta eyes, digital particles, "
-                "purple and cyan neon burst, clean pfp composition, {aura}, {reference_lock}"
+                "{character}, full body standing with arms slightly spread, glowing magenta eyes, "
+                "digital neon particles raining around her full body, purple and cyan explosion behind, "
+                "clean full body pfp composition, boots on glowing floor, {aura}, {reference_lock}"
             ),
-            "palette": "purple, magenta, cyan, black",
+            "palette": "purple, magenta, cyan, black, neon particle rain",
         },
         {
-            "label": "ELECTRONIC_LASER_EYES",
+            "label": "ELECTRONIC_LASER_FULLBODY",
             "scene": (
-                "{character}, horizontal neon laser reflection across glowing eyes, rain and holograms, "
-                "clean anime cyberpunk portrait, {aura}, {reference_lock}"
+                "{character}, full body standing, horizontal neon laser reflections across her glowing eyes, "
+                "rain falling all around full body, holographic elements behind, "
+                "clean anime cyberpunk full body portrait, boots on wet reflective floor, {aura}, {reference_lock}"
             ),
-            "palette": "red laser, cyan rain, purple haze",
+            "palette": "red laser, cyan rain, purple haze, wet floor reflections",
         },
     ],
     "lofi": [
         {
-            "label": "LOFI_MIDNIGHT_PHONE",
+            "label": "LOFI_MIDNIGHT_FULLBODY",
             "scene": (
-                "{character}, sitting alone in dark neon room holding phone, soft sad cute expression, "
-                "rain outside window, purple shadows, {aura}, {reference_lock}"
+                "{character}, full body sitting on windowsill or low wall, legs visible, holding phone, "
+                "soft sad cute expression, rain outside window, full outfit and boots visible, "
+                "purple shadows filling the room, lonely midnight full body vibe, {aura}, {reference_lock}"
             ),
-            "palette": "black room, soft cyan rain, violet glow, warm small lamp",
+            "palette": "black room, soft cyan rain outside, violet glow, warm small lamp",
         },
         {
-            "label": "LOFI_SOFT_GOTH",
+            "label": "LOFI_SOFT_GOTH_FULLBODY",
             "scene": (
-                "{character}, soft cute gothic anime portrait, sleepy glowing eyes, quiet midnight vibe, "
-                "deep shadows, gentle magenta aura, {aura}, {reference_lock}"
+                "{character}, full body standing or leaning, soft cute gothic anime portrait, "
+                "sleepy glowing eyes, full gothic outfit visible, quiet midnight vibe, "
+                "deep shadows with gentle magenta aura around full body, {aura}, {reference_lock}"
             ),
-            "palette": "black, violet, soft pink, cold blue edge",
+            "palette": "black, violet, soft pink, cold blue edge light on silhouette",
         },
     ],
     "default": [
         {
-            "label": "DEFAULT_DARK_ANIME",
+            "label": "DEFAULT_DARK_FULLBODY",
             "scene": (
-                "{character}, {camera}, {pose}, dark anime cyberpunk portrait, glowing eyes, "
-                "neon bokeh background, high contrast, {aura}, {reference_lock}"
+                "{character}, {camera}, {pose}, dark anime cyberpunk full body portrait, glowing eyes, "
+                "full gothic outfit and boots visible, neon bokeh background, high contrast, {aura}, {reference_lock}"
             ),
-            "palette": "black, purple, magenta, cyan, red glow",
+            "palette": "black, purple, magenta, cyan, red glow, visible outfit head to toe",
         },
         {
-            "label": "DEFAULT_GREEN_AURA",
+            "label": "DEFAULT_RED_SKY_CHAINS_FULLBODY",
             "scene": (
-                "{character}, toxic green flame aura behind her shaped like cat ears, black outfit, "
-                "glowing green eyes, cute dark anime expression, viral pfp cover art, {aura}, {reference_lock}"
+                "{character}, full body standing centered, long dark hair flowing, glowing red eyes, "
+                "crimson dramatic sky behind with dark chain silhouettes floating, gothic full dress visible, "
+                "album cover full body dark anime art, viral phonk cover energy, {aura}, {reference_lock}"
             ),
-            "palette": "black, toxic green, white highlights, tiny violet shadows",
+            "palette": "black dress, crimson red sky, dark chains, red glow, dramatic atmosphere",
         },
     ],
 }
@@ -384,7 +422,7 @@ def _compact(text: str, max_len: int = 3900) -> str:
 
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|darkmark_v14_final_vibrant_beauty_lock"
+    key = f"{filename}|{short_num}|darkmark_v15_fullbody_lock"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
@@ -432,16 +470,16 @@ def _build_character(parts: dict) -> str:
 def _song_micro_detail(song_name: str) -> str:
     clean = song_name.lower()
     if any(w in clean for w in ["car", "drive", "drift", "night", "road", "truck"]):
-        return "subtle night drive detail, red taillight streaks and wet road reflections"
+        return "red taillight streaks on wet ground at her feet, night drive atmosphere"
     if any(w in clean for w in ["ghost", "phantom", "shadow", "dark", "madrugada"]):
-        return "ghostly shadow aura, midnight darkness and glowing eyes"
+        return "ghostly shadow tendrils rising from the ground around her boots, midnight darkness"
     if any(w in clean for w in ["rain", "cry", "sad", "alone"]):
-        return "lonely rain mood, window reflections and soft melancholic neon"
+        return "rain falling around her full body, wet floor reflections below her boots"
     if any(w in clean for w in ["fire", "burn", "rage"]):
-        return "crimson sparks, heat haze and aggressive red neon aura"
+        return "crimson fire erupting from the ground around her feet, heat haze distortion"
     if any(w in clean for w in ["bass", "drop", "808"]):
-        return "visible bass shockwave rings and vibrating neon particles"
-    return "one strong memorable visual detail connected to the song title"
+        return "visible bass shockwave rings expanding from her feet on the floor"
+    return "dramatic atmosphere element at ground level around her boots"
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -450,8 +488,8 @@ def _song_micro_detail(song_name: str) -> str:
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
     """
-    Gera prompt v14 DARKMARK FINAL VIBRANT BEAUTY LOCK.
-    Foco: parecer anime edit/phonk cover viral, não imagem genérica de IA.
+    Gera prompt v15 DARKMARK FULL BODY LOCK.
+    Foco: corpo inteiro da personagem, como nas referências enviadas.
     """
     styles = styles or []
     song_name = _clean_song_name(filename)
@@ -476,11 +514,13 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
         f"palette: {concept.get('palette', 'deep black, neon purple, hot magenta, cyan, red glow')}, "
         f"{parts['art']}, "
         f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {SKIN_LIGHTING_LOCK}, {QUALITY_TAGS}, "
-        "vibrant but tasteful neon, bright clean light effects on hair and eyes, beautiful polished lighting, "
+        "CRITICAL: full body visible from head to feet, character fills 75 percent of vertical frame, "
+        "full gothic outfit and platform boots clearly visible, do not crop below waist, "
+        "vibrant but tasteful neon, beautiful polished lighting on full body, "
         "sometimes cute, sometimes evil, sometimes crazy, sometimes calm, but always pretty and on-brand, "
-        "phone-screen readable, eyes are the main hook, strong face focal point, "
-        "clean 9:16 vertical composition, background dark enough for waveform and logo overlay, "
-        "no text, no watermark, no logo, no letters, no photorealism, no 3d, no blue skin, no fully blue face"
+        "clean 9:16 vertical composition, background dark enough for waveform and logo overlay at bottom, "
+        "no text, no watermark, no logo, no letters, no photorealism, no 3d, no blue skin, no fully blue face, "
+        "no extreme close-up, no head-only shot, full body is mandatory"
     )
 
     return _compact(prompt, max_len=3600)
@@ -491,10 +531,6 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_image(prompt: str, output_path: str | None = None) -> str | None:
-    """
-    Gera imagem via Replicate (flux-dev).
-    Compatível com o fluxo antigo do main.py.
-    """
     if not REPLICATE_API_TOKEN:
         logger.error("REPLICATE_API_TOKEN não configurado.")
         return None
@@ -504,17 +540,18 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    # Reforço final para o Flux não fugir para realismo/3D.
     full_prompt = _compact(
         prompt
-        + ", 2D anime only, dark anime edit, viral phonk anime cover, glowing eyes, "
+        + ", 2D anime only, dark anime full body edit, viral phonk anime cover, glowing eyes, "
         + "manga shadows, sharp lineart, cel shading, high contrast, deep black background, "
         + "natural anime skin tone preserved, face not tinted blue, neon only as rim light and eye glow, "
         + "hot magenta violet cyan red neon, toxic green aura sometimes, beautiful gothic cyberpunk anime girl, "
-        + "close-up or medium close-up, eyes dominate the image, vibrant beautiful light effects, "
-        + "cute/evil/crazy/calm expression variety, polished not messy, "
-        + "must look like viral dark anime phonk edit references, not generic AI art, "
-        + "not realistic, not 3d, not photo, clean face, phone wallpaper quality, high retention"
+        + "FULL BODY from head to feet visible in frame, full gothic outfit and boots visible, "
+        + "character takes up 75 to 85 percent of the vertical 9:16 frame height, "
+        + "do not crop legs or feet, do not zoom in on face only, full silhouette visible, "
+        + "cute evil crazy or calm expression variety, polished not messy, "
+        + "must look like viral dark anime phonk full body edit references, not generic AI art, "
+        + "not realistic, not 3d, not photo, clean face and full clean body anatomy, phone wallpaper quality"
     )
 
     headers = {
@@ -583,7 +620,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES EXTRAS — compatibilidade com partes antigas do bot
+# FUNÇÕES EXTRAS — compatibilidade com main.py
 # ══════════════════════════════════════════════════════════════════════
 
 def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, str]:
@@ -653,7 +690,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator v14 — DarkMark Final Vibrant Beauty Lock")
+    parser = argparse.ArgumentParser(description="AI Image Generator v15 — DarkMark Full Body Lock")
     parser.add_argument("--style", default="phonk")
     parser.add_argument("--filename", default="dark phonk.mp3")
     parser.add_argument("--short-num", type=int, default=1)
