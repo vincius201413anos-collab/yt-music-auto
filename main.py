@@ -778,7 +778,10 @@ def run_remotion_overlay(
 
     copied_logo = False
 
-    possible_logo_paths = []
+    possible_logo_paths = [
+        Path("assets/logo_darkmark.png"),
+        Path("assets/logo.png"),
+    ]
     if logo_path:
         possible_logo_paths.append(Path(logo_path))
     possible_logo_paths.extend([
@@ -801,7 +804,7 @@ def run_remotion_overlay(
                     shutil.copy(str(candidate), str(logo_darkmark_dest))
 
                 copied_logo = True
-                log(f"✅ Logo copiada para Remotion: {candidate} -> logo.png e logo_darkmark.png")
+                log(f"🔥 LOGO USADA: {candidate} -> logo aplicada no Remotion")
                 break
         except Exception:
             pass
