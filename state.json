@@ -419,9 +419,9 @@
       "name": "Tá Tranquilo Demais (4).mp3",
       "key": "1Eql4Bxe3SnoeylHiDmNXSSnpso3ipEew",
       "name_key": "tá tranquilo demais",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1ThBU2N4wHv0oeh1-2NRQFFTlWvFx8B-P",
