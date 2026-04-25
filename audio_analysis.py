@@ -42,6 +42,27 @@ HOP_LENGTH = 512
 FRAME_LEN  = 2048
 
 
+def _clean_audio(y):
+    """
+    Corrige NaN/inf e normaliza o áudio.
+    Isso evita o erro: Audio buffer is not finite everywhere.
+    """
+    if not LIBROSA_OK:
+        return y
+
+    try:
+        y = np.asarray(y, dtype=np.float32)
+        y = np.nan_to_num(y, nan=0.0, posinf=0.0, neginf=0.0)
+
+        peak = float(np.max(np.abs(y))) if y.size else 0.0
+        if peak > 1e-9:
+            y = y / peak
+
+        return y
+    except Exception:
+        return y
+
+
 # ══════════════════════════════════════════════════════════════════
 # FILTROS DE FREQUÊNCIA
 # ══════════════════════════════════════════════════════════════════
@@ -78,21 +99,68 @@ def _highpass(y, sr: int, lowcut: float):
 # ══════════════════════════════════════════════════════════════════
 
 def detect_bass_hits(y, sr: int) -> list:
-    """Kicks: 20-180 Hz — pulso forte de zoom e shake."""
+    """
+    Kicks / 808 / sub-bass: 20-220 Hz.
+    Versão corrigida:
+    - limpa NaN/inf
+    - reforça grave
+    - detecta kick mais agressivo
+    - fallback nos beats se não achar bass suficiente
+    """
     if not LIBROSA_OK:
         return []
+
     try:
-        y_b = _bandpass(y, sr, 20.0, 180.0)
-        env = librosa.onset.onset_strength(y=y_b, sr=sr, hop_length=HOP_LENGTH)
-        frames = librosa.onset.onset_detect(
-            onset_envelope=env, sr=sr, hop_length=HOP_LENGTH,
-            backtrack=True, pre_max=1, post_max=1,
-            pre_avg=3, post_avg=5, delta=0.08, wait=5,
+        y = _clean_audio(y)
+
+        # Faixa mais larga pra phonk/trap: pega kick + 808
+        y_b = _bandpass(y, sr, 20.0, 220.0)
+        y_b = _clean_audio(y_b)
+
+        env = librosa.onset.onset_strength(
+            y=y_b,
+            sr=sr,
+            hop_length=HOP_LENGTH,
+            aggregate=np.median,
         )
-        return [float(t) for t in librosa.frames_to_time(frames, sr=sr, hop_length=HOP_LENGTH)]
+
+        env = np.nan_to_num(env, nan=0.0, posinf=0.0, neginf=0.0)
+
+        if len(env) == 0 or float(np.max(env)) <= 1e-9:
+            bpm, beats = detect_beats(y, sr)
+            return [float(t) for t in beats[:90]]
+
+        frames = librosa.onset.onset_detect(
+            onset_envelope=env,
+            sr=sr,
+            hop_length=HOP_LENGTH,
+            backtrack=True,
+            pre_max=2,
+            post_max=2,
+            pre_avg=4,
+            post_avg=6,
+            delta=0.055,
+            wait=3,
+        )
+
+        times = [float(t) for t in librosa.frames_to_time(frames, sr=sr, hop_length=HOP_LENGTH)]
+
+        # Fallback inteligente: se a música é phonk/trap e achou pouco grave,
+        # usa os beats como "bass proxy" pra logo não ficar morto.
+        if len(times) < 8:
+            bpm, beats = detect_beats(y, sr)
+            if beats:
+                return [float(t) for t in beats[:110]]
+
+        return times
+
     except Exception as e:
         logger.warning(f"detect_bass_hits: {e}")
-        return []
+        try:
+            bpm, beats = detect_beats(_clean_audio(y), sr)
+            return [float(t) for t in beats[:90]]
+        except Exception:
+            return []
 
 
 def detect_snare_hits(y, sr: int) -> list:
@@ -100,6 +168,7 @@ def detect_snare_hits(y, sr: int) -> list:
     if not LIBROSA_OK:
         return []
     try:
+        y = _clean_audio(y)
         y_m = _bandpass(y, sr, 200.0, 8000.0)
         env = librosa.onset.onset_strength(y=y_m, sr=sr, hop_length=HOP_LENGTH)
         frames = librosa.onset.onset_detect(
@@ -118,6 +187,7 @@ def detect_hihat_hits(y, sr: int) -> list:
     if not LIBROSA_OK:
         return []
     try:
+        y = _clean_audio(y)
         y_h = _highpass(y, sr, 8000.0)
         env = librosa.onset.onset_strength(y=y_h, sr=sr, hop_length=256)
         frames = librosa.onset.onset_detect(
@@ -136,6 +206,7 @@ def detect_beats(y, sr: int) -> tuple:
     if not LIBROSA_OK:
         return 120.0, []
     try:
+        y = _clean_audio(y)
         tempo, frames = librosa.beat.beat_track(y=y, sr=sr, hop_length=HOP_LENGTH)
         bpm = float(np.ravel(tempo)[0]) if hasattr(tempo, "__len__") else float(tempo)
         times = [float(t) for t in librosa.frames_to_time(frames, sr=sr, hop_length=HOP_LENGTH)]
@@ -150,6 +221,7 @@ def detect_drop(y, sr: int, duration: float) -> Optional[float]:
     if not LIBROSA_OK:
         return None
     try:
+        y = _clean_audio(y)
         rms = librosa.feature.rms(y=y, frame_length=FRAME_LEN, hop_length=HOP_LENGTH)[0]
         smooth = uniform_filter1d(rms.astype(float), size=60) if SCIPY_OK else rms.astype(float)
         total = len(smooth)
@@ -211,6 +283,7 @@ def classify_beat_intensities(beats: list, y, sr: int) -> list:
     if not LIBROSA_OK or not beats:
         return ["medium"] * len(beats)
     try:
+        y = _clean_audio(y)
         rms = librosa.feature.rms(y=y, hop_length=HOP_LENGTH)[0]
         energies = []
         for t in beats:
@@ -232,6 +305,7 @@ def classify_song_profile(y, sr: int, bpm: float) -> str:
     if not LIBROSA_OK:
         return "medium"
     try:
+        y = _clean_audio(y)
         rms     = librosa.feature.rms(y=y)[0]
         zcr     = librosa.feature.zero_crossing_rate(y)[0]
         onset   = librosa.onset.onset_strength(y=y, sr=sr)
@@ -276,6 +350,7 @@ def compute_energy_curve(y, sr: int, n_points: int = 100) -> list:
     if not LIBROSA_OK:
         return [0.5] * n_points
     try:
+        y = _clean_audio(y)
         rms  = librosa.feature.rms(y=y, frame_length=FRAME_LEN, hop_length=HOP_LENGTH)[0]
         idx  = np.linspace(0, len(rms) - 1, n_points).astype(int)
         curve = rms[idx].astype(float)
@@ -317,6 +392,7 @@ def full_analysis(audio_path: str) -> dict:
     try:
         logger.info(f"  [analysis] Carregando: {Path(audio_path).name}")
         y, sr    = librosa.load(audio_path, mono=True)
+        y = _clean_audio(y)
         duration = float(librosa.get_duration(y=y, sr=sr))
         result["duration"] = duration
 
@@ -390,6 +466,7 @@ def find_best_window(audio_path: str, target_dur: int) -> tuple:
         return 0.0, float(target_dur)
     try:
         y, sr = librosa.load(audio_path, mono=True, duration=300)
+        y = _clean_audio(y)
         total = float(librosa.get_duration(y=y, sr=sr))
         if total <= target_dur:
             return 0.0, total
