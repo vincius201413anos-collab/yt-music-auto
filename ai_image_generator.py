@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — v12.0 DARKMARK FINAL RETENTION LOCK
+ai_image_generator.py — v13.0 DARKMARK REFERENCE LOCK
 ============================================================
 FINALIDADE:
 - Gerar imagens mais parecidas com referências virais de anime dark/phonk.
@@ -40,8 +40,8 @@ REPLICATE_MODELS = [
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": 38,
-    "guidance_scale": 7.2,
+    "num_inference_steps": 42,
+    "guidance_scale": 7.8,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -61,19 +61,22 @@ CHANNEL_IDENTITY = (
 # Mais próximo das imagens que você mandou: dark anime, olhos neon, sombra pesada,
 # rosto marcante, composição simples e memorável. Sem realismo.
 CHARACTER_DNA = (
-    "one adult anime girl, dark cute gothic cyberpunk girl, beautiful face, "
-    "large glowing eyes, hypnotic gaze, sharp anime eyes, tiny fang smile or calm mysterious expression, "
-    "black or white hair, messy bangs, twin tails or long flowing hair, "
-    "cat-ear hoodie or small demon horns optional, black techwear or gothic streetwear, "
-    "choker, oversized dark hoodie or glossy black jacket, platform-safe outfit, "
-    "clean anime face, natural anime skin tone, soft blush, strong silhouette, alone in frame, no crowd"
+    "one adult anime girl only, dark cute gothic cyberpunk anime girl, beautiful face, "
+    "viral anime edit character, big glowing hypnotic eyes, sharp anime eyes, glossy pupils, "
+    "clean face, pretty face, soft blush, small nose, attractive anime expression, "
+    "black hair, white hair, purple-black hair or cyan-tipped hair, messy bangs, twin tails or long flowing hair, "
+    "small demon horns, cat ears, cat-ear hoodie, gothic bow or hair clips optional, "
+    "black techwear, gothic streetwear, oversized black hoodie, glossy black jacket, choker, chains, "
+    "platform-safe outfit, no nudity, no explicit outfit, alone in frame, no crowd, "
+    "strong silhouette, character centered, face and eyes are the hook"
 )
 
 ANIME_STYLE_DNA = (
-    "2D anime illustration only, anime edit style, manga cover energy, phonk cover art, "
-    "sharp line art, crisp cel shading, halftone shadow texture optional, high contrast ink shadows, "
-    "glowing neon eyes, deep black background, dark purple shadows, hot pink neon, cyan rim light, "
-    "red eye glow, green toxic glow optional, intense but clean composition"
+    "2D anime illustration only, dark anime edit style, viral phonk anime cover art, "
+    "anime pfp aesthetic, manga cover energy, sharp manga lineart, crisp cel shading, "
+    "deep black shadows, high contrast ink shadows, glowing neon eyes, luminous aura, "
+    "hot magenta neon, violet glow, toxic green flame, red eye glow, cyan rim light only, "
+    "simple powerful composition like viral anime phonk thumbnails, not realistic, not 3D"
 )
 
 RETENTION_DNA = (
@@ -113,7 +116,7 @@ NEGATIVE_PROMPT = (
     "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash, "
     "blue skin, cyan skin, fully blue face, blue face, blue body, avatar skin, smurf skin, "
     "neon skin, skin completely tinted blue, overexposed cyan face, plastic blue shading, "
-    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face"
+    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, random scenery, empty city without character, ugly AI face, bad crop, far away character, full body too small, generic cyberpunk city only"
 )
 
 
@@ -185,6 +188,26 @@ AURA_VARIATIONS = [
 ]
 
 
+EXPRESSION_VARIATIONS = [
+    "cute mischievous fang smile, playful but dark",
+    "evil confident smile, villain anime girl energy",
+    "crazy hypnotic stare, slightly unhinged smile, glowing eyes",
+    "calm mysterious expression, beautiful and dangerous",
+    "blank emotionless stare, creepy-cute anime edit mood",
+    "soft cute face with dangerous neon eyes",
+    "smirking gothic girl, chaotic phonk energy",
+]
+
+REFERENCE_LOCKS = [
+    "looks like a viral dark anime phonk profile picture, close-up face with glowing eyes",
+    "similar vibe to gothic anime girl edits with purple neon horns and black shadows",
+    "similar vibe to hot pink demon girl anime edit, cute fang smile, cyan hair highlights",
+    "similar vibe to toxic green cat aura anime edit, glowing green eyes, black background",
+    "similar vibe to purple lightning anime girl, dark face, glowing magenta eyes",
+    "similar vibe to black and pink anime edit with branches, glow, and heavy shadows",
+]
+
+
 # ══════════════════════════════════════════════════════════════════════
 # CONCEITOS VISUAIS POR GÊNERO
 # ══════════════════════════════════════════════════════════════════════
@@ -192,104 +215,112 @@ AURA_VARIATIONS = [
 VISUAL_CONCEPTS = {
     "phonk": [
         {
-            "label": "PHONK_RED_EYES_CLOSEUP",
+            "label": "PHONK_PURPLE_HORNS",
             "scene": (
-                "{character}, {camera}, {pose}, black manga shadows, glowing red eyes, "
-                "dark room, crimson neon bloom, phonk album cover energy, {aura}"
+                "{character}, tight close-up portrait, small glowing purple horns, black hair with bangs, "
+                "leaning in dark alley wall, violet eyes, gothic cyberpunk girl, {aura}, {reference_lock}"
             ),
-            "palette": "deep black, blood red, violet, tiny cyan edge light",
+            "palette": "deep black, violet neon, hot magenta, tiny cyan rim light",
         },
         {
-            "label": "PHONK_CAT_HOOD",
+            "label": "PHONK_PINK_DEMON_CUTE",
             "scene": (
-                "{character}, oversized cat-ear hoodie, centered portrait in rainy neon alley, "
-                "blue city lights behind, eyes glowing magenta, cute dark phonk vibe, {aura}"
+                "{character}, cute demon anime girl, fang smile, hot pink background glow, "
+                "cyan hair tips, black jacket, playful evil expression, anime pfp cover art, {aura}, {reference_lock}"
             ),
-            "palette": "black, electric blue, magenta, purple haze",
+            "palette": "hot pink, cyan highlights, black outfit, violet eyes",
         },
         {
-            "label": "PHONK_NIGHT_ROOM",
+            "label": "PHONK_GREEN_CAT_AURA",
             "scene": (
-                "{character}, sitting on floor in a dark cyberpunk bedroom, giant red ventilation fan behind her, "
-                "phone glow on face, lonely 3am phonk mood, wet neon shadows, {aura}"
+                "{character}, cat ears or cat-ear hoodie, toxic green flame aura behind her, "
+                "glowing green eyes, centered dark anime portrait, black background, {aura}, {reference_lock}"
             ),
-            "palette": "red fan glow, cyan shadows, hot pink highlights, black room",
+            "palette": "black, toxic green, white glow, tiny violet shadows",
         },
         {
-            "label": "PHONK_DEMON_GIRL",
+            "label": "PHONK_PURPLE_LIGHTNING",
             "scene": (
-                "{character}, small black demon horns optional, mischievous smile, violet eyes, "
-                "hot pink background glow, anime pfp aesthetic, simple high-retention composition, {aura}"
+                "{character}, dark face in shadow, glowing magenta eyes, purple lightning aura around body, "
+                "album cover portrait, hypnotic phonk energy, {aura}, {reference_lock}"
             ),
-            "palette": "hot pink, cyan hair glow, black outfit, violet eyes",
+            "palette": "near black, neon purple, magenta eye glow, cyan edge light",
+        },
+        {
+            "label": "PHONK_MADRUGADA_MONO",
+            "scene": (
+                "{character}, grayscale dark anime girl, moonlit night, black car silhouette behind, "
+                "white blue audio-wave mood without text, red or violet glowing eyes, {aura}, {reference_lock}"
+            ),
+            "palette": "black and white, violet glow, cold blue highlights",
         },
     ],
     "trap": [
         {
+            "label": "TRAP_GLITCH_GIRL",
+            "scene": (
+                "{character}, close-up anime portrait, hot pink glitch branches, black streetwear, "
+                "confident trap cover art look, neon city blur behind, {aura}, {reference_lock}"
+            ),
+            "palette": "black, hot pink, violet, cyan shine",
+        },
+        {
+            "label": "TRAP_BLUE_PURPLE_AURA",
+            "scene": (
+                "{character}, blue hair with purple smoke, glowing magenta eyes, dark outfit, "
+                "centered album cover pose, cyber trap aesthetic, {aura}, {reference_lock}"
+            ),
+            "palette": "deep black, electric purple, cyan hair glow, magenta eyes",
+        },
+        {
             "label": "TRAP_LUXURY_DARK",
             "scene": (
-                "{character}, {camera}, dark luxury rooftop at night, neon city bokeh, glossy black outfit, "
-                "confident look, magenta eyes, trap cover art mood, {aura}"
+                "{character}, glossy black jacket, neon city bokeh, calm boss energy, "
+                "magenta eyes, clean dark anime edit, {aura}, {reference_lock}"
             ),
             "palette": "black, violet, cyan, magenta shine",
-        },
-        {
-            "label": "TRAP_GLITCH_PORTRAIT",
-            "scene": (
-                "{character}, close-up anime portrait, glitch light strips crossing the frame, "
-                "purple smoke, cyan rim light, expensive dark streetwear, {aura}"
-            ),
-            "palette": "purple, cyan, black, hot pink",
-        },
-        {
-            "label": "TRAP_PENTHOUSE_RAIN",
-            "scene": (
-                "{character}, standing by rainy penthouse window, city grid reflected in glass, "
-                "neon jewelry sparkle, calm boss energy, {aura}"
-            ),
-            "palette": "blue-black glass, violet city, pink highlights",
         },
     ],
     "dark": [
         {
-            "label": "DARK_MANGA_RED_EYES",
+            "label": "DARK_RED_EYES_MANGA",
             "scene": (
-                "{character}, extreme dark manga portrait, grayscale skin shading, glowing red eyes, "
-                "black hair swallowing the frame, minimal background, hypnotic face, {aura}"
+                "{character}, extreme dark manga portrait, black hair swallowing the frame, "
+                "glowing red eyes, grayscale skin shading, hypnotic face, minimal background, {aura}, {reference_lock}"
             ),
             "palette": "black and gray, red eyes, faint violet edge light",
         },
         {
-            "label": "DARK_MIRROR_SHARDS",
-            "scene": (
-                "{character}, surrounded by shattered mirror shards, each shard reflecting neon eyes, "
-                "purple fog, black void, beautiful mysterious expression, {aura}"
-            ),
-            "palette": "near black, violet, crimson eyes, cyan shard edges",
-        },
-        {
             "label": "DARK_HOOD_GIRL",
             "scene": (
-                "{character}, hood up, face half in shadow, glowing eyes under the hood, "
-                "rainy alley, blue neon columns, mysterious anime edit, {aura}"
+                "{character}, hood up, face half hidden in shadow, glowing eyes under hood, "
+                "rainy alley, blue neon columns behind, mysterious anime edit, {aura}, {reference_lock}"
             ),
             "palette": "black hood, blue neon, magenta face glow",
+        },
+        {
+            "label": "DARK_PURPLE_BRANCHES",
+            "scene": (
+                "{character}, black branches crossing foreground, hot pink backlight, "
+                "glowing purple eyes, beautiful evil anime girl, {aura}, {reference_lock}"
+            ),
+            "palette": "black, hot pink, violet, tiny cyan rim",
         },
     ],
     "electronic": [
         {
-            "label": "ELECTRONIC_PURPLE_POWER",
+            "label": "ELECTRONIC_NEON_CRAZY",
             "scene": (
-                "{character}, electric purple energy exploding behind her, glowing magenta eyes, "
-                "digital particles, synthwave cyberpunk stage mood, {aura}"
+                "{character}, crazy cute anime expression, glowing magenta eyes, digital particles, "
+                "purple and cyan neon explosion, clean pfp composition, {aura}, {reference_lock}"
             ),
             "palette": "purple, magenta, cyan, black",
         },
         {
             "label": "ELECTRONIC_LASER_EYES",
             "scene": (
-                "{character}, horizontal neon laser crossing her glowing eyes, rain and holograms, "
-                "clean anime cyberpunk portrait, {aura}"
+                "{character}, horizontal neon laser crossing glowing eyes, rain and holograms, "
+                "clean anime cyberpunk portrait, {aura}, {reference_lock}"
             ),
             "palette": "red laser, cyan rain, purple haze",
         },
@@ -298,18 +329,18 @@ VISUAL_CONCEPTS = {
         {
             "label": "LOFI_MIDNIGHT_PHONE",
             "scene": (
-                "{character}, sitting alone by window at 3am, phone glow, rain outside, soft sad anime mood, "
-                "dark room with neon reflections, cute melancholic expression, {aura}"
+                "{character}, sitting alone in dark neon room holding phone, soft sad cute expression, "
+                "rain outside window, purple shadows, {aura}, {reference_lock}"
             ),
             "palette": "black room, soft cyan rain, violet glow, warm small lamp",
         },
         {
-            "label": "LOFI_TRAIN_PLATFORM",
+            "label": "LOFI_SOFT_GOTH",
             "scene": (
-                "{character}, empty subway platform at midnight, last train lights fading, headphone wire, "
-                "soft neon melancholy, rain dripping, {aura}"
+                "{character}, soft cute gothic anime portrait, sleepy glowing eyes, quiet midnight vibe, "
+                "deep shadows, gentle magenta aura, {aura}, {reference_lock}"
             ),
-            "palette": "teal shadows, violet platform haze, red eye glow",
+            "palette": "black, violet, soft pink, cold blue edge",
         },
     ],
     "default": [
@@ -317,7 +348,7 @@ VISUAL_CONCEPTS = {
             "label": "DEFAULT_DARK_ANIME",
             "scene": (
                 "{character}, {camera}, {pose}, dark anime cyberpunk portrait, glowing eyes, "
-                "neon bokeh background, high contrast, {aura}"
+                "neon bokeh background, high contrast, {aura}, {reference_lock}"
             ),
             "palette": "black, purple, magenta, cyan, red glow",
         },
@@ -325,7 +356,7 @@ VISUAL_CONCEPTS = {
             "label": "DEFAULT_GREEN_AURA",
             "scene": (
                 "{character}, toxic green flame aura behind her shaped like cat ears, black outfit, "
-                "glowing green eyes, cute dark anime expression, viral pfp cover art, {aura}"
+                "glowing green eyes, cute dark anime expression, viral pfp cover art, {aura}, {reference_lock}"
             ),
             "palette": "black, toxic green, white highlights, tiny violet shadows",
         },
@@ -360,7 +391,7 @@ def _compact(text: str, max_len: int = 3900) -> str:
 
 
 def _seed(filename: str, short_num: int) -> int:
-    key = f"{filename}|{short_num}|darkmark_v11_retention_refs"
+    key = f"{filename}|{short_num}|darkmark_v13_reference_lock"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
 
@@ -394,13 +425,15 @@ def _pick_style_parts(filename: str, short_num: int) -> dict:
         "camera": rng.choice(CAMERA_VARIATIONS),
         "art": rng.choice(ART_STYLES),
         "aura": rng.choice(AURA_VARIATIONS),
+        "expression": rng.choice(EXPRESSION_VARIATIONS),
+        "reference_lock": rng.choice(REFERENCE_LOCKS),
     }
 
 
 def _build_character(parts: dict) -> str:
     return (
         f"{CHARACTER_DNA}, {parts['hair']}, {parts['eyes']}, "
-        f"{parts['outfit']}"
+        f"{parts['outfit']}, {parts['expression']}"
     )
 
 
@@ -444,6 +477,7 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
         camera=parts["camera"],
         pose=parts["pose"],
         aura=parts["aura"],
+        reference_lock=parts["reference_lock"],
     )
 
     prompt = (
@@ -452,6 +486,8 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
         f"palette: {concept.get('palette', 'deep black, neon purple, hot magenta, cyan, red glow')}, "
         f"{parts['art']}, "
         f"{CHANNEL_IDENTITY}, {ANIME_STYLE_DNA}, {RETENTION_DNA}, {SKIN_LIGHTING_LOCK}, {QUALITY_TAGS}, "
+        "must stay close to the provided reference style: dark anime girl edit, glowing eyes, gothic phonk pfp, "
+        "sometimes cute, sometimes evil, sometimes crazy, sometimes calm, but always beautiful and on-brand, "
         "phone-screen readable, eyes are the main hook, strong face focal point, "
         "clean 9:16 vertical composition, background dark enough for waveform and logo overlay, "
         "no text, no watermark, no logo, no letters, no photorealism, no 3d, no blue skin, no fully blue face"
@@ -484,7 +520,9 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         + ", 2D anime only, dark anime edit, viral phonk anime cover, glowing eyes, "
         + "manga shadows, sharp lineart, cel shading, high contrast, deep black background, "
         + "natural anime skin tone preserved, face not tinted blue, neon only as rim light and eye glow, "
-        + "hot magenta violet cyan red neon, beautiful gothic cyberpunk anime girl, "
+        + "hot magenta violet cyan red neon, toxic green aura sometimes, beautiful gothic cyberpunk anime girl, "
+        + "close-up or medium close-up, eyes dominate the image, cute/evil/crazy expression variety, "
+        + "must look like viral dark anime phonk edit references, not generic AI art, "
         + "not realistic, not 3d, not photo, clean face, phone wallpaper quality, high retention"
     )
 
