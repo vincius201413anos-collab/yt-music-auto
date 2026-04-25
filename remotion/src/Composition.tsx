@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AbsoluteFill,
   useCurrentFrame,
@@ -8,17 +8,31 @@ import {
 } from "remotion";
 
 /**
- * Composition.tsx — v10 FINAL ABSURDA VIRAL
- * -----------------------------------------
- * Foco: padrão viral/hipnótico estilo Shorts grandes.
- * - Poucos elementos, impacto alto.
- * - Build controlado.
- * - Drop explosivo.
- * - Logo como foco principal.
- * - Fundo cyberpunk aparece mais.
- * - Sem progress bar.
- * - Sem Math.random no render.
- * - Otimizado para 1080x1920.
+ * Composition.tsx — v11 DARK PROFESSIONAL
+ * ----------------------------------------
+ * Estilo: canal de phonk/trap/electronic profissional.
+ * Referência: visual escuro, logo central como foco único,
+ * glow neon reativo ao beat, fundo quase invisível.
+ *
+ * O que foi REMOVIDO vs v10:
+ * - 72 partículas flutuantes (pesado + poluído)
+ * - 8 orbit dots
+ * - 6 rings simultâneos → agora 1 ring limpo
+ * - Starburst (spikes)
+ * - Scanlines
+ * - Color wash excessivo
+ * - Camera shake agressivo
+ * - Glitch RGB triplo → agora glitch sutil 1 camada
+ *
+ * O que ficou / melhorou:
+ * - Logo como protagonista absoluto
+ * - 1 ring neon reativo ao beat
+ * - Glow difuso de fundo (aura)
+ * - Impact wave limpo no drop
+ * - Vinheta forte mantendo o fundo escuro
+ * - Texto mínimo e elegante
+ * - Borda neon respirando
+ * - Performance: ~80% menos elementos no DOM
  */
 
 type AudioPayload =
@@ -37,14 +51,13 @@ type AudioPayload =
       style?: string;
     };
 
-const clamp = (v: number, min = 0, max = 1) => Math.max(min, Math.min(max, v));
+const clamp = (v: number, min = 0, max = 1) =>
+  Math.max(min, Math.min(max, v));
 
-const smooth = (arr: number[], index: number, radius = 2) => {
+const smooth = (arr: number[], index: number, radius = 3) => {
   if (!arr.length) return 0;
-
   let total = 0;
   let count = 0;
-
   for (let i = -radius; i <= radius; i++) {
     const v = arr[index + i];
     if (typeof v === "number" && Number.isFinite(v)) {
@@ -52,65 +65,64 @@ const smooth = (arr: number[], index: number, radius = 2) => {
       count++;
     }
   }
-
   return count ? total / count : 0;
 };
 
 const splitTitle = (title: string) => {
-  const clean = (title || "DJ DARKMARK").trim().toUpperCase().replace(/_/g, " ");
+  const clean = (title || "DJ DARKMARK")
+    .trim()
+    .toUpperCase()
+    .replace(/_/g, " ");
   const words = clean.split(/\s+/).filter(Boolean);
-
-  if (words.length <= 2) {
-    return [clean, ""];
-  }
-
+  if (words.length <= 2) return [clean, ""];
   const mid = Math.ceil(words.length / 2);
   return [words.slice(0, mid).join(" "), words.slice(mid).join(" ")];
 };
 
 const GENRE_TAGS: Record<string, string> = {
-  phonk: "◈ PHONK MODE ◈",
-  trap: "◈ TRAP ENERGY ◈",
-  dark: "◈ DARK VIBES ◈",
-  electronic: "◈ ELECTRONIC ◈",
-  lofi: "◈ LO-FI CHILL ◈",
-  metal: "◈ METAL RAGE ◈",
-  rock: "◈ ROCK ENERGY ◈",
-  indie: "◈ INDIE SOUL ◈",
-  cinematic: "◈ CINEMATIC ◈",
-  funk: "◈ FUNK GROOVE ◈",
-  default: "◈ DJ DARKMARK ◈",
+  phonk:      "PHONK",
+  trap:       "TRAP",
+  dark:       "DARK",
+  electronic: "ELECTRONIC",
+  lofi:       "LO-FI",
+  metal:      "METAL",
+  rock:       "ROCK",
+  indie:      "INDIE",
+  cinematic:  "CINEMATIC",
+  funk:       "FUNK",
+  default:    "DJ DARKMARK",
 };
 
+// Paleta contida — neon só onde precisa
 const GENRE_COLORS: Record<
   string,
-  { primary: string; secondary: string; accent: string; deep: string }
+  { primary: string; secondary: string; accent: string }
 > = {
-  phonk: { primary: "#8B00FF", secondary: "#00FFEE", accent: "#FF003C", deep: "#030006" },
-  trap: { primary: "#00CCFF", secondary: "#FF00FF", accent: "#00FFEE", deep: "#020511" },
-  dark: { primary: "#6600CC", secondary: "#9900FF", accent: "#FF003C", deep: "#020004" },
-  electronic: { primary: "#00FFEE", secondary: "#00CCFF", accent: "#FF00FF", deep: "#000912" },
-  metal: { primary: "#FF5500", secondary: "#FF003C", accent: "#CC00FF", deep: "#100300" },
-  rock: { primary: "#FF8800", secondary: "#FF003C", accent: "#CC00FF", deep: "#100500" },
-  lofi: { primary: "#FFAA44", secondary: "#FF7700", accent: "#CC44FF", deep: "#100800" },
-  indie: { primary: "#FFDD88", secondary: "#FF8800", accent: "#CC44FF", deep: "#100800" },
-  cinematic: { primary: "#FFBB44", secondary: "#FF8800", accent: "#CC00FF", deep: "#100700" },
-  funk: { primary: "#FF8800", secondary: "#FF4400", accent: "#CC00FF", deep: "#100500" },
-  default: { primary: "#8B00FF", secondary: "#00FFEE", accent: "#FF003C", deep: "#030006" },
+  phonk:      { primary: "#7B00FF", secondary: "#00EEFF", accent: "#CC00FF" },
+  trap:       { primary: "#0099FF", secondary: "#00EEFF", accent: "#FF00CC" },
+  dark:       { primary: "#5500BB", secondary: "#8800FF", accent: "#FF0033" },
+  electronic: { primary: "#00EEFF", secondary: "#0099FF", accent: "#CC00FF" },
+  metal:      { primary: "#FF4400", secondary: "#FF0033", accent: "#AA00FF" },
+  rock:       { primary: "#FF6600", secondary: "#FF0033", accent: "#AA00FF" },
+  lofi:       { primary: "#FF9933", secondary: "#FF6600", accent: "#BB33FF" },
+  indie:      { primary: "#FFCC66", secondary: "#FF7700", accent: "#BB33FF" },
+  cinematic:  { primary: "#FFAA33", secondary: "#FF6600", accent: "#AA00FF" },
+  funk:       { primary: "#FF6600", secondary: "#FF3300", accent: "#AA00FF" },
+  default:    { primary: "#7B00FF", secondary: "#00EEFF", accent: "#CC00FF" },
 };
 
 export const MyComposition = () => {
   const frame = useCurrentFrame();
   const { fps, durationInFrames, width, height } = useVideoConfig();
 
-  const [rms, setRms] = useState<number[]>([]);
-  const [beats, setBeats] = useState<number[]>([]);
-  const [bassHits, setBassHits] = useState<number[]>([]);
-  const [snareHits, setSnareHits] = useState<number[]>([]);
+  const [rms, setRms]                         = useState<number[]>([]);
+  const [beats, setBeats]                     = useState<number[]>([]);
+  const [bassHits, setBassHits]               = useState<number[]>([]);
+  const [snareHits, setSnareHits]             = useState<number[]>([]);
   const [beatIntensities, setBeatIntensities] = useState<number[]>([]);
-  const [dropTime, setDropTime] = useState<number | null>(null);
-  const [songTitle, setSongTitle] = useState("DJ darkMark");
-  const [songStyle, setSongStyle] = useState("phonk");
+  const [dropTime, setDropTime]               = useState<number | null>(null);
+  const [songTitle, setSongTitle]             = useState("DJ darkMark");
+  const [songStyle, setSongStyle]             = useState("phonk");
 
   useEffect(() => {
     fetch(staticFile("audio_data.json"))
@@ -120,7 +132,6 @@ export const MyComposition = () => {
           setRms(data);
           return;
         }
-
         setRms(
           Array.isArray(data.rms)
             ? data.rms
@@ -131,464 +142,336 @@ export const MyComposition = () => {
         setBeats(Array.isArray(data.beats) ? data.beats : []);
         setBassHits(Array.isArray(data.bass_hits) ? data.bass_hits : []);
         setSnareHits(Array.isArray(data.snare_hits) ? data.snare_hits : []);
-        setBeatIntensities(Array.isArray(data.beat_intensities) ? data.beat_intensities : []);
-        setDropTime(typeof data.drop_time === "number" ? data.drop_time : null);
-
-        if (typeof data.title === "string" && data.title.trim()) setSongTitle(data.title);
-        if (typeof data.style === "string" && data.style.trim()) setSongStyle(data.style);
+        setBeatIntensities(
+          Array.isArray(data.beat_intensities) ? data.beat_intensities : []
+        );
+        setDropTime(
+          typeof data.drop_time === "number" ? data.drop_time : null
+        );
+        if (typeof data.title === "string" && data.title.trim())
+          setSongTitle(data.title);
+        if (typeof data.style === "string" && data.style.trim())
+          setSongStyle(data.style);
       })
       .catch(() => {});
   }, []);
 
-  const time = frame / fps;
+  // ── Tempo e progresso ──────────────────────────────────────────────────────
+  const time     = frame / fps;
   const progress = frame / Math.max(1, durationInFrames - 1);
 
-  const cx = width / 2;
-  const cy = height * 0.445;
+  const cx     = width / 2;
+  const cy     = height * 0.44;
   const minDim = Math.min(width, height);
 
+  // ── Áudio ──────────────────────────────────────────────────────────────────
   const audioIndex = Math.floor(time * 60);
-  const rawAudio = rms[audioIndex] || 0;
-  const audioValue = clamp(smooth(rms, audioIndex, 3) * 1.55);
+  const rawAudio   = rms[audioIndex] || 0;
+  const audioSmooth = clamp(smooth(rms, audioIndex, 3) * 1.4);
 
-  const recentValues = useMemo(() => {
-    const values = rms.slice(Math.max(0, audioIndex - 10), audioIndex + 1);
-    return values.length ? values : [0];
-  }, [rms, audioIndex]);
+  const beatPulse  = clamp((rawAudio - audioSmooth * 0.4) * 6.5);
+  const energy     = clamp(audioSmooth * 2.0);
+  const bassEnergy = clamp(
+    Math.max(...(rms.slice(Math.max(0, audioIndex - 8), audioIndex + 1).length
+      ? rms.slice(Math.max(0, audioIndex - 8), audioIndex + 1)
+      : [0])) * 1.6
+  );
 
-  const recentPeak = clamp(Math.max(...recentValues) * 1.75);
-  const beatPulse = clamp((rawAudio - audioValue * 0.34) * 7.4);
-  const energy = clamp(audioValue * 2.25);
-  const bassEnergy = clamp(recentPeak * 1.85);
-
-  const beatNear = beats.some((b) => Math.abs(time - b) < 0.055);
-  const bassNear = bassHits.some((b) => Math.abs(time - b) < 0.085);
-  const snareNear = snareHits.some((s) => Math.abs(time - s) < 0.055);
+  const beatNear  = beats.some((b) => Math.abs(time - b) < 0.05);
+  const bassNear  = bassHits.some((b) => Math.abs(time - b) < 0.08);
+  const snareNear = snareHits.some((s) => Math.abs(time - s) < 0.05);
 
   const detectedDrop =
-    typeof dropTime === "number" ? dropTime : durationInFrames / fps * 0.42;
+    typeof dropTime === "number"
+      ? dropTime
+      : (durationInFrames / fps) * 0.42;
 
-  const dropNear = clamp(1 - Math.abs(time - detectedDrop) / 1.35);
-  const hardDrop = clamp(1 - Math.abs(time - detectedDrop) / 0.22);
+  const dropNear = clamp(1 - Math.abs(time - detectedDrop) / 1.2);
+  const hardDrop = clamp(1 - Math.abs(time - detectedDrop) / 0.18);
 
-  const intensityIndex = Math.floor(time * 2);
-  const beatIntensity = clamp(beatIntensities[intensityIndex] || 0);
+  const intensityIdx  = Math.floor(time * 2);
+  const beatIntensity = clamp(beatIntensities[intensityIdx] || 0);
 
-  const beatHit = Math.max(beatNear ? 1 : 0, beatPulse, beatIntensity * 0.68);
-  const bassHit = Math.max(bassNear ? 1 : 0, bassEnergy);
+  const beatHit  = Math.max(beatNear ? 1 : 0, beatPulse, beatIntensity * 0.6);
+  const bassHit  = Math.max(bassNear ? 1 : 0, bassEnergy);
   const snareHit = snareNear ? 1 : 0;
-
-  const dropFromEnergy = recentPeak > 0.53 || beatPulse > 0.64 ? recentPeak : 0;
-  const dropHit = Math.max(dropNear, dropFromEnergy * 0.72);
-
-  // 0-12% = hook limpo; 12-40% = build; 40%+ = energia controlada.
-  const hookPhase = frame < fps * 2.0 ? 1 - frame / (fps * 2.0) : 0;
-  const buildPhase = clamp((progress - 0.10) / 0.35);
-  const afterDropPhase = progress > 0.42 ? 1 : 0;
-
-  const intensity = clamp(
-    energy * 0.52 +
-      beatHit * 0.18 +
-      bassHit * 0.22 +
-      dropHit * 0.70 +
-      afterDropPhase * 0.10
+  const dropHit  = Math.max(
+    dropNear,
+    bassEnergy > 0.5 ? bassEnergy * 0.6 : 0
   );
 
-  const controlledChaos = clamp(
-    hardDrop * 1.0 +
-      dropHit * 0.34 +
-      bassHit * 0.18 +
-      snareHit * 0.12
-  );
+  // ── Fases ──────────────────────────────────────────────────────────────────
+  // Fade-in nos primeiros 0.8s
+  const fadeIn  = clamp(time / 0.8);
+  // Fade-out nos últimos 1s
+  const fadeOut = clamp(1 - (time - (durationInFrames / fps - 1.0)) / 1.0);
+  const masterOpacity = Math.min(fadeIn, fadeOut);
 
-  const cameraShake = controlledChaos * 22 + bassHit * 4;
-  const zoom = 1 + buildPhase * 0.045 + beatHit * 0.010 + bassHit * 0.020 + hardDrop * 0.155;
-  const logoScale = 1 + beatHit * 0.085 + bassHit * 0.16 + hardDrop * 0.48 + dropHit * 0.08;
-  const logoRotate = Math.sin(frame * 0.025) * (1.5 + beatHit * 1.2) + hardDrop * Math.sin(frame * 0.8) * 4;
+  // ── Efeitos visuais ────────────────────────────────────────────────────────
+  // Zoom contido — só respira levemente
+  const zoom = 1 + beatHit * 0.008 + bassHit * 0.015 + hardDrop * 0.08;
 
-  const glow = 48 + energy * 88 + bassHit * 60 + dropHit * 120 + hardDrop * 210;
-  const flashOpacity = clamp(hardDrop * 0.88 + dropHit * 0.18 + hookPhase * 0.18);
+  // Câmera: só treme no hard drop, sutil
+  const shake  = hardDrop * 10 + bassHit * 2.5;
+  const shakeX = Math.sin(frame * 1.1) * shake;
+  const shakeY = Math.cos(frame * 0.9) * shake;
 
-  const glitch = hardDrop > 0.08 || bassHit > 0.66;
-  const chromaShift = glitch ? 3 + bassHit * 10 + hardDrop * 30 : 0;
+  // Logo: escala reativa ao beat
+  const logoScale =
+    1 + beatHit * 0.06 + bassHit * 0.12 + hardDrop * 0.32 + dropHit * 0.05;
 
-  const cameraX = Math.sin(frame * 0.84) * cameraShake;
-  const cameraY = Math.cos(frame * 1.18) * cameraShake;
+  // Rotação mínima — profissional, não cartoon
+  const logoRotate =
+    Math.sin(frame * 0.018) * 0.8 +
+    hardDrop * Math.sin(frame * 0.7) * 2.5;
 
-  const colors = GENRE_COLORS[songStyle] || GENRE_COLORS.default;
-  const { primary: C1, secondary: C2, accent: C3, deep } = colors;
-  const genreTag = GENRE_TAGS[songStyle] || GENRE_TAGS.default;
-  const [titleLine1, titleLine2] = splitTitle(songTitle);
+  // Glow: base baixa, explode no beat
+  const glowBase = 20 + energy * 40 + bassHit * 30 + dropHit * 70 + hardDrop * 140;
 
-  const particles = useMemo(
-    () =>
-      Array.from({ length: 72 }, (_, i) => ({
-        id: i,
-        baseX: (i * 73) % width,
-        seed: i * 1.771,
-        speed: 0.54 + (i % 7) * 0.18,
-        size: i % 13 === 0 ? 7 : i % 5 === 0 ? 5 : 3,
-        colorIndex: i % 5,
-      })),
-    [width]
-  );
+  // Flash branco no hard drop — rápido e limpo
+  const flashOpacity = clamp(hardDrop * 0.65 + snareHit * 0.15);
 
-  const orbitDots = useMemo(
-    () =>
-      Array.from({ length: 8 }, (_, i) => ({
-        id: i,
-        baseAngle: (i / 8) * Math.PI * 2,
-        orbitRadius: i < 4 ? minDim * 0.25 : minDim * 0.36,
-        size: i < 4 ? 18 : 13,
-        speed: i < 4 ? 0.027 : 0.018,
-        dir: i % 2 ? 1 : -1,
-        colorIndex: i % 3,
-      })),
-    [minDim]
-  );
+  // Glitch: só no hard drop, 1 camada
+  const glitchActive = hardDrop > 0.12 || bassHit > 0.72;
+  const chromaShift  = glitchActive ? 2 + bassHit * 6 + hardDrop * 18 : 0;
+
+  // Brightness do fundo: começa escuro, sobe levemente no drop
+  const bgBrightness = 0.55 + energy * 0.18 + dropHit * 0.15;
+
+  const colors = GENRE_COLORS[songStyle] ?? GENRE_COLORS.default;
+  const { primary: C1, secondary: C2, accent: C3 } = colors;
+  const genreTag   = GENRE_TAGS[songStyle] ?? GENRE_TAGS.default;
+  const [line1, line2] = splitTitle(songTitle);
+
+  // Ring size: pulsa no beat
+  const ringSize =
+    minDim * 0.36 * (1 + beatHit * 0.06 + bassHit * 0.12 + hardDrop * 0.35);
+
+  // Impact wave: frame relativo ao beat/drop
+  const waveProgress = ((frame * 1.4) % 80) / 80;
+  const wavePower    = clamp(beatHit * 0.5 + bassHit * 0.6 + hardDrop * 1.2);
 
   return (
-    <AbsoluteFill style={{ background: deep, overflow: "hidden" }}>
-      {/* BASE VIDEO — o fundo importa */}
+    <AbsoluteFill
+      style={{
+        background: "#050005",
+        overflow: "hidden",
+        opacity: masterOpacity,
+      }}
+    >
+      {/* ── FUNDO (vídeo base) ─────────────────────────────────────────────── */}
       <AbsoluteFill
         style={{
-          transform: `translate(${cameraX}px, ${cameraY}px) scale(${zoom})`,
-          filter: `brightness(${0.66 + intensity * 0.34}) contrast(${
-            1.18 + intensity * 0.28
-          }) saturate(${1.08 + intensity * 0.58})`,
+          transform: `translate(${shakeX}px, ${shakeY}px) scale(${zoom * 1.04})`,
+          filter: `brightness(${bgBrightness}) contrast(1.15) saturate(${0.9 + energy * 0.35})`,
         }}
       >
         <Video
           src={staticFile("input.mp4")}
-          style={{
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-          }}
+          style={{ width: "100%", height: "100%", objectFit: "cover" }}
         />
       </AbsoluteFill>
 
-      {/* VIGNETTE — foco central */}
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(ellipse 70% 58% at 50% 43%, transparent 0%, rgba(0,0,0,0.14) 35%, rgba(0,0,0,0.70) 76%, rgba(0,0,0,0.97) 100%)`,
-        }}
-      />
-
-      {/* COLOR WASH — menor, pra não matar o fundo */}
-      <AbsoluteFill
-        style={{
-          background: `linear-gradient(145deg, ${C3}22 0%, ${C1}26 52%, ${C2}18 100%)`,
-          mixBlendMode: "screen",
-          opacity: 0.10 + energy * 0.13 + dropHit * 0.18,
-        }}
-      />
-
-      {/* FLASH DO DROP */}
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(circle at 50% 44%, rgba(255,255,255,${
-            flashOpacity * 0.92
-          }) 0%, ${C3}AA 18%, ${C1}55 42%, transparent 74%)`,
-          opacity: flashOpacity,
-          mixBlendMode: "screen",
-        }}
-      />
-
-      {/* TÚNEL HIPNÓTICO — 6 rings, mais limpo */}
-      {[...Array(6)].map((_, i) => {
-        const baseSize = minDim * 0.28 + i * minDim * 0.23;
-        const size = baseSize * (1 + buildPhase * 0.05 + bassHit * 0.08 + hardDrop * 0.42);
-        const dir = i % 2 ? 1 : -1;
-        const spd = (0.62 - i * 0.055) * dir * 0.32;
-        const col = [C1, C2, C3][i % 3];
-        const opacity = Math.max(0.035, 0.48 - i * 0.05 + beatHit * 0.10 + hardDrop * 0.28);
-
-        return (
-          <div
-            key={`ring-${i}`}
-            style={{
-              position: "absolute",
-              left: cx,
-              top: cy,
-              width: size,
-              height: size,
-              borderRadius: "50%",
-              border: `${Math.max(1, 3.2 - i * 0.32)}px solid ${col}`,
-              boxShadow: `0 0 ${glow * (0.95 - i * 0.09)}px ${col}`,
-              opacity,
-              transform: `translate(-50%, -50%) rotate(${frame * spd}deg)`,
-            }}
-          />
-        );
-      })}
-
-      {/* STARBURST — só quando precisa */}
-      {dropHit > 0.12 &&
-        [...Array(8)].map((_, i) => {
-          const angle = (i / 8) * 360 + frame * 0.08;
-          const length = minDim * 0.13 + bassHit * 45 + hardDrop * 250;
-          const col = [C1, C2, C3][i % 3];
-
-          return (
-            <div
-              key={`spike-${i}`}
-              style={{
-                position: "absolute",
-                left: cx,
-                top: cy,
-                width: 2 + hardDrop * 4,
-                height: length,
-                background: `linear-gradient(180deg, ${col}, transparent)`,
-                boxShadow: `0 0 ${14 + glow * 0.12}px ${col}`,
-                transformOrigin: "50% 0%",
-                transform: `translateX(-50%) rotate(${angle}deg)`,
-                opacity: hardDrop * 0.85 + dropHit * 0.25,
-              }}
-            />
-          );
-        })}
-
-      {/* IMPACT WAVES — limpo */}
-      {[...Array(3)].map((_, i) => {
-        const wave = ((frame + i * 18) % 80) / 80;
-        const power = 0.06 + beatHit * 0.12 + bassHit * 0.16 + hardDrop * 0.70;
-        const col = [C1, C2, C3][i % 3];
-
-        return (
-          <div
-            key={`wave-${i}`}
-            style={{
-              position: "absolute",
-              left: cx,
-              top: cy,
-              width: minDim * 0.32 + wave * minDim * 1.20,
-              height: minDim * 0.32 + wave * minDim * 1.20,
-              borderRadius: "50%",
-              border: `${1.2 + hardDrop * 3}px solid ${col}`,
-              opacity: (1 - wave) * power,
-              boxShadow: `0 0 ${34 + hardDrop * 110}px ${col}`,
-              transform: "translate(-50%, -50%)",
-            }}
-          />
-        );
-      })}
-
-      {/* ORBIT DOTS — poucos, mais premium */}
-      {orbitDots.map((p) => {
-        const angle = frame * p.speed * p.dir + p.baseAngle;
-        const pulse = 1 + beatHit * 0.18 + hardDrop * 0.82;
-        const orbitX = Math.cos(angle) * p.orbitRadius * pulse;
-        const orbitY = Math.sin(angle) * p.orbitRadius * pulse;
-        const col = [C1, C2, C3][p.colorIndex];
-        const size = p.size + bassHit * 6 + hardDrop * 18;
-
-        return (
-          <div
-            key={`orbit-${p.id}`}
-            style={{
-              position: "absolute",
-              left: cx,
-              top: cy,
-              width: size,
-              height: size,
-              borderRadius: "50%",
-              background: col,
-              boxShadow: `0 0 ${22 + glow * 0.15}px ${col}, 0 0 ${45 + glow * 0.22}px ${col}55`,
-              transform: `translate(calc(-50% + ${orbitX}px), calc(-50% + ${orbitY}px)) scale(${
-                1 + beatHit * 0.24 + hardDrop * 0.82
-              })`,
-              opacity: 0.62 + beatHit * 0.16 + hardDrop * 0.32,
-            }}
-          />
-        );
-      })}
-
-      {/* GLOW DIFUSO DO LOGO */}
-      <img
-        src={staticFile("logo.png")}
-        style={{
-          position: "absolute",
-          left: cx,
-          top: cy,
-          width: minDim * 0.72 * logoScale,
-          height: "auto",
-          filter: `blur(${10 + bassHit * 14 + hardDrop * 30}px) brightness(3.6)`,
-          opacity: 0.16 + bassHit * 0.10 + hardDrop * 0.30,
-          mixBlendMode: "screen",
-          transform: `translate(-50%, -50%)`,
-        }}
-      />
-
-      {/* RGB GLITCH DO LOGO */}
-      {glitch && (
-        <>
-          <img
-            src={staticFile("logo.png")}
-            style={{
-              position: "absolute",
-              left: cx - chromaShift,
-              top: cy,
-              width: minDim * 0.49,
-              opacity: 0.22 + hardDrop * 0.28,
-              mixBlendMode: "screen",
-              transform: `translate(-50%, -50%) scale(${logoScale * 1.035}) rotate(${
-                logoRotate - 1.4
-              }deg)`,
-              filter: `drop-shadow(0 0 ${glow * 0.62}px ${C3}) brightness(1.55)`,
-            }}
-          />
-          <img
-            src={staticFile("logo.png")}
-            style={{
-              position: "absolute",
-              left: cx + chromaShift,
-              top: cy,
-              width: minDim * 0.49,
-              opacity: 0.20 + hardDrop * 0.24,
-              mixBlendMode: "screen",
-              transform: `translate(-50%, -50%) scale(${logoScale * 1.035}) rotate(${
-                logoRotate + 1.4
-              }deg)`,
-              filter: `drop-shadow(0 0 ${glow * 0.62}px ${C2}) brightness(1.5)`,
-            }}
-          />
-        </>
-      )}
-
-      {/* LOGO PRINCIPAL — foco absoluto */}
-      <img
-        src={staticFile("logo.png")}
-        style={{
-          position: "absolute",
-          left: cx,
-          top: cy,
-          width: minDim * 0.49,
-          transform: `translate(-50%, -50%) scale(${logoScale}) rotate(${logoRotate}deg)`,
-          filter: `
-            drop-shadow(0 0 ${glow}px ${C2})
-            drop-shadow(0 0 ${glow * 1.35}px ${C1})
-            drop-shadow(0 0 ${glow * 0.65}px ${C3})
-            brightness(${1.08 + energy * 0.25 + hardDrop * 0.55})
-            contrast(${1.15 + beatHit * 0.16})
-          `,
-          opacity: 0.99,
-        }}
-      />
-
-      {/* PARTICLES — controlado */}
-      {particles.map((p) => {
-        const y = (frame * p.speed + p.id * 43) % height;
-        const drift = Math.sin(frame * 0.024 + p.seed) * (30 + beatHit * 34 + hardDrop * 80);
-        const x = (p.baseX + drift + width) % width;
-        const col = [C1, C2, C3, "#ffffff", C1][p.colorIndex];
-
-        return (
-          <div
-            key={`particle-${p.id}`}
-            style={{
-              position: "absolute",
-              left: x,
-              top: y,
-              width: p.size + hardDrop * 2.8,
-              height: p.size + hardDrop * 2.8,
-              borderRadius: "50%",
-              background: col,
-              opacity: 0.09 + energy * 0.22 + beatHit * 0.10 + hardDrop * 0.36,
-              boxShadow: `0 0 ${14 + hardDrop * 34}px ${col}`,
-              transform: `scale(${1 + beatHit * 0.22 + hardDrop * 0.72})`,
-            }}
-          />
-        );
-      })}
-
-      {/* SCANLINES — sutil */}
+      {/* ── VINHETA PESADA — mantém tudo escuro ───────────────────────────── */}
       <AbsoluteFill
         style={{
           background:
-            "repeating-linear-gradient(0deg, rgba(255,255,255,0.040) 0px, rgba(255,255,255,0.040) 1px, transparent 1px, transparent 7px)",
-          opacity: 0.05 + beatHit * 0.04 + hardDrop * 0.12,
-          transform: `translateY(${frame % 7}px)`,
-          mixBlendMode: "screen",
+            "radial-gradient(ellipse 60% 52% at 50% 42%, transparent 0%, rgba(0,0,0,0.25) 30%, rgba(0,0,0,0.82) 68%, rgba(0,0,0,0.97) 100%)",
         }}
       />
 
-      {/* TEXT SAFE ZONE — menor que antes */}
+      {/* ── COR DE AMBIENTE — muito sutil ─────────────────────────────────── */}
+      <AbsoluteFill
+        style={{
+          background: `radial-gradient(ellipse 55% 45% at 50% 42%, ${C1}30 0%, transparent 70%)`,
+          mixBlendMode: "screen",
+          opacity: 0.08 + energy * 0.10 + dropHit * 0.14,
+        }}
+      />
+
+      {/* ── FLASH DO DROP ─────────────────────────────────────────────────── */}
+      {flashOpacity > 0.01 && (
+        <AbsoluteFill
+          style={{
+            background: `radial-gradient(circle at 50% 42%, rgba(255,255,255,${
+              flashOpacity * 0.7
+            }) 0%, ${C1}88 22%, transparent 60%)`,
+            opacity: flashOpacity,
+            mixBlendMode: "screen",
+          }}
+        />
+      )}
+
+      {/* ── AURA DIFUSA DO LOGO ────────────────────────────────────────────── */}
+      <img
+        src={staticFile("logo.png")}
+        style={{
+          position: "absolute",
+          left: cx,
+          top: cy,
+          width: minDim * 0.65 * logoScale,
+          height: "auto",
+          filter: `blur(${16 + bassHit * 18 + hardDrop * 36}px) brightness(3.5)`,
+          opacity: 0.12 + bassHit * 0.08 + hardDrop * 0.22,
+          mixBlendMode: "screen",
+          transform: "translate(-50%, -50%)",
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* ── RING NEON — 1 único, reativo ──────────────────────────────────── */}
+      <div
+        style={{
+          position: "absolute",
+          left: cx,
+          top: cy,
+          width: ringSize,
+          height: ringSize,
+          borderRadius: "50%",
+          border: `${1.5 + bassHit * 2 + hardDrop * 5}px solid ${C1}`,
+          boxShadow: `0 0 ${glowBase}px ${C1}, 0 0 ${glowBase * 0.5}px ${C2}`,
+          opacity: 0.55 + beatHit * 0.25 + hardDrop * 0.35,
+          transform: `translate(-50%, -50%) rotate(${frame * 0.22}deg)`,
+        }}
+      />
+
+      {/* ── IMPACT WAVE — limpa, só quando há energia ─────────────────────── */}
+      {wavePower > 0.05 && (
+        <div
+          style={{
+            position: "absolute",
+            left: cx,
+            top: cy,
+            width:  minDim * 0.28 + waveProgress * minDim * 1.1,
+            height: minDim * 0.28 + waveProgress * minDim * 1.1,
+            borderRadius: "50%",
+            border: `${1 + hardDrop * 2}px solid ${C2}`,
+            opacity: (1 - waveProgress) * wavePower * 0.7,
+            boxShadow: `0 0 ${20 + hardDrop * 60}px ${C2}`,
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      )}
+
+      {/* ── GLITCH — 1 camada, sutil ──────────────────────────────────────── */}
+      {glitchActive && chromaShift > 0 && (
+        <img
+          src={staticFile("logo.png")}
+          style={{
+            position: "absolute",
+            left: cx - chromaShift,
+            top: cy,
+            width: minDim * 0.46,
+            height: "auto",
+            opacity: 0.15 + hardDrop * 0.18,
+            mixBlendMode: "screen",
+            transform: `translate(-50%, -50%) scale(${logoScale * 1.02}) rotate(${
+              logoRotate - 1
+            }deg)`,
+            filter: `drop-shadow(0 0 ${glowBase * 0.4}px ${C3}) brightness(1.4)`,
+            pointerEvents: "none",
+          }}
+        />
+      )}
+
+      {/* ── LOGO PRINCIPAL ────────────────────────────────────────────────── */}
+      <img
+        src={staticFile("logo.png")}
+        style={{
+          position: "absolute",
+          left: cx,
+          top: cy,
+          width: minDim * 0.46,
+          height: "auto",
+          transform: `translate(-50%, -50%) scale(${logoScale}) rotate(${logoRotate}deg)`,
+          filter: `
+            drop-shadow(0 0 ${glowBase}px ${C1})
+            drop-shadow(0 0 ${glowBase * 1.2}px ${C2})
+            brightness(${1.05 + energy * 0.2 + hardDrop * 0.45})
+            contrast(${1.1 + beatHit * 0.12})
+          `,
+          opacity: 0.98,
+          pointerEvents: "none",
+        }}
+      />
+
+      {/* ── TEXTO INFERIOR — minimalista ──────────────────────────────────── */}
       <div
         style={{
           position: "absolute",
           left: "50%",
-          bottom: height * 0.060,
-          transform: `translateX(-50%) scale(${1 + beatHit * 0.012 + hardDrop * 0.025})`,
-          width: "84%",
+          bottom: height * 0.055,
+          transform: `translateX(-50%) scale(${1 + beatHit * 0.008 + hardDrop * 0.016})`,
+          width: "80%",
           textAlign: "center",
           zIndex: 10,
-          opacity: 0.92,
         }}
       >
+        {/* Tag de gênero — pequena, elegante */}
         <div
           style={{
             display: "inline-block",
-            color: C3,
-            border: `1px solid ${C3}99`,
-            background: `${C3}18`,
-            padding: "4px 12px",
-            borderRadius: 6,
-            fontSize: 18,
-            fontWeight: 900,
-            letterSpacing: 4,
-            textShadow: `0 0 12px ${C3}`,
-            boxShadow: `0 0 ${14 + beatHit * 10}px ${C3}40`,
-            marginBottom: 8,
+            color: C2,
+            border: `1px solid ${C2}66`,
+            background: `${C2}12`,
+            padding: "3px 10px",
+            borderRadius: 4,
+            fontSize: 15,
+            fontWeight: 800,
+            letterSpacing: 5,
+            textShadow: `0 0 10px ${C2}`,
+            marginBottom: 7,
+            opacity: 0.88,
           }}
         >
           {genreTag}
         </div>
 
+        {/* Título linha 1 */}
         <div
           style={{
-            color: "#fff",
-            fontSize: 44,
-            fontWeight: 1000,
-            lineHeight: 1.02,
-            letterSpacing: 2,
+            color: "#ffffff",
+            fontSize: 42,
+            fontWeight: 900,
+            lineHeight: 1.05,
+            letterSpacing: 1.5,
             textTransform: "uppercase",
-            textShadow: `0 0 10px ${C3}, 0 0 24px ${C3}cc, 0 0 48px ${C2}60, 2px 2px 0 #000`,
-            WebkitTextStroke: "1px rgba(0,0,0,0.85)",
-            position: "relative",
+            textShadow: `0 0 8px ${C1}, 0 0 20px ${C1}aa, 2px 2px 0 #000`,
+            WebkitTextStroke: "1px rgba(0,0,0,0.8)",
           }}
         >
-          {titleLine1}
+          {line1}
         </div>
 
-        {titleLine2 && (
+        {/* Título linha 2 */}
+        {line2 && (
           <div
             style={{
-              color: "#f0f0ff",
-              fontSize: 42,
-              fontWeight: 900,
-              lineHeight: 1.02,
-              letterSpacing: 1.8,
+              color: "#e8e8ff",
+              fontSize: 40,
+              fontWeight: 800,
+              lineHeight: 1.05,
+              letterSpacing: 1.2,
               textTransform: "uppercase",
-              textShadow: `0 0 9px ${C1}, 0 0 20px ${C1}cc, 2px 2px 0 #000`,
-              WebkitTextStroke: "1px rgba(0,0,0,0.80)",
+              textShadow: `0 0 7px ${C2}, 0 0 18px ${C2}aa, 2px 2px 0 #000`,
+              WebkitTextStroke: "1px rgba(0,0,0,0.75)",
             }}
           >
-            {titleLine2}
+            {line2}
           </div>
         )}
       </div>
 
-      {/* BORDA NEON — só respira, não domina */}
+      {/* ── BORDA NEON — respira, não domina ──────────────────────────────── */}
       <AbsoluteFill
         style={{
-          border: `${2 + hardDrop * 5}px solid ${C2}${Math.floor(
-            (0.08 + beatHit * 0.08 + hardDrop * 0.32) * 255
+          border: `${1.5 + hardDrop * 3}px solid ${C1}${Math.floor(
+            clamp(0.06 + beatHit * 0.07 + hardDrop * 0.28) * 255
           )
             .toString(16)
             .padStart(2, "0")}`,
-          boxShadow: `inset 0 0 ${42 + glow * 0.35}px ${C1}${Math.floor(
-            (0.08 + hardDrop * 0.24) * 255
+          boxShadow: `inset 0 0 ${30 + glowBase * 0.25}px ${C1}${Math.floor(
+            clamp(0.05 + hardDrop * 0.18) * 255
           )
             .toString(16)
             .padStart(2, "0")}`,
@@ -596,23 +479,12 @@ export const MyComposition = () => {
         }}
       />
 
-      {/* LOOP FINAL — volta pro escuro, sem progress bar */}
-      <AbsoluteFill
-        style={{
-          background: `radial-gradient(circle at 50% 44%, ${C2}${Math.floor(
-            clamp((progress > 0.94 ? (progress - 0.94) / 0.06 : 0) * 95)
-          )
-            .toString(16)
-            .padStart(2, "0")} 0%, transparent 62%)`,
-          opacity: progress > 0.94 ? (progress - 0.94) / 0.06 : 0,
-          mixBlendMode: "screen",
-        }}
-      />
-
+      {/* ── FADE FINAL ────────────────────────────────────────────────────── */}
       <AbsoluteFill
         style={{
           background: "#000",
-          opacity: progress > 0.987 ? (progress - 0.987) / 0.013 : 0,
+          opacity: progress > 0.97 ? (progress - 0.97) / 0.03 : 0,
+          pointerEvents: "none",
         }}
       />
     </AbsoluteFill>
