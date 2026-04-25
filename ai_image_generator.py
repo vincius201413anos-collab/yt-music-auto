@@ -1,10 +1,12 @@
 """
-ai_image_generator.py — v14.0 DARKMARK FINAL VIBRANT BEAUTY LOCK
+ai_image_generator.py — DJ DARK MARK v14 FINAL VIBRANT BEAUTY LOCK
 ============================================================
+Merge v14 (prompts virais) + v7 (estrutura segura GitHub Actions).
+
 FINALIDADE:
 - Gerar imagens mais parecidas com referências virais de anime dark/phonk.
 - Menos imagem genérica de IA, menos 3D, menos realismo.
-- Mais: anime edit, olhos brilhando, sombra pesada, neon roxo/rosa/vermelho/verde,
+- Mais: anime edit, olhos brilhando, sombra pesada, neon roxo/rosa/vermelho,
   composição forte para Shorts, rosto/olhos impactantes e variações boas.
 - Compatível com o pipeline antigo: build_ai_prompt(...) e generate_image(...).
 """
@@ -29,19 +31,17 @@ logger = logging.getLogger("ai_image_generator")
 # CONFIG
 # ══════════════════════════════════════════════════════════════════════
 
-REPLICATE_API_TOKEN = os.environ.get("REPLICATE_API_TOKEN", "")
+REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
     "black-forest-labs/flux-dev",
 ]
 
-# FLUX-dev tende a responder melhor com prompt direto + steps/guidance controlados.
-# 1080x1920 mantém o pipeline Shorts sem precisar redimensionar.
 FLUX_PARAMS = {
     "width": 1080,
     "height": 1920,
-    "num_inference_steps": 42,
-    "guidance_scale": 7.6,
+    "num_inference_steps": int(os.getenv("FLUX_STEPS", "38")),
+    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "7.2")),
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -50,7 +50,7 @@ FLUX_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════
-# IDENTIDADE VISUAL — baseada nas referências enviadas
+# IDENTIDADE VISUAL
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
@@ -58,8 +58,6 @@ CHANNEL_IDENTITY = (
     "YouTube Shorts music visualizer background, high-retention anime thumbnail"
 )
 
-# Mais próximo das imagens que você mandou: dark anime, olhos neon, sombra pesada,
-# rosto marcante, composição simples e memorável. Sem realismo.
 CHARACTER_DNA = (
     "one adult anime girl only, beautiful dark gothic cyberpunk anime girl, "
     "pretty face, clean face, soft blush, natural anime skin tone, "
@@ -89,8 +87,7 @@ RETENTION_DNA = (
     "viral anime pfp aesthetic, album cover aesthetic, music visualizer background"
 )
 
-# FINAL LOCK: Neon é LUZ, não cor base da pele.
-# Isso evita o erro feio de rosto/corpo totalmente azul ou plástico.
+# SKIN LOCK: neon é LUZ, não cor base da pele.
 SKIN_LIGHTING_LOCK = (
     "natural anime skin tone preserved, pale skin or soft warm anime skin, "
     "skin is not blue, face is not fully cyan, no full blue face, no blue body, "
@@ -119,12 +116,14 @@ NEGATIVE_PROMPT = (
     "yellow dominant, orange sunset dominant, brown dominant, daylight, sunny, photobash, "
     "blue skin, cyan skin, fully blue face, blue face, blue body, avatar skin, smurf skin, "
     "neon skin, skin completely tinted blue, overexposed cyan face, plastic blue shading, "
-    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, overexposed neon, messy lights, random scenery, empty city without character, ugly AI face, bad crop, far away character, full body too small"
+    "flat blue lighting, monochrome blue character, ugly blue color cast, oversaturated blue face, "
+    "overexposed neon, messy lights, random scenery, empty city without character, "
+    "ugly AI face, bad crop, far away character, full body too small"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES VISUAIS — mais próximas das referências
+# VARIAÇÕES VISUAIS
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
@@ -189,7 +188,6 @@ AURA_VARIATIONS = [
     "cyan rain reflections and magenta neon haze behind her",
     "black ink shadows with violet sparks floating in the air",
 ]
-
 
 EXPRESSION_VARIATIONS = [
     "cute mischievous fang smile, playful but dark",
@@ -405,7 +403,6 @@ def _clean_song_name(filename: str) -> str:
 def _pick_concept(style: str, filename: str, short_num: int) -> dict:
     mapped = GENRE_MAP.get(style, style)
     concepts = VISUAL_CONCEPTS.get(mapped, VISUAL_CONCEPTS["default"])
-    # Para não ficar sempre A/B/C igual por short, usa música + short como seed.
     rng = _rng(filename, short_num)
     return concepts[rng.randrange(len(concepts))]
 
@@ -434,7 +431,6 @@ def _build_character(parts: dict) -> str:
 
 def _song_micro_detail(song_name: str) -> str:
     clean = song_name.lower()
-
     if any(w in clean for w in ["car", "drive", "drift", "night", "road", "truck"]):
         return "subtle night drive detail, red taillight streaks and wet road reflections"
     if any(w in clean for w in ["ghost", "phantom", "shadow", "dark", "madrugada"]):
@@ -445,17 +441,16 @@ def _song_micro_detail(song_name: str) -> str:
         return "crimson sparks, heat haze and aggressive red neon aura"
     if any(w in clean for w in ["bass", "drop", "808"]):
         return "visible bass shockwave rings and vibrating neon particles"
-
     return "one strong memorable visual detail connected to the song title"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — COMPATÍVEL COM SEU BOT
+# PROMPT PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
     """
-    Prompt v12 DARKMARK FINAL RETENTION LOCK.
+    Gera prompt v14 DARKMARK FINAL VIBRANT BEAUTY LOCK.
     Foco: parecer anime edit/phonk cover viral, não imagem genérica de IA.
     """
     styles = styles or []
@@ -492,13 +487,13 @@ def build_ai_prompt(style: str, filename: str, styles: list | None = None, short
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO DE IMAGEM — COMPATÍVEL COM PIPELINE ANTIGO
+# GERAÇÃO DE IMAGEM
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     """
-    Gera imagem via Replicate.
-    Compatível com o fluxo antigo do seu main.py.
+    Gera imagem via Replicate (flux-dev).
+    Compatível com o fluxo antigo do main.py.
     """
     if not REPLICATE_API_TOKEN:
         logger.error("REPLICATE_API_TOKEN não configurado.")
@@ -588,7 +583,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES EXTRAS — CASO ALGUMA PARTE DO BOT USE
+# FUNÇÕES EXTRAS — compatibilidade com partes antigas do bot
 # ══════════════════════════════════════════════════════════════════════
 
 def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, str]:
@@ -604,14 +599,12 @@ def generate_background_image(
     max_retries: int = 3,
 ) -> Optional[str]:
     prompt, _negative = build_prompt(style=style, seed_variant=seed_variant)
-
     for attempt in range(1, max_retries + 1):
         result = generate_image(prompt, output_path)
         if result:
             return result
         logger.warning(f"  ⚠ Tentativa background {attempt}/{max_retries} falhou.")
         time.sleep(3 * attempt)
-
     return None
 
 
@@ -622,12 +615,10 @@ def get_or_generate_background(
 ) -> Optional[str]:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     existing = list(Path(output_dir).glob(f"{style}_bg_*.png"))
-
     if existing and not force_new:
         chosen = random.choice(existing)
         logger.info(f"  ► Background reutilizado: {chosen}")
         return str(chosen)
-
     variant = random.randint(0, 99)
     output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
     return generate_background_image(style=style, output_path=output_path, seed_variant=variant)
@@ -640,7 +631,6 @@ def generate_background_batch(
 ) -> dict[str, list[str]]:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     results: dict[str, list[str]] = {}
-
     for style in styles:
         results[style] = []
         for v in range(variants_per_style):
@@ -648,11 +638,9 @@ def generate_background_batch(
             if os.path.exists(output_path):
                 results[style].append(output_path)
                 continue
-
             path = generate_background_image(style=style, output_path=output_path, seed_variant=v)
             if path:
                 results[style].append(path)
-
     return results
 
 
@@ -665,7 +653,7 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator v14.0 — DarkMark Final Vibrant Beauty Lock")
+    parser = argparse.ArgumentParser(description="AI Image Generator v14 — DarkMark Final Vibrant Beauty Lock")
     parser.add_argument("--style", default="phonk")
     parser.add_argument("--filename", default="dark phonk.mp3")
     parser.add_argument("--short-num", type=int, default=1)
