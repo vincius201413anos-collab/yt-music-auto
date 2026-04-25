@@ -27,6 +27,12 @@ V11.1 HOTFIX DRAWBOX ALPHA:
 - Corrigido alpha dinâmico no drawbox: FFmpeg do GitHub Actions não aceita @expressao com sin(t).
 - Mantida vibe hipnótica com alpha fixo seguro para não quebrar o render.
 
+V11.2 SAFE GITHUB ACTIONS:
+- Corrigido unsharp com matriz par 4x4, que quebra no FFmpeg do runner.
+- Adicionado sanitizador final de filtros FFmpeg antes do render.
+- Removido PI/2.5 em vignette para número fixo compatível.
+- Mantidos efeitos neon/beat, mas só com sintaxe segura para GitHub Actions.
+
 V11 FINAL VIBRANT HYPNOTIC:
 - Luzes vibrantes no beat/kick com overlays neon bonitos e controlados.
 - Glitch mais forte no drop, sem pesar demais no GitHub.
@@ -162,7 +168,7 @@ GENRE_COLOR_GRADE = {
         "colorbalance=rh=-0.04:gh=0.08:bh=0.20,"
         "eq=contrast=1.36:brightness=-0.040:saturation=1.30:gamma=0.96,"
         "curves=r='0/0 0.3/0.10 1/0.92':b='0/0 0.2/0.20 1/1',"
-        "unsharp=4:4:1.5:4:4:0,"
+        "unsharp=5:5:1.5:5:5:0,"
         "noise=alls=5:allf=t+u"
     ),
     "dark": (
@@ -197,7 +203,7 @@ GENRE_COLOR_GRADE = {
         "colorbalance=rs=-0.18:gs=-0.12:bs=0.15,"
         "eq=contrast=1.60:brightness=-0.10:saturation=0.70,"
         "unsharp=5:5:1.6:5:5:0,"
-        "vignette=angle=PI/2.5:mode=forward"
+        "vignette=angle=1.257:mode=forward"
     ),
     "indie": (
         "colorbalance=rs=0.08:gs=0.05:bs=-0.10,"
@@ -370,6 +376,59 @@ def escape_text(text: str) -> str:
 
 def join_filters(parts: list[str]) -> str:
     return ",".join([p for p in parts if p and str(p).strip()])
+
+
+def _odd_ffmpeg_kernel(value: str, fallback: int = 5) -> str:
+    """FFmpeg unsharp exige matrizes ímpares: 3, 5, 7..."""
+    try:
+        n = int(float(value))
+    except Exception:
+        return str(fallback)
+    if n < 3:
+        n = 3
+    if n % 2 == 0:
+        n += 1
+    return str(n)
+
+
+def sanitize_ffmpeg_filter(vf: str) -> str:
+    """
+    Camada final de segurança para GitHub Actions.
+    Corrige automaticamente:
+    - unsharp=4:4 / 6:6 etc. para tamanho ímpar
+    - alpha dinâmico em drawbox/color, que quebra no runner
+    - PI/2.5 em vignette para número fixo
+    """
+    if not vf:
+        return vf
+
+    vf = vf.replace("vignette=angle=PI/2.5:mode=forward", "vignette=angle=1.257:mode=forward")
+
+    def fix_unsharp(match: re.Match) -> str:
+        parts = match.group(1).split(":")
+        if len(parts) >= 2:
+            parts[0] = _odd_ffmpeg_kernel(parts[0])
+            parts[1] = _odd_ffmpeg_kernel(parts[1])
+        if len(parts) >= 5:
+            parts[3] = _odd_ffmpeg_kernel(parts[3])
+            parts[4] = _odd_ffmpeg_kernel(parts[4])
+        return "unsharp=" + ":".join(parts)
+
+    vf = re.sub(r"unsharp=([^,\s]+)", fix_unsharp, vf)
+
+    vf = re.sub(
+        r"(color=(?:0x[0-9A-Fa-f]{6}|[A-Za-z]+))@'[^']*(?:sin|cos|max|min|if|\+|\*|/)[^']*'",
+        r"\1@0.025",
+        vf,
+    )
+
+    vf = re.sub(
+        r"(color=(?:0x[0-9A-Fa-f]{6}|[A-Za-z]+))@[0-9.]+[^,:]*(?:sin|cos|max|min|if|\+|\*|/)[^,:]*(?=[:,])",
+        r"\1@0.025",
+        vf,
+    )
+
+    return vf
 
 
 def clean_song_name(audio_path: str, override: str = "") -> str:
@@ -1153,7 +1212,8 @@ def _build_cmd(
     audio_filter: str, dur: float, output_name: str,
     audio_input_idx: int = 1,
 ) -> list:
-    cmd = ["ffmpeg", "-y"] + inputs + ["-t", str(dur)]
+    vf_or_complex = sanitize_ffmpeg_filter(vf_or_complex)
+    cmd = ["ffmpeg", "-y", "-nostdin"] + inputs + ["-t", str(dur)]
 
     if is_complex:
         cmd += ["-filter_complex", vf_or_complex]
@@ -1224,8 +1284,9 @@ def generate_thumbnail(
         ":fontsize=40:fontcolor=white@0.90:borderw=2:bordercolor=black@0.75"
         ":x=(w-text_w)/2:y=h*0.90"
     )
+    vf = sanitize_ffmpeg_filter(vf)
     cmd = [
-        "ffmpeg", "-y", "-ss", str(timestamp),
+        "ffmpeg", "-y", "-nostdin", "-ss", str(timestamp),
         "-i", video_path, "-vframes", "1",
         "-vf", vf, "-q:v", "2", out,
     ]
