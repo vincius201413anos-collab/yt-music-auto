@@ -1,5 +1,5 @@
 """
-video_generator.py — Elite Music Shorts Generator v9 FINAL FFmpeg MAX
+video_generator.py — Elite Music Shorts Generator v10 HYPNOTIC BEAT LIGHTS
 =========================================================================
 MUDANÇAS v8.0 (VIRAL CONTROL — 15M STYLE):
 - FFmpeg agora gera uma base cyberpunk LIMPA e forte, sem brigar com o Remotion.
@@ -22,6 +22,13 @@ FIX v8.2 SAFE RUNNER:
 - Thumbnail também ganhou timeout para não prender o job.
 - IMPORTANTE: este arquivo gera a base FFmpeg. Se o log travar em "Iniciando render Remotion",
   o ponto final do travamento está no arquivo que chama o Remotion depois deste gerador.
+
+V10 HYPNOTIC BEAT LIGHTS:
+- Luzes piscando no beat/kick com overlays neon controlados.
+- Glitch mais forte no drop, sem pesar demais no GitHub.
+- Glow central/olhos simulados para dar sensação hipnótica.
+- Movimento constante mais vivo: micro pulso + respiração visual.
+- Mantém FFmpeg seguro, sem Remotion obrigatório.
 """
 
 from __future__ import annotations
@@ -120,6 +127,14 @@ FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "720"))   # 12 
 FFMPEG_THUMB_TIMEOUT_S  = int(os.getenv("FFMPEG_THUMB_TIMEOUT", "120"))    # 2 min
 FINAL_GRAIN_STRENGTH  = int(os.getenv("FINAL_GRAIN_STRENGTH", "4"))
 FORCE_FPS             = int(os.getenv("FFMPEG_FPS", "30"))
+
+# V10 — luzes hipnóticas sincronizadas no beat
+HYPNOTIC_LIGHTS_ENABLED = os.getenv("HYPNOTIC_LIGHTS_ENABLED", "true").lower() == "true"
+HYPNOTIC_LIGHT_INTENSITY = float(os.getenv("HYPNOTIC_LIGHT_INTENSITY", "1.0"))
+HYPNOTIC_MAX_BEATS = int(os.getenv("HYPNOTIC_MAX_BEATS", "52"))
+HYPNOTIC_MAX_BASS = int(os.getenv("HYPNOTIC_MAX_BASS", "42"))
+HYPNOTIC_MAX_SNARES = int(os.getenv("HYPNOTIC_MAX_SNARES", "22"))
+EYE_GLOW_ENABLED = os.getenv("EYE_GLOW_ENABLED", "true").lower() == "true"
 
 # ══════════════════════════════════════════════════════════════════════════════
 # COLOR GRADES — v8.1 CYBERPUNK MÁXIMO
@@ -569,7 +584,7 @@ def build_glitch_slices(analysis: dict, style: str = "default") -> str:
             y = 260 + ((i * 421) % 1300)
             glitches.append(
                 f"drawbox=enable='between(t,{t0:.4f},{drop_time+offset:.4f})'"
-                f":x=0:y={y}:w=iw:h=14:color={c3}@0.42:t=fill"
+                f":x=0:y={y}:w=iw:h=18:color={c3}@0.55:t=fill"
             )
 
     return ",".join(glitches) if glitches else ""
@@ -634,6 +649,161 @@ def build_cyberpunk_water_fx(analysis: dict, style: str = "default") -> str:
             )
 
     filters.append("eq=gamma=1.02:saturation=1.05")
+    return ",".join(filters)
+
+
+
+def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
+    """
+    V10 — luzes piscando no beat/kick.
+    Feito só com drawbox para ser seguro no GitHub Actions.
+    Resultado: sensação de setup/club light pulsando junto com a música.
+    """
+    if not HYPNOTIC_LIGHTS_ENABLED:
+        return ""
+
+    neon = GENRE_NEON.get(style, GENRE_NEON["default"])
+    c1 = neon["c1"]
+    c2 = neon["c2"]
+    c3 = neon["c3"]
+
+    beats = analysis.get("beats", [])[:HYPNOTIC_MAX_BEATS]
+    bass_hits = analysis.get("bass_hits", [])[:HYPNOTIC_MAX_BASS]
+    snares = analysis.get("snares", [])[:HYPNOTIC_MAX_SNARES]
+    drop_time = analysis.get("drop_time")
+
+    intensity = max(0.25, min(float(HYPNOTIC_LIGHT_INTENSITY), 1.8))
+    filters = []
+
+    # Respiração constante bem leve — evita imagem morta/parada.
+    filters.append(
+        f"drawbox=x=0:y=0:w=iw:h=ih:color={c2}@"
+        f"'{0.018*intensity:.4f}+{0.014*intensity:.4f}*(0.5+0.5*sin(t*1.35))':t=fill"
+    )
+
+    # Luzes laterais respirando, estilo palco/club.
+    filters.append(
+        f"drawbox=x=0:y=0:w=iw*0.10:h=ih:color={c1}@"
+        f"'{0.030*intensity:.4f}+{0.025*intensity:.4f}*(0.5+0.5*sin(t*2.10))':t=fill"
+    )
+    filters.append(
+        f"drawbox=x=iw*0.90:y=0:w=iw*0.10:h=ih:color={c2}@"
+        f"'{0.030*intensity:.4f}+{0.025*intensity:.4f}*(0.5+0.5*sin(t*2.35+1.2))':t=fill"
+    )
+
+    # Beat geral: flashes curtos e suaves. Dá vida sem poluir.
+    for i, bt in enumerate(beats):
+        if drop_time is not None and abs(bt - drop_time) < 0.55:
+            continue
+        t0 = max(0.0, bt - 0.006)
+        t1 = bt + 0.045
+        color = c2 if i % 2 else c1
+        alpha = 0.045 * intensity
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color={color}@{alpha:.3f}:t=fill"
+        )
+
+    # Bass/kick: pulso mais forte, principalmente embaixo e laterais.
+    for i, bt in enumerate(bass_hits):
+        t0 = max(0.0, bt - 0.010)
+        t1 = bt + 0.085
+        alpha = 0.115 * intensity if i < 18 else 0.075 * intensity
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=0:y=ih*0.55:w=iw:h=ih*0.45:color={c1}@{alpha:.3f}:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=0:y=0:w=12:h=ih:color={c1}@{min(alpha*1.55,0.32):.3f}:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=iw-12:y=0:w=12:h=ih:color={c2}@{min(alpha*1.55,0.32):.3f}:t=fill"
+        )
+
+    # Snare/hat: linhas rápidas no alto, dá percepção de ritmo.
+    for i, st in enumerate(snares):
+        if drop_time is not None and abs(st - drop_time) < 0.45:
+            continue
+        t0 = max(0.0, st - 0.004)
+        t1 = st + 0.026
+        y = 120 + ((i * 197) % 1520)
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=0:y={y}:w=iw:h=3:color={c3}@{0.110*intensity:.3f}:t=fill"
+        )
+
+    # Drop: flash grande + blackout curto + túnel de luz.
+    if drop_time is not None:
+        t0 = max(0.0, drop_time - 0.020)
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{drop_time+0.030:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=white@{min(0.78*intensity,0.90):.3f}:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{drop_time+0.030:.4f},{drop_time+0.090:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color=black@0.24:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.220:.4f})'"
+            f":x=0:y=0:w=iw:h=ih:color={c1}@{0.35*intensity:.3f}:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.280:.4f})'"
+            f":x=iw*0.18:y=0:w=iw*0.06:h=ih:color={c2}@{0.42*intensity:.3f}:t=fill"
+        )
+        filters.append(
+            f"drawbox=enable='between(t,{drop_time+0.090:.4f},{drop_time+0.280:.4f})'"
+            f":x=iw*0.76:y=0:w=iw*0.06:h=ih:color={c3}@{0.42*intensity:.3f}:t=fill"
+        )
+
+    return ",".join(filters)
+
+
+def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
+    """
+    V10 — simula brilho nos olhos/centro do personagem.
+    Como FFmpeg não sabe onde estão os olhos, o glow fica na região superior central,
+    que é onde seus prompts colocam o rosto na maioria das imagens.
+    """
+    if not EYE_GLOW_ENABLED:
+        return ""
+
+    neon = GENRE_NEON.get(style, GENRE_NEON["default"])
+    c1 = neon["c1"]
+    c2 = neon["c2"]
+
+    bass_hits = analysis.get("bass_hits", [])[:28]
+    drop_time = analysis.get("drop_time")
+
+    filters = []
+
+    # Glow fixo sutil no rosto/olhos.
+    filters.append(
+        f"drawbox=x=iw*0.36:y=ih*0.215:w=iw*0.28:h=ih*0.080:"
+        f"color={c1}@'0.030+0.020*(0.5+0.5*sin(t*2.2))':t=fill"
+    )
+    filters.append(
+        f"drawbox=x=iw*0.42:y=ih*0.245:w=iw*0.16:h=ih*0.018:"
+        f"color={c2}@'0.080+0.050*(0.5+0.5*sin(t*3.4))':t=fill"
+    )
+
+    # Pulso de olhos no grave.
+    for bt in bass_hits:
+        t0 = max(0.0, bt - 0.010)
+        t1 = bt + 0.065
+        filters.append(
+            f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
+            f":x=iw*0.38:y=ih*0.232:w=iw*0.24:h=ih*0.045:color={c1}@0.145:t=fill"
+        )
+
+    if drop_time is not None:
+        filters.append(
+            f"drawbox=enable='between(t,{max(0.0, drop_time-0.010):.4f},{drop_time+0.160:.4f})'"
+            f":x=iw*0.31:y=ih*0.205:w=iw*0.38:h=ih*0.105:color={c2}@0.230:t=fill"
+        )
+
     return ",".join(filters)
 
 
@@ -871,6 +1041,8 @@ def build_image_filter(
     drop_flash = build_drop_flash(analysis)
     neon_border = build_neon_border_pulse(analysis, style)
     glitch = build_glitch_slices(analysis, style)
+    hypnotic_lights = build_hypnotic_beat_lights(analysis, style)
+    eye_glow = build_eye_glow_hypnosis(analysis, style)
 
     parts = [
         "scale=1440:2560:force_original_aspect_ratio=increase",
@@ -890,6 +1062,10 @@ def build_image_filter(
         parts.append(scanlines)
     if glitch:
         parts.append(glitch)
+    if hypnotic_lights:
+        parts.append(hypnotic_lights)
+    if eye_glow:
+        parts.append(eye_glow)
     if neon_border:
         parts.append(neon_border)
     if drop_flash:
@@ -925,6 +1101,8 @@ def build_video_filter(
     drop_flash = build_drop_flash(analysis)
     neon_border = build_neon_border_pulse(analysis, style)
     glitch = build_glitch_slices(analysis, style)
+    hypnotic_lights = build_hypnotic_beat_lights(analysis, style)
+    eye_glow = build_eye_glow_hypnosis(analysis, style)
 
     parts = [
         "scale=1140:2026:force_original_aspect_ratio=increase",
@@ -941,6 +1119,10 @@ def build_video_filter(
         parts.append(scanlines)
     if glitch:
         parts.append(glitch)
+    if hypnotic_lights:
+        parts.append(hypnotic_lights)
+    if eye_glow:
+        parts.append(eye_glow)
     if neon_border:
         parts.append(neon_border)
     if drop_flash:
@@ -1169,7 +1351,9 @@ def create_short(
         scanlines = build_scanlines(analysis, style)
         drop_flash = build_drop_flash(analysis)
         neon_border = build_neon_border_pulse(analysis, style)
-        base_vf  = join_filters([genre_g, scanlines, neon_border, drop_flash, fade, pbar])
+        hypnotic_lights = build_hypnotic_beat_lights(analysis, style)
+        eye_glow = build_eye_glow_hypnosis(analysis, style)
+        base_vf  = join_filters([genre_g, scanlines, hypnotic_lights, eye_glow, neon_border, drop_flash, fade, pbar])
         inputs = [
             "-f", "lavfi", "-i", f"color=c=black:s=1080x1920:d={dur}",
             "-ss", str(start), "-i", audio_path,
@@ -1178,10 +1362,10 @@ def create_short(
                          audio_input_idx=1)
 
     # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Iniciando render v9 FINAL (FFmpeg Max)…")
+    logger.info("  ► Iniciando render v10 HYPNOTIC BEAT LIGHTS…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            run_cmd_safe(cmd, "Render FFmpeg base v9 FINAL", FFMPEG_RENDER_TIMEOUT_S, capture=True)
+            run_cmd_safe(cmd, "Render FFmpeg v10 HYPNOTIC BEAT LIGHTS", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
         except subprocess.TimeoutExpired:
@@ -1275,7 +1459,7 @@ def generate_batch(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v9 FINAL — FFmpeg Max")
+    parser = argparse.ArgumentParser(description="Elite Music Shorts Generator v10 — Hypnotic Beat Lights")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
