@@ -374,8 +374,8 @@
       "name": "Still Alone (3).mp3",
       "key": "1ZzJ_SMs2R5CWAyi0cODJ7fZWLDF8ivNB",
       "done": 0,
-      "is_new": true,
-      "genre": null,
+      "is_new": false,
+      "genre": "phonk",
       "name_key": "still alone"
     },
     {
