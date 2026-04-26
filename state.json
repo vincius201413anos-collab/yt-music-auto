@@ -742,9 +742,9 @@
       "id": "18Z91hehhmvZ8KcMPcelClOztZ66XM44f",
       "name": "Signal Lost (2).mp3",
       "key": "18Z91hehhmvZ8KcMPcelClOztZ66XM44f",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "signal lost"
     },
     {
