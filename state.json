@@ -769,9 +769,9 @@
       "id": "1Yzea5c967XtWyDbWBLycR90myQ8sQL6J",
       "name": "Throne of Glass (1).mp3",
       "key": "1Yzea5c967XtWyDbWBLycR90myQ8sQL6J",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "throne of glass"
     },
     {
