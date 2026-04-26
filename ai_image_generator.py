@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — DJ DARK MARK v25 ULTRA VIRAL ENGINE
+ai_image_generator.py — DJ DARK MARK v25 BODY FIXED ULTRA VIRAL ENGINE
 =============================================================
 Versão profissional unificada (V18→V24 best-of merge).
 
@@ -75,10 +75,14 @@ TRAPSTAR_DNA = (
 )
 
 BODY_LOCK = (
-    "medium full body or upper body portrait, character visible from head to thighs or knees, "
-    "body centered, fills most of vertical frame, "
-    "outfit and silhouette clearly visible, strong pose, "
-    "not a face-only headshot, not cropped at neck, not tiny in background"
+    "MANDATORY: show character from head to thighs or knees, "
+    "full upper body clearly visible, including torso, waist, arms and outfit, "
+    "character fills 65 to 85 percent of vertical frame height, "
+    "face must NOT dominate the frame, face takes only 25 to 35 percent of image, "
+    "camera pulled back, medium shot or three-quarter body shot, "
+    "outfit, chains, tattoos, piercings and silhouette clearly visible, "
+    "not a face-only headshot, not bust portrait, not cropped at neck, "
+    "not tiny in background"
 )
 
 STYLE_LOCK = (
@@ -92,9 +96,10 @@ STYLE_LOCK = (
 
 RETENTION_LOCK = (
     "extreme scroll-stopping composition, strong center focal point, "
-    "face dominant, takes 50 to 65 percent of frame, "
-    "eyes positioned slightly above center for mobile framing, "
-    "tight cinematic portrait, perfect for vertical 9:16 YouTube Shorts and TikTok, "
+    "body dominant composition, character visible from head to thighs or knees, "
+    "face takes only 25 to 35 percent of frame, "
+    "eyes positioned slightly above center but body and outfit remain clearly visible, "
+    "medium shot or three-quarter body framing, perfect for vertical 9:16 YouTube Shorts and TikTok, "
     "instant readability in under 1 second, "
     "space near bottom for waveform and DJ logo overlay"
 )
@@ -157,7 +162,9 @@ NEGATIVE_PROMPT = (
     "overexposed, too much glow, messy colors, heavy glow everywhere, "
     "toxic neon overload, 5 colors at once, "
     # composição ruim
-    "face only, headshot only, portrait only, cropped body, missing legs, missing torso, "
+    "face only, headshot only, portrait only, extreme close-up, close-up face, "
+    "face filling frame, only face, only eyes, bust portrait, cropped chest, "
+    "cropped shoulders, cropped body, missing legs, missing torso, "
     "small character, character too far, empty background without character, "
     # estilo indesejado
     "low quality, flat lighting, generic AI art, boring composition, clutter, bad crop"
@@ -187,8 +194,6 @@ EYE_VARIATIONS = [
     "soft glowing pink eyes with light sparkle",
     "intense purple eyes with cinematic rim reflection",
     "glowing red eyes, cold hypnotic stare",
-    "cyan and pink heterochromia, electric gaze",
-    "toxic green glowing eyes, dangerous smirk",
 ]
 
 EXPRESSION_VARIATIONS = [
@@ -403,7 +408,8 @@ def build_ai_prompt(
         # regras críticas finais
         "CRITICAL: must be extremely attractive, scroll-stopping, visually clean, "
         "must look like viral anime thumbnail with high click-through rate, "
-        "face must be the main focus and beautiful instantly, "
+        "body and outfit must be clearly visible, not a close-up portrait, camera pulled back, "
+        "face must stay beautiful but must not dominate the frame, "
         "no text anywhere, no watermark, no logo, no letters, "
         "no messy glow, no color pollution, no overexposure, "
         "must look professional and viral, must create emotional reaction in first second"
@@ -441,7 +447,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         prompt
         + ", 2D anime only, premium dark trapstar anime girl, beautiful face, "
         + "clean anatomy, natural anime skin tone, neon only as rim light and eye glow, "
-        + "no text, no logo, no watermark, viral YouTube Shorts thumbnail"
+        + "no text, no logo, no watermark, body visible head to thighs, camera pulled back, viral YouTube Shorts thumbnail"
     )
 
     headers = {
