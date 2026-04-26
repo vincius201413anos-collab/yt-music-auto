@@ -1,14 +1,17 @@
 """
-ai_image_generator.py — DJ DARK MARK v34 CINEMATIC SENSUAL CYBERPUNK
+ai_image_generator.py — DJ DARK MARK v35 GLOWING EYES CUTE DARK ENERGY
 =============================================================
-CHANGELOG v34:
-- MODELOS TROCADOS: adicionado animagine-xl e anything-v5 (muito melhores para full body anime)
-- FLUX_PARAMS: resolução alterada para 768x1344 (ratio 4:7 força mais espaço vertical para corpo)
-- PROMPT REORDENADO: pose/composição vem PRIMEIRO antes de qualquer descrição de rosto
-- BODY_LOCK v3: linguagem ainda mais direta, frases curtas que os modelos entendem melhor
-- GENERATION_SUFFIX reforçado com triggers técnicos: "full body", "wide shot", "from head to toe"
-- NEGATIVE PROMPT: adicionado "portrait", "face focus", "upper body" explicitamente
-- PALETA: azul/cyan banido em todas as camadas
+CHANGELOG v35:
+- ESTÉTICA REFORMULADA: baseada em 4 imagens de referência reais analisadas
+- OLHOS BRILHANTES EXTREMOS: glow dominante, reflexo intenso, efeito chama/plasma nos íris
+- ACESSÓRIOS DEMONÍACOS: chifres pequenos, orelhas de gato, correntes — como nas refs
+- AURA ENERGY: chamas, correntes brilhantes, glitch, tentáculos de energia
+- FUNDO PURO ESCURO: personagem iluminado só pelos próprios efeitos
+- ESTILO "CUTE BUT DARK": fofo-perturbador, expressões intesas, olhos dominantes
+- COMPOSIÇÃO: mais portrait/bust shot para capturar o glow extremo dos olhos
+- BODY_LOCK ajustado: aceita portrait quando o estilo pede (como refs 1, 2, 3)
+- PALETA: mantém magenta/violet/crimson, mas permite green como opção secundária (ref 1)
+- CEL SHADING BRUTAL: contraste alto, linhas limpas, highlight glossy intenso
 """
 
 from __future__ import annotations
@@ -34,19 +37,18 @@ logger = logging.getLogger("ai_image_generator")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
-    # Animagine XL — melhor para anime full body, composição vertical
+    # Animagine XL — melhor para anime dark cute, respeita bem composição
     "cjwbw/animagine-xl-3.1",
-    # Fallback: Anything v5 — clássico anime, respeita bem composição de corpo
+    # Fallback: Anything v5 — clássico anime, linhas limpas
     "lucataco/anything-v5-better-vae",
     # Último fallback: Flux-dev
     "black-forest-labs/flux-dev",
 ]
 
 FLUX_PARAMS = {
-    # 768x1344 = ratio ~1:1.75 — força mais espaço vertical, menos tendência a focar no rosto
-    # Equivale a aprox. 9:16 mas com pixels suficientes para mostrar corpo completo
+    # 768x1024 — portrait quad, ideal para capturar olhos brilhantes e expressão
     "width":               int(os.getenv("FLUX_WIDTH",    "768")),
-    "height":              int(os.getenv("FLUX_HEIGHT",   "1344")),
+    "height":              int(os.getenv("FLUX_HEIGHT",   "1024")),
     "num_inference_steps": int(os.getenv("FLUX_STEPS",    "35")),
     "guidance_scale":      float(os.getenv("FLUX_GUIDANCE", "7.5")),
     "num_outputs": 1,
@@ -62,283 +64,340 @@ FLUX_PARAMS = {
 
 CHANNEL_IDENTITY = (
     "DJ Dark Mark official cinematic cyberpunk visual identity, "
-    "adult anime cyberpunk muse, dark phonk trap dark pop music cover art, "
-    "magenta violet crimson palette, glowing eyes, sensual streetwear, "
+    "dark cute anime muse, glowing eyes dominant, cute but dangerous energy, "
+    "dark phonk trap dark pop music cover art, "
+    "magenta violet crimson palette, energy auras, chains, demon aesthetic, "
     "premium YouTube Shorts thumbnail universe"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# LOCKS PRINCIPAIS — V30 TRAPSTAR CYBERPUNK + ANTI-BLUE NUCLEAR
+# CORE CHARACTER — V35 CUTE DARK GLOWING EYES
 # ══════════════════════════════════════════════════════════════════════
 
 TRAPSTAR_DNA = (
     "one adult anime woman, clearly adult, "
-    "beautiful cyberpunk trapstar muse, sensual but stylish, not explicit, "
-    "cute but dangerous, yandere cyberpunk personality, soft face with unstable obsessive eyes, "
-    "fofa maluca malvada vibe, sweet smile hiding chaos, "
-    "extremely attractive face, glossy lips, sharp cat eyeliner, heavy mascara, "
-    "glowing eyes, hypnotic stare, confident dark trap queen energy, "
-    "curvy feminine body, rounded waist, attractive proportions, visible waistline, "
-    "subtle body definition, soft stomach shading, stylish tattoos visible, "
-    "black/pink/violet identity, memorable silhouette, "
-    "wearing sensual cyberpunk streetwear: open cropped jacket OR oversized open hoodie OR techwear straps, "
-    "black bra top OR strappy crop top OR leather top visible, "
-    "chain necklace, black choker, rings, piercings, chain belt, "
-    "dark mini skirt OR dark cargo pants OR techwear shorts, thigh-high boots OR platform combat boots, "
-    "glowing tattoos, waist tattoos, arm tattoos, thigh tattoo details, "
-    "alone, no other characters, no crowds"
+    "beautiful dark cute cyberpunk muse, cute but deeply unsettling, "
+    "yandere dark energy, fofa maluca malvada supreme, "
+    # OLHOS — elemento dominante como nas referências
+    "EYES ARE THE FOCAL POINT: extremely large glowing anime eyes, "
+    "intense neon glow radiating from irises, pupils with flame or plasma effect, "
+    "neon light reflected in eyes, tears of neon glow, "
+    "eyes full of unstable obsessive dark energy, hypnotic beautiful stare, "
+    # ROSTO
+    "beautiful detailed anime face, glossy lips, "
+    "sharp cat eyeliner, dramatic eyelashes, soft cheeks with subtle blush, "
+    "cute smile hiding something dark, grin with visible teeth, "
+    # ACESSÓRIOS DEMONÍACOS — como nas referências
+    "small cute demon horns OR fluffy cat ears, black choker collar with ring, "
+    "chain necklace, ear piercings, fang teeth visible in smile, "
+    # CORPO/ROUPA — sem nudez, mas sensual dark
+    "dark cyberpunk outfit, cropped jacket OR dark corset top, "
+    "chains draped over shoulders, glowing tattoos on visible skin, "
+    # IDENTIDADE
+    "alone, single character, no other people"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# BODY LOCK V4 — FRASES CURTAS + ORDEM PRIORITÁRIA
+# COMPOSIÇÃO — V35: PORTRAIT FIRST (como nas refs)
 # ══════════════════════════════════════════════════════════════════════
 
-BODY_LOCK = (
-    "full body, full length character, wide shot, long shot, head to toe visible, "
-    "whole body visible, legs visible, boots visible, feet in frame, "
-    "complete outfit visible, full silhouette visible, "
-    "face beautiful but not close-up, body dominant composition, "
-    "visible waist, stylish sensual pose, vertical poster framing, centered character, 9:16 aspect ratio"
+COMPOSITION_LOCK = (
+    "portrait or upper body composition, face dominant in frame, "
+    "eyes occupying large portion of frame, "
+    "character centered, dark background with energy effects surrounding, "
+    "subject glowing from within, cinematic portrait framing, "
+    "vertical 9:16 thumbnail composition, clean space for text overlays"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# STYLE LOCK — CYBERPUNK TRAPSTAR ESPECÍFICO
+# AURA ENERGY — ELEMENTO CENTRAL DAS REFS
+# ══════════════════════════════════════════════════════════════════════
+
+AURA_ENERGY_LOCK = (
+    "dramatic energy effects surrounding character, "
+    "glowing flames OR energy chains OR glitch distortion OR dark tendrils surrounding her, "
+    "energy particles floating around her, "
+    "neon sparks and embers in the air, "
+    "aura visible from behind and sides creating halo effect, "
+    "energy effect same color as eye glow, coherent color throughout, "
+    "smoke and fog at edges blending into black background"
+)
+
+# ══════════════════════════════════════════════════════════════════════
+# STYLE LOCK — DARK CUTE ANIME ESPECÍFICO
 # ══════════════════════════════════════════════════════════════════════
 
 STYLE_LOCK = (
-    "premium 2D anime illustration, cinematic cyberpunk anime key visual, "
-    "sharp clean lineart, polished cel shading, glossy neon highlights, "
-    "deep cinematic shadows, high contrast silhouette, dark phonk cover art aesthetic, "
-    "dark pop music visualizer background, professional anime music thumbnail, "
-    "clean color grading, vibrant colors, not generic, not realistic, not 3D, not photo"
+    "premium 2D dark anime illustration, "
+    "extremely clean sharp lineart, bold cel shading high contrast, "
+    "glossy reflections on eyes and lips and hair, "
+    "deep cinematic shadows on face, "
+    "neon glow effects blended naturally into dark background, "
+    "professional anime music cover art quality, "
+    "dark cute aesthetic, not generic, not realistic, not 3D, "
+    "inspired by dark anime character art, yandere character design"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# PALETA — ANTI-AZUL NUCLEAR V30
+# PALETA — MAGENTA/VIOLET/CRIMSON + GREEN OPCIONAL
 # ══════════════════════════════════════════════════════════════════════
 
 PALETTE_HARD_LOCK = (
-    "clean cinematic color grading, vibrant colors, no ugly filter, "
-    "magenta dominant color palette, hot pink neon accents, deep violet shadows, "
-    "dark purple atmosphere, crimson red highlights, warm orange secondary rim light, "
-    "near-black background, dark red and violet mood, "
-    "hair may be neon pink, violet, crimson, silver, black with colorful highlights, "
-    "eyes must glow pink, magenta, violet, or red, "
-    "no blue, no cyan, no teal, no turquoise, no aqua, no cobalt, no azure, "
-    "avoid cold blue lighting, avoid icy colors, avoid washed color filter, "
-    "warm neon palette only, magenta violet red only"
+    "dominant dark palette with neon accents, "
+    "near-black background, character illuminated only by her own energy glow, "
+    "eye glow is the primary light source on her face, "
+    "magenta OR violet OR crimson OR green neon glow coherent throughout, "
+    "no mixed incompatible colors, single dominant neon color per image, "
+    "hair glowing with same neon color as eyes, "
+    "chains and accessories reflecting neon light, "
+    "deep shadows, high contrast, dramatic dark mood"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# LIGHTING — QUENTE E DIRECIONAL
+# LIGHTING — EYES AS LIGHT SOURCE
 # ══════════════════════════════════════════════════════════════════════
 
 LIGHTING_LOCK = (
-    "cinematic neon lighting, hot magenta rim light, deep violet backlight, "
-    "warm red-orange key light from one side, clean natural anime skin tone, "
-    "soft highlight on waist and stomach, subtle body contour lighting, "
-    "eyes glowing with neon reflection, glossy lips highlight, "
-    "dark background, subject clearly separated from background, "
-    "soft smoke haze, wet reflective highlights, high contrast, "
-    "no blue light, no cyan light, no cold color filter, no ugly blue overlay"
+    "eyes emit strong neon glow illuminating the face from within, "
+    "eye glow creates soft light on cheeks and nose, "
+    "rim lighting from energy aura behind her, "
+    "face in dramatic shadow except where lit by own glow, "
+    "no external light sources, character is the light source, "
+    "deep blacks, strong contrast, glossy highlights on eyes and lips"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# SKIN — TOM NATURAL ANIME
+# SKIN
 # ══════════════════════════════════════════════════════════════════════
 
 SKIN_LOCK = (
-    "natural warm anime skin tone, warm pale skin, light beige or warm ivory, "
-    "soft blush on cheeks, clean skin shading, no color filter on skin, "
-    "no blue skin, no cyan skin, no cold skin tone, not blue-tinted, not gray skin"
+    "warm pale anime skin tone, slightly illuminated by neon glow, "
+    "soft blush, clean smooth skin, "
+    "neon light casting colored tint on skin matching eye color"
 )
 
 RETENTION_LOCK = (
-    "scroll-stopping viral YouTube Shorts thumbnail, strong visual impact in under one second, "
-    "recognizable DJ Dark Mark visual identity, character instantly memorable, "
-    "beautiful face, glowing eyes, sensual cyberpunk silhouette, "
-    "full body centered, clean space near bottom for DJ logo and waveform overlay, "
-    "dark anime music video energy, high CTR phonk trap dark pop thumbnail, "
-    "not cluttered, readable silhouette even on phone screen"
+    "scroll-stopping dark anime thumbnail, "
+    "EYES are the first thing viewer sees, massive visual impact, "
+    "instantly recognizable DJ Dark Mark visual identity, "
+    "beautiful but unsettling, cute but dangerous, "
+    "high CTR dark phonk trap thumbnail energy"
 )
 
 QUALITY_LOCK = (
     "masterpiece, best quality, ultra detailed anime illustration, "
-    "clean anatomy, beautiful face, sharp expressive glowing eyes, detailed outfit, "
-    "professional dark cyberpunk anime poster, high resolution, crisp lineart, polished shading, "
-    "consistent character proportions, premium channel branding quality, cinematic composition"
+    "beautiful detailed face, sharp expressive glowing eyes, "
+    "clean anatomy, detailed outfit and accessories, "
+    "professional dark anime art, high resolution, crisp lineart, "
+    "polished shading, premium channel branding quality"
 )
-
 
 CONSISTENCY_LOCK = (
     "consistent channel branding, same visual universe, "
-    "recognizable recurring cyberpunk anime muse, "
-    "black outfit, magenta neon identity, deep violet shadows, crimson accents, "
-    "clean readable silhouette, premium YouTube channel standard, "
-    "not random, not generic, not cluttered"
+    "recognizable recurring dark cute anime muse, "
+    "glowing eyes signature feature, dark outfit, neon energy identity, "
+    "not random, not generic"
 )
-
-CINEMATIC_COLOR_LOCK = (
-    "clean cinematic color grading, no ugly blue filter, no washed filter, "
-    "skin remains warm natural anime skin tone, "
-    "neon colors are magenta pink violet crimson only, "
-    "eyes and hair are colorful and glowing, "
-    "high contrast but not overexposed"
-)
-
 
 
 # ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT V30 — ANTI-AZUL MÁXIMO + COMPOSIÇÃO FORÇADA
+# NEGATIVE PROMPT V35
 # ══════════════════════════════════════════════════════════════════════
 
 NEGATIVE_PROMPT = (
-    "blue, cyan, teal, turquoise, aqua, cobalt, azure, cerulean, indigo, navy blue, sky blue, "
-    "blue background, cyan background, teal background, blue lighting, cyan lighting, "
-    "blue neon, cyan neon, teal neon, blue glow, cyan glow, blue filter, cyan filter, "
-    "cold color grading, cold color palette, icy tones, washed color filter, ugly filter, "
-    "blue skin, cyan skin, blue-tinted skin, cold skin, gray skin, dead skin, "
-    "green, yellow, muddy colors, washed out colors, desaturated, flat colors, "
-    "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, lazy eye, "
-    "bad hands, extra fingers, missing fingers, fused fingers, fused limbs, broken body, "
-    "long neck, disfigured, mutated, melted face, uncanny valley, blurry, low quality, jpeg artifacts, noise, "
-    "photorealistic, realistic, photography, real person, 3D render, CGI, doll, plastic skin, "
-    "child, underage, loli, chibi, schoolgirl, baby face, teenager, young girl, "
-    "nude, explicit nudity, genitalia, nipples, porn, erotic explicit, transparent clothes, "
+    # Cores erradas
+    "washed out colors, desaturated, flat colors, muddy palette, "
+    "ugly filter, bad color grading, cold washed filter, "
+    # Anatomia ruim
+    "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
+    "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
+    "long neck, disfigured, mutated, melted face, uncanny valley, "
+    "blurry, low quality, jpeg artifacts, noise, "
+    # Estilo errado
+    "photorealistic, realistic, photography, real person, 3D render, CGI, "
+    "doll, plastic skin, western cartoon, simple cartoon, "
+    # Idade
+    "child, underage, loli, baby face, very young, "
+    # Conteúdo explícito
+    "nude, explicit nudity, genitalia, nipples, porn, erotic explicit, "
+    # Múltiplos personagens
     "multiple people, crowd, two girls, group, duplicate character, "
-    "text, words, logo, watermark, signature, letters, numbers, username, "
-    "portrait, headshot, bust shot, close-up, extreme close-up, face only, face filling frame, "
-    "upper body only, waist up, shoulders up, cropped legs, cropped body, missing legs, missing feet, "
-    "missing lower body, bad composition, boring pose, generic anime girl, plain outfit, "
-    "too much clothing, winter coat covering body, oversized outfit hiding waist, "
-    "overexposed, too much glow, bloom overload, color chaos"
+    # Texto
+    "text, words, logo, watermark, signature, letters, numbers, "
+    # Composição ruim
+    "boring pose, generic anime girl, plain background without effects, "
+    "flat background, no energy effects, no glow, dull eyes, "
+    "normal eyes without glow, realistic eyes, "
+    # Overexposure
+    "overexposed, too much glow, bloom overload, color chaos, "
+    "rainbow colors, too many colors"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES — V30 TRAPSTAR CYBERPUNK, SEM AZUL
+# VARIAÇÕES — V35 CUTE DARK ENERGY
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "neon pink hair, vibrant and glowing, glossy cyberpunk strands",
-    "deep violet hair, glossy, cinematic cyberpunk shine",
-    "black hair with neon pink highlights, glowing strands, sharp anime bangs",
-    "dark purple hair with hot pink neon reflections, smooth gradient",
-    "black hair with crimson red highlights, glossy finish, magenta rim light",
-    "white platinum hair with magenta glow, soft and beautiful, black roots",
-    "silver hair with magenta rim light, futuristic seductive look",
-    "black hair with glowing purple streaks, cyberpunk aesthetic",
-    "deep red hair with neon glow, seductive dark pop vibe",
-    "dark violet ombre hair, smooth gradient, high detail",
-    "black wolfcut hair with pink streaks, punk cyberpunk style",
-    "long black wavy hair flowing in neon wind, hot magenta edge light",
+    "black hair with glowing magenta edges, neon trim highlights, messy cute style",
+    "white platinum hair with magenta glow, soft flowing, black roots",
+    "dark violet hair with pink neon streaks, glossy finish",
+    "black wolfcut hair with crimson hot pink neon glow at tips",
+    "deep blue-black hair glowing with purple light, sleek and sharp",
+    "silver hair with violet rim glow, futuristic beautiful look",
+    "dark purple ombre hair flowing with energy wisps",
+    "black spiky hair with neon pink electricity crackling",
+    "long dark hair billowing as if in wind made of energy",
+    "white twin tails with glowing violet tips, edgy cute style",
+    "short black hair with glowing red-crimson edges, sharp jaw-length cut",
+    "dark hair with glowing strands weaving between energy effects",
 ]
 
 EYE_VARIATIONS = [
-    "bright glowing pink eyes, extremely detailed, strong neon reflections",
-    "intense magenta eyes with powerful glow, hypnotic stare",
-    "violet glowing eyes with reflections and spark effects",
-    "deep red glowing eyes, dark seductive villain vibe",
-    "pink neon eyes with light bloom, ultra anime style",
-    "glowing purple eyes with soft light aura",
-    "magenta eyes with inner glow and sharp highlights",
-    "neon pink eyes with electric spark details inside iris",
-    "crimson pink eyes, calm but terrifying, direct eye contact",
-    "wide glowing violet eyes, cute but unstable yandere energy",
+    # OLHOS SÃO O ELEMENTO CENTRAL — descrições muito detalhadas
+    "GLOWING MAGENTA EYES: massive anime eyes, iris filled with pink plasma flame, "
+    "neon light bursting outward, pupils like dark voids surrounded by fire",
+    
+    "GLOWING VIOLET EYES: large glowing anime eyes, purple energy radiating from irises, "
+    "sparks of violet light, deep hypnotic stare, glow illuminating face",
+    
+    "GLOWING CRIMSON RED EYES: intense red neon eyes, dark flame inside iris, "
+    "dangerous stare, blood red glow on surrounding face",
+    
+    "GLOWING PINK NEON EYES: bright hot pink anime eyes, electric spark effects inside iris, "
+    "tears of glowing pink light at corners, overwhelming cute but unhinged look",
+    
+    "GLOWING GREEN EYES: bright toxic green glowing anime eyes, emerald fire in iris, "
+    "unsettling beautiful stare, green rim light on face",
+    
+    "GLOWING DEEP VIOLET EYES: large glowing purple-violet eyes, halo effect around iris, "
+    "obsessive hypnotic stare, violet light casting on cheeks",
+    
+    "GLOWING DUAL-COLOR EYES: heterochromia, one eye magenta one eye violet, "
+    "both glowing intensely, chaotic unstable beautiful look",
+    
+    "GLOWING WHITE-CORE EYES: eyes with bright white core surrounded by magenta ring, "
+    "overwhelming light, like looking into neon stars",
+    
+    "GLOWING ROSE PINK EYES: soft but intense rose neon eyes, romantic but unstable, "
+    "glossy wet look with inner glow, cute overwhelm",
+    
+    "GLOWING ELECTRIC PURPLE EYES: electric purple eyes with lightning cracks in iris, "
+    "dangerous cute stare, purple light on nose and cheeks",
 ]
 
 EXPRESSION_VARIATIONS = [
-    "cute smile but eyes completely insane, unsettling contrast",
-    "adorable expression with slightly broken emotional look",
-    "soft smile with obsessive stare, uncomfortable but attractive",
-    "playful cute smile hiding something dark",
-    "emotionless face with slight creepy smile forming",
-    "shy smile but intense eye contact, yandere vibe",
-    "gentle expression but mentally unstable aura",
-    "sweet face with subtle madness behind the eyes",
-    "small innocent smile but eyes screaming obsession",
-    "calm relaxed face with disturbing undertone",
-    "seductive but unstable expression, confident gaze, slight smirk",
-    "confident trap queen smirk, beautiful and dangerous",
+    # Como nas referências — expressões intensas mas cute
+    "wide grin showing teeth, eyes glowing intensely, unhinged adorable smile",
+    "calm soft smile but eyes absolutely burning with obsession, yandere peak",
+    "shy cute smile with overwhelming eye contact, too intense to look away",
+    "gleeful smile, eyes full of chaotic energy, adorable but dangerous",
+    "expressionless face but eyes screaming unstable energy, eerie beautiful",
+    "sweet gentle smile, eyes too wide, too bright, deeply unsettling",
+    "small smirk, half-lidded glowing eyes, confident dark queen energy",
+    "open mouth smile showing fang, eyes bright with excitement and madness",
+    "melancholic expression, glowing eyes downcast but burning, sad villain energy",
+    "playful tongue-out, one eye winking glowing, chaotic cute energy",
+    "slightly open mouth, dazed beautiful expression, glowing eyes unfocused",
+    "intense direct stare, lips slightly parted, eyes consuming the viewer",
 ]
 
-POSE_VARIATIONS = [
-    "full body standing pose, one hand in hoodie pocket, legs apart, complete figure head to boots",
-    "full body walking toward camera, jacket flowing, chains moving, boots visible",
-    "full body low angle shot, looking down at viewer, boots visible, powerful silhouette",
-    "full body leaning against neon wall, one knee bent, full outfit visible",
-    "full body arms crossed, weight on one hip, dominant stance, complete silhouette",
-    "full body sitting on concrete ledge, legs visible, boots visible, dark relaxed pose",
-    "full body crouched slightly, one hand near face, mischievous crazy smile, boots visible",
-    "full body three-quarter turn, looking back over shoulder, complete figure visible",
-    "full body hand reaching toward camera, rest of body fully visible behind, dramatic perspective",
-    "full body standing in rain, hood up, chains glowing, boots and legs visible",
-    "full body holding chain loosely, dark aura around boots, head to toe visible",
-]
-
-OUTFIT_VARIATIONS = [
-    "black cyberpunk bra top, open cropped jacket, exposed waist, glowing tattoos, thigh-high boots",
-    "cropped oversized hoodie open, black bra visible, cyberpunk chains, exposed midriff, platform boots",
-    "dark strappy top, minimal fabric, techwear belts, visible waist, thigh-high boots",
-    "black bikini-style top with techwear straps, open jacket, cargo pants, chains",
-    "cropped neon bra top, oversized open hoodie, exposed waist, cyberpunk accessories",
-    "tight black top with stylish cutouts, chain belt, thigh-high boots, glowing tattoos",
-    "minimal cyberpunk outfit, bra top, dark shorts, exposed legs, platform boots",
-    "dark leather bra top, techwear mini skirt, exposed stomach, chains and piercings",
-    "black harness top, exposed torso, cyberpunk straps, high boots, arm tattoos",
-    "cropped jacket open, bra visible, waist exposed, tattoos glowing, confident pose",
-    "dark clubwear outfit, minimal top, strong silhouette, sexy cyberpunk vibe",
-    "black techwear crop top, low-rise cargo pants, rounded waist visible, neon tattoo lines",
-]
-
-SCENE_VARIATIONS = [
-    "dark cyberpunk alley, magenta neon lights flickering, wet reflective ground, heavy fog",
-    "underground neon tunnel, hot pink and red lights, glitch distortion, cinematic darkness",
-    "dark futuristic street, glowing magenta signs, rainy night, reflections everywhere",
-    "pure black void background, only neon lighting the character, ultra focus",
-    "dark room with one magenta spotlight, deep shadows, mysterious atmosphere",
-    "cyberpunk city background blurred, neon bokeh, character dominant in foreground",
-    "abandoned neon-lit building, flickering lights, soft horror vibe, pink smoke",
-    "underground parking garage, violet fog, hot magenta tubes, concrete shadows",
-    "rooftop at night, blood red moon, violet fog, city lights far below",
-    "rainy asphalt street, warm red taillights, pink reflections under boots",
-    "dark cyberpunk club hallway, magenta lasers, red velvet shadows, smoke haze",
+DEMON_ACCESSORY_VARIATIONS = [
+    # Como nas referências
+    "small cute curved black demon horns growing from forehead",
+    "fluffy black cat ears with inner neon glow matching eye color",
+    "small twisted demon horns with glowing cracks in same color as eyes",
+    "wolf ears dark and fluffy, alert and expressive",
+    "elegant curved horns with neon markings etched into them",
+    "tiny imp horns barely visible through dark hair, subtle cute detail",
+    "cat ears with glowing tips, matching energy color of her aura",
+    "broken halo hovering crookedly above her head, dark angel aesthetic",
+    "ram-style curved horns, dark and polished, intimidating but cute",
+    "no horns, just strong dark energy halo behind head like dark saint",
 ]
 
 AURA_VARIATIONS = [
-    "deep magenta electric sparks tracing her silhouette from waist and boots upward",
-    "dark red energy smoke rising around her boots and legs",
-    "hot pink glitch distortion at the edges of her body",
-    "violet shadow tendrils curling around her arms and legs",
-    "crimson plasma aura wrapping her lower body, controlled and dark",
-    "dark ink bleeding effect at silhouette edges, magenta glow inside",
-    "warm orange heat shimmer rising from ground near her boots",
-    "pink neon particles orbiting around her body, subtle but alive",
-    "magenta cyberpunk halo behind her head, dark queen icon energy",
-    "red-violet smoke forming claw shapes behind her, cute but dangerous",
-    "glowing tattoo lines pulsing softly on waist and arms",
+    # ENERGIA VISÍVEL — como nas referências
+    "dark neon flames surrounding her entire silhouette, same color as eye glow, "
+    "fire licking upward behind head and shoulders, embers floating",
+    
+    "glowing chains wrapping around her body and floating in air beside her, "
+    "chains pulse with neon light, links detailed and sharp",
+    
+    "dark energy tendrils curling outward from her silhouette, "
+    "organic flowing shapes, same neon color as eyes, alive and moving",
+    
+    "glitch distortion surrounding edges of her form, "
+    "digital corruption aesthetic, neon pixels and scan lines at border",
+    
+    "dark petals and thorns made of neon energy floating around her, "
+    "gothic dark romance energy, petals glowing same color as eyes",
+    
+    "electrical arc chains floating beside her, neon lightning coiling, "
+    "energy cracking between floating chain links",
+    
+    "dark smoke pouring upward from around her, lit from within by neon glow, "
+    "fog and embers surrounding silhouette",
+    
+    "sharp crystal shards of energy radiating outward behind her, "
+    "dark gemstone aesthetic, shards glowing with neon color",
+    
+    "dark water ripple energy emanating outward from her, "
+    "neon-lit concentric rings distorting space around her",
+    
+    "floating dark feathers surrounding her, each feather edge glowing neon, "
+    "fallen angel aesthetic, feathers drifting slowly upward",
+]
+
+SCENE_VARIATIONS = [
+    # Fundo extremamente escuro — personagem é a única luz (como nas refs)
+    "pure absolute black background, character is the only light source, "
+    "neon glow from eyes and aura painting the darkness",
+    
+    "near-black void background with faint smoke and particles, "
+    "depth created only by layers of dark fog",
+    
+    "black background with subtle dark texture, "
+    "energy effects creating all visible color and light",
+    
+    "deep dark environment barely visible, ruins or alley, "
+    "character's glow illuminating immediate surroundings only",
+    
+    "dark cinematic background, blurred and abstract, "
+    "neon smears of background light, bokeh effect, character sharp in foreground",
+    
+    "dark void with floating debris lit by character's glow, "
+    "particles of dust and embers in foreground",
 ]
 
 ART_STYLE_VARIATIONS = [
-    "premium dark 2D anime, ultra sharp lineart, polished high contrast cel shading, cinematic cover quality",
-    "dark cyberpunk anime illustration, crisp clean lines, deep shadows, professional music cover energy",
-    "underground trap anime art, bold silhouette, neon accents, viral thumbnail composition",
-    "dark anime key visual style, cinematic lighting, clean anatomy, phonk trapstar aesthetic",
-    "high quality dark anime poster art, moody atmosphere, dark queen protagonist energy",
-    "music video anime cover art, sharp expressive face, detailed sensual streetwear, dramatic neon",
-    "cyberpunk manga cover style, glossy eyes, bold shape language, dark pop energy",
-    "high CTR anime thumbnail art, beautiful character, strong silhouette, unforgettable vibe",
+    "ultra detailed dark anime illustration, bold clean lineart, "
+    "high contrast cel shading, glossy eye highlights dominant, "
+    "professional dark character art, music cover quality",
+    
+    "premium dark anime character design, sharp expressive features, "
+    "detailed neon glow effects, clean polished finish, "
+    "yandere character art aesthetic",
+    
+    "high quality dark cute anime art, detailed eyes are focal point, "
+    "clean anatomy, bold color contrast, viral thumbnail composition",
+    
+    "dark anime key visual, cinematic portrait lighting, "
+    "detailed glow effects, sharp lineart, professional music cover",
+    
+    "dark pop anime cover art, beautiful character with intense eyes, "
+    "dramatic energy aura, premium phonk trap visual identity",
 ]
 
 MOOD_VARIATIONS = [
-    "cinematic yandere cyberpunk mood, cute but unstable, beautiful but dangerous",
-    "soft pretty face, villain eyes, obsessive aura, sensual confidence",
-    "adorable but emotionally dangerous, cyberpunk bad girl, hypnotic stare",
-    "cold trap queen, sweet smile, crazy stare, dark romance energy",
-    "fofa maluca malvada, beautiful and unpredictable, glowing eyes",
-    "calm exterior, chaotic obsessive eyes, dark cyberpunk muse",
-    "innocent smile, dangerous mind, neon villain energy",
+    "fofa maluca malvada supreme — sweet face, broken mind, beautiful energy",
+    "cute exterior hiding chaotic obsessive soul, dark romance",
+    "adorable but emotionally dangerous, beautiful and unstable",
+    "cold dark queen with burning obsessive eyes, terrifying cute",
+    "sweet innocent smile, villain eyes, yandere at max level",
+    "calm serene face over boiling dark energy within",
+    "loveable but unpredictable, cute but haunted",
 ]
 
 
@@ -364,30 +423,42 @@ GENRE_MAP = {
     "pop":        "default",
 }
 
-# PALETAS SEM AZUL/CYAN — V30
 GENRE_PALETTES = {
     "phonk": [
-        "palette: black background, hot magenta dominant rim light, deep violet shadows, crimson red accents",
-        "palette: near-black background, neon pink primary, dark blood red secondary, violet smoke",
-        "palette: dark background, magenta glow, warm red sparks, deep purple haze, no blue",
+        "dominant color: hot magenta — eye glow magenta, aura magenta, "
+        "hair neon pink or black, near-black background",
+        "dominant color: crimson red — eye glow red, aura deep crimson flame, "
+        "hair dark with red highlights, absolute black background",
+        "dominant color: violet — eye glow deep violet, aura violet energy, "
+        "hair black-purple, background near-black void",
     ],
     "trap": [
-        "palette: black background, hot pink neon dominant, violet rim light, gold jewelry warm accent",
-        "palette: near-black background, crimson neon primary, magenta glow secondary, warm street reflection",
-        "palette: dark background, violet dominant, magenta street glow, warm dark red accent",
+        "dominant color: hot pink — neon pink eyes, pink energy chains, "
+        "black outfit with pink glow, dark background",
+        "dominant color: magenta violet — violet eyes glowing, magenta rim, "
+        "dark streetwear, near-black cyberpunk void",
+        "dominant color: electric pink — bright pink neon eyes, pink sparks, "
+        "dramatic dark environment",
     ],
     "electronic": [
-        "palette: black background, magenta laser dominant, violet digital atmosphere, no cyan or blue",
-        "palette: deep black background, hot pink primary neon, violet glow secondary, red spark accents",
-        "palette: dark background, electric purple dominant, magenta accent, warm dark red hint",
+        "dominant color: electric violet — violet glowing eyes, purple plasma aura, "
+        "dark background with violet particles",
+        "dominant color: magenta — hot magenta eyes and aura, electric sparks, "
+        "dark digital void background",
+        "dominant color: deep purple — purple energy field, dark atmosphere, "
+        "character glowing purple from within",
     ],
     "dark": [
-        "palette: near black background, dark blood red eyes and accents, deep violet aura, minimal glow",
-        "palette: black background, gray-black deep shadows, crimson neon accent, magenta edge light",
-        "palette: black background, silver hair contrast, magenta-pink glow, dark violet atmosphere",
+        "dominant color: deep crimson — blood red glowing eyes, dark flame aura, "
+        "absolute black background, minimal glow",
+        "dominant color: dark violet — muted violet eyes glowing, shadow tendrils, "
+        "deep black atmosphere",
+        "dominant color: cold white — white glowing eyes with violet rim, "
+        "dark ghost energy, near-black void",
     ],
     "default": [
-        "palette: black background, violet and magenta dominant neon, warm dark red secondary, clean professional palette",
+        "dominant color: magenta violet — magenta eyes, violet aura energy, "
+        "dark background, professional palette",
     ],
 }
 
@@ -410,7 +481,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v34_cinematic_sensual"
+    key = f"{style}|{filename}|{short_num}|darkmark_v35_glowing_eyes_cute_dark"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -421,22 +492,22 @@ def _rng(style: str, filename: str, short_num: int) -> random.Random:
 def _song_detail(song_name: str) -> str:
     clean = song_name.lower()
     if any(w in clean for w in ["bass", "808", "drop"]):
-        return "visible bass shockwave rings on the wet ground around her feet"
+        return "shockwave rings of energy radiating outward from her"
     if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada"]):
-        return "midnight shadow aura hugging her silhouette, dark red neon smoke at feet"
+        return "shadow tendrils wrapping around her, dark midnight energy aura"
     if any(w in clean for w in ["rage", "fire", "burn"]):
-        return "crimson neon flame aura outlining her body, aggressive energy"
+        return "flames surrounding her, aggressive fire energy aura"
     if any(w in clean for w in ["drive", "drift", "car", "speed"]):
-        return "night drive warm red taillight streaks in background, wet asphalt reflection below"
+        return "speed lines and energy streaks surrounding her form"
     if any(w in clean for w in ["red", "blood", "demon", "devil"]):
-        return "dark blood red energy aura wrapping her lower body and arms"
+        return "dark blood red energy chains floating around her"
     if any(w in clean for w in ["queen", "king", "rule", "boss"]):
-        return "dark throne energy, commanding full body stance, powerful presence"
-    return "music energy as subtle violet neon aura outlining her full body"
+        return "dark crown energy halo, commanding powerful aura"
+    return "subtle neon energy particles orbiting around her silhouette"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — V30
+# PROMPT PRINCIPAL — V35
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(
@@ -453,10 +524,9 @@ def build_ai_prompt(
     hair        = rng.choice(HAIR_VARIATIONS)
     eyes        = rng.choice(EYE_VARIATIONS)
     expression  = rng.choice(EXPRESSION_VARIATIONS)
-    pose        = rng.choice(POSE_VARIATIONS)
-    outfit      = rng.choice(OUTFIT_VARIATIONS)
-    scene       = rng.choice(SCENE_VARIATIONS)
+    demon_acc   = rng.choice(DEMON_ACCESSORY_VARIATIONS)
     aura        = rng.choice(AURA_VARIATIONS)
+    scene       = rng.choice(SCENE_VARIATIONS)
     art         = rng.choice(ART_STYLE_VARIATIONS)
     mood_mix    = rng.choice(MOOD_VARIATIONS)
     palette     = rng.choice(GENRE_PALETTES.get(mapped, GENRE_PALETTES["default"]))
@@ -465,17 +535,31 @@ def build_ai_prompt(
     genre_text = ", ".join([style] + [s for s in styles if s and s != style])
 
     prompt = (
-        # ══ COMPOSIÇÃO VEM PRIMEIRO — isso é o que o modelo prioriza ══
-        f"{BODY_LOCK}, "
+        # ══ OLHOS VÊM PRIMEIRO — elementos dominantes nas refs ══
+        f"{eyes}, "
 
-        # PERSONAGEM
+        # EXPRESSÃO IMEDIATA
+        f"expression: {expression}, "
+
+        # PERSONAGEM COMPLETO
         f"{TRAPSTAR_DNA}, "
+
+        # ACESSÓRIO DEMONÍACO
+        f"accessories: {demon_acc}, "
+
+        # AURA DE ENERGIA
+        f"{AURA_ENERGY_LOCK}, "
+        f"specific aura: {aura}, "
+
+        # COMPOSIÇÃO
+        f"{COMPOSITION_LOCK}, "
 
         # ESTILO VISUAL
         f"{STYLE_LOCK}, "
 
-        # PALETA DE CORES (SEM AZUL)
+        # PALETA
         f"{PALETTE_HARD_LOCK}, "
+        f"{palette}, "
 
         # ILUMINAÇÃO
         f"{LIGHTING_LOCK}, "
@@ -483,37 +567,27 @@ def build_ai_prompt(
         # PELE
         f"{SKIN_LOCK}, "
 
-        # COMPOSIÇÃO PARA ENGAJAMENTO
+        # ENGAJAMENTO
         f"{RETENTION_LOCK}, "
 
         # QUALIDADE
         f"{QUALITY_LOCK}, "
-
-        # CONSISTÊNCIA DE CANAL
         f"{CONSISTENCY_LOCK}, "
-        f"{CINEMATIC_COLOR_LOCK}, "
 
-        # VARIAÇÕES DINÂMICAS — pose vem antes de hair/eyes
-        f"pose: {pose}, "
-        f"outfit: {outfit}, "
-        f"body detail: visible waist, rounded feminine waist, stylish sensual cyberpunk silhouette, glowing tattoos, "
-        f"scene: {scene}, "
+        # VARIAÇÕES DINÂMICAS
         f"hair: {hair}, "
-        f"eyes: {eyes}, "
-        f"expression: {expression}, "
+        f"scene: {scene}, "
         f"mood: {mood_mix}, "
-        f"aura: {aura}, "
-        f"detail: {detail}, "
+        f"song detail: {detail}, "
 
         # CONTEXTO MUSICAL
-        f"{palette}, "
+        f"art style: {art}, "
         f"genre mood: {genre_text}, "
         f"song mood: {song_name}, "
-        f"{art}, "
 
-        # REGRAS CRÍTICAS FINAIS
-        "full body, wide shot, whole body visible from head to toe, "
-        "NO BLUE NO CYAN NO TEAL, "
+        # REFORÇO FINAL
+        "glowing eyes dominant, dark background, energy aura visible, "
+        "cute but dangerous, fofa maluca malvada, "
         "no text, no watermark, no logo"
     )
 
@@ -533,20 +607,28 @@ def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, st
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SUFIXO DE REFORÇO — Adicionado na hora da geração
+# SUFIXO DE REFORÇO V35
 # ══════════════════════════════════════════════════════════════════════
 
 GENERATION_SUFFIX = (
-    ", full body, full length, wide shot, long shot, head to toe, "
-    "whole body visible, legs visible, boots visible, complete figure, visible waist, "
-    "beautiful adult cyberpunk anime girl, sensual but stylish, yandere vibe, cute but dangerous, "
-    "glowing colorful eyes, colorful neon hair, black outfit, less clothing but not nude, "
-    "bra top or crop top visible, exposed waist, tattoos, chains, piercings, "
-    "premium 2D anime art, sharp lineart, polished cel shading, clean cinematic color grading, "
-    "dark cyberpunk phonk music cover aesthetic, "
-    "magenta dominant, hot pink neon, deep violet shadows, crimson red accents, vibrant colors, "
-    "NO BLUE, NO CYAN, NO TEAL, no ugly filter, no cold color grading, "
-    "dark background, no text, no logo, no watermark"
+    ", "
+    # OLHOS — repetição intencional para reforço máximo
+    "glowing anime eyes, massive glowing iris, neon light emanating from eyes, "
+    "eyes illuminating the face, beautiful intense glowing stare, "
+    # AURA
+    "energy aura surrounding character, neon glow effects, "
+    "dark background contrasting with neon, "
+    # PERSONAGEM
+    "beautiful adult dark cute anime girl, yandere energy, "
+    "cute but dangerous, fofa maluca malvada, "
+    "demon horns OR cat ears, chains, dark cyberpunk outfit, "
+    # ESTILO
+    "premium 2D anime art, ultra sharp lineart, bold cel shading, "
+    "high contrast dark illustration, professional music cover quality, "
+    # PALETA
+    "vibrant neon single dominant color, dark background, deep shadows, "
+    # PROIBIÇÕES
+    "no text, no logo, no watermark, no extra characters"
 )
 
 
@@ -576,8 +658,6 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
             try:
                 logger.info(f"[Replicate] Tentativa {attempt}/3 — {model}")
 
-                # Cada modelo tem nomes de parâmetros diferentes.
-                # Mantém compatibilidade sem quebrar quando trocar de modelo.
                 if "flux" in model:
                     model_input = {
                         **FLUX_PARAMS,
@@ -721,7 +801,7 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v34 Cinematic Sensual Cyberpunk Engine"
+        description="AI Image Generator — DJ DARK MARK v35 Glowing Eyes Cute Dark Energy"
     )
     parser.add_argument("--style",       default="phonk",
                         help="Gênero musical (phonk, trap, electronic, dark, etc.)")
