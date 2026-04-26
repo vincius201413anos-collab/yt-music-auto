@@ -1,17 +1,33 @@
 """
-ai_image_generator.py — DJ DARK MARK v35 GLOWING EYES CUTE DARK ENERGY
+ai_image_generator.py — DJ DARK MARK v36 HIGH-CTR CHANNEL-OPTIMIZED
 =============================================================
-CHANGELOG v35:
-- ESTÉTICA REFORMULADA: baseada em 4 imagens de referência reais analisadas
-- OLHOS BRILHANTES EXTREMOS: glow dominante, reflexo intenso, efeito chama/plasma nos íris
-- ACESSÓRIOS DEMONÍACOS: chifres pequenos, orelhas de gato, correntes — como nas refs
-- AURA ENERGY: chamas, correntes brilhantes, glitch, tentáculos de energia
-- FUNDO PURO ESCURO: personagem iluminado só pelos próprios efeitos
-- ESTILO "CUTE BUT DARK": fofo-perturbador, expressões intesas, olhos dominantes
-- COMPOSIÇÃO: mais portrait/bust shot para capturar o glow extremo dos olhos
-- BODY_LOCK ajustado: aceita portrait quando o estilo pede (como refs 1, 2, 3)
-- PALETA: mantém magenta/violet/crimson, mas permite green como opção secundária (ref 1)
-- CEL SHADING BRUTAL: contraste alto, linhas limpas, highlight glossy intenso
+CHANGELOG v36 — BASEADO EM DADOS REAIS DO CANAL:
+
+DIAGNÓSTICO DO v35:
+- Dark neon glowing eyes (Black Cherry Lips): 224 views → PIOR performer
+- O estilo "yandere dark neon" não converte no algoritmo
+
+O QUE REALMENTE PERFORMA (dados do canal):
+- 1.9k views: performer real com fogo dramático → energia humana/quente
+- 508-417 views: anime girl azul/teal moody, composição limpa → paleta fria clara
+- 399-304 views: anime girl warm golden/sunset, expressão emocional → paleta quente
+- 288-215 views: sunset city anime girl → fundo dourado cinematic
+
+NOVA ESTRATÉGIA v36:
+- PALETA PRINCIPAL: warm golden/amber/sunset (maior CTR consistente)
+- PALETA SECUNDÁRIA: moody blue/teal (segunda maior performance)
+- DARK NEON: mantido como variação, mas nunca dominante
+- PERSONAGEM: expressivo, emocional, cute acessível — NÃO yandere perigosa
+- COMPOSIÇÃO: portrait limpo, menos poluído, foco na expressão facial
+- ILUMINAÇÃO: luz quente (golden hour, sunset, luz ambiente) > só escuridão
+- ELEMENTOS: fones de ouvido, microfone, headphones — música visível
+- REGRA DE CTR: uma só cor dominante, alto contraste, face centralizada
+
+REFERÊNCIAS DE PERFORMANCE:
+- Teal/blue moody clean → 400-500 views
+- Warm golden sunset → 280-400 views
+- Cute emotional face dominant → +30% CTR (dado vidIQ)
+- Composição simples > efeitos complexos (pesquisa 2025)
 """
 
 from __future__ import annotations
@@ -37,16 +53,16 @@ logger = logging.getLogger("ai_image_generator")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
-    # Animagine XL — melhor para anime dark cute, respeita bem composição
+    # Animagine XL — melhor qualidade anime, paletas ricas
     "cjwbw/animagine-xl-3.1",
-    # Fallback: Anything v5 — clássico anime, linhas limpas
+    # Anything v5 — linhas limpas, rostos expressivos
     "lucataco/anything-v5-better-vae",
-    # Último fallback: Flux-dev
+    # Flux-dev — fallback final
     "black-forest-labs/flux-dev",
 ]
 
 FLUX_PARAMS = {
-    # 768x1024 — portrait quad, ideal para capturar olhos brilhantes e expressão
+    # Portrait vertical — rosto dominante, olhos expressivos
     "width":               int(os.getenv("FLUX_WIDTH",    "768")),
     "height":              int(os.getenv("FLUX_HEIGHT",   "1024")),
     "num_inference_steps": int(os.getenv("FLUX_STEPS",    "35")),
@@ -59,408 +75,496 @@ FLUX_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════
-# IDENTIDADE DO CANAL
+# IDENTIDADE DO CANAL — v36 REALINHADA COM CTR REAL
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
-    "DJ Dark Mark official cinematic cyberpunk visual identity, "
-    "dark cute anime muse, glowing eyes dominant, cute but dangerous energy, "
-    "dark phonk trap dark pop music cover art, "
-    "magenta violet crimson palette, energy auras, chains, demon aesthetic, "
-    "premium YouTube Shorts thumbnail universe"
+    "DJ Dark Mark music channel visual identity, "
+    "emotional anime muse, expressive face dominant, beautiful melancholic energy, "
+    "dark pop trap phonk electronic music cover art, "
+    "warm golden OR moody teal OR cinematic dark palette, "
+    "premium YouTube Shorts thumbnail universe, high CTR emotional hook"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CORE CHARACTER — V35 CUTE DARK GLOWING EYES
+# CORE CHARACTER — v36 EMOTIONAL CUTE HIGH-CTR
 # ══════════════════════════════════════════════════════════════════════
 
 TRAPSTAR_DNA = (
     "one adult anime woman, clearly adult, "
-    "beautiful dark cute cyberpunk muse, cute but deeply unsettling, "
-    "yandere dark energy, fofa maluca malvada supreme, "
-    # OLHOS — elemento dominante como nas referências
-    "EYES ARE THE FOCAL POINT: extremely large glowing anime eyes, "
-    "intense neon glow radiating from irises, pupils with flame or plasma effect, "
-    "neon light reflected in eyes, tears of neon glow, "
-    "eyes full of unstable obsessive dark energy, hypnotic beautiful stare, "
-    # ROSTO
-    "beautiful detailed anime face, glossy lips, "
-    "sharp cat eyeliner, dramatic eyelashes, soft cheeks with subtle blush, "
-    "cute smile hiding something dark, grin with visible teeth, "
-    # ACESSÓRIOS DEMONÍACOS — como nas referências
-    "small cute demon horns OR fluffy cat ears, black choker collar with ring, "
-    "chain necklace, ear piercings, fang teeth visible in smile, "
-    # CORPO/ROUPA — sem nudez, mas sensual dark
-    "dark cyberpunk outfit, cropped jacket OR dark corset top, "
-    "chains draped over shoulders, glowing tattoos on visible skin, "
+    "beautiful expressive anime muse, emotionally resonant, "
+    "cute melancholic energy, deeply felt, relatable but intense, "
+    # ROSTO — elemento #1 de CTR (dado: faces = +30% CTR)
+    "FACE IS THE FOCAL POINT: beautiful detailed anime face, "
+    "large expressive emotional anime eyes, visible emotion in eyes, "
+    "eyes with depth and feeling, catching light naturally, "
+    "soft glossy lips, defined eyelashes, subtle blush on cheeks, "
+    "expression that makes viewer stop scrolling, "
+    # CABELO — define o mood
+    "detailed flowing hair catching ambient light, "
+    "hair with natural sheen and movement, "
+    # ROUPA — sutil, não dominante
+    "dark aesthetic outfit, tasteful, "
+    "subtle accessory details, clean look, "
     # IDENTIDADE
-    "alone, single character, no other people"
+    "alone, single character, no other people, no text"
 )
 
+
 # ══════════════════════════════════════════════════════════════════════
-# COMPOSIÇÃO — V35: PORTRAIT FIRST (como nas refs)
+# COMPOSIÇÃO — v36 CLEAN PORTRAIT FIRST
 # ══════════════════════════════════════════════════════════════════════
 
 COMPOSITION_LOCK = (
-    "portrait or upper body composition, face dominant in frame, "
-    "eyes occupying large portion of frame, "
-    "character centered, dark background with energy effects surrounding, "
-    "subject glowing from within, cinematic portrait framing, "
-    "vertical 9:16 thumbnail composition, clean space for text overlays"
+    "tight portrait or close upper body shot, "
+    "face filling majority of frame, eyes at upper third of composition, "
+    "character centered or slightly off-center for dynamic feel, "
+    "clean uncluttered composition, one clear focal point, "
+    "vertical 9:16 format optimized for mobile, "
+    "generous negative space around character for text placement, "
+    "mobile-first design: readable at small thumbnail size, "
+    "cinematic portrait framing, professional music cover composition"
 )
 
-# ══════════════════════════════════════════════════════════════════════
-# AURA ENERGY — ELEMENTO CENTRAL DAS REFS
-# ══════════════════════════════════════════════════════════════════════
-
-AURA_ENERGY_LOCK = (
-    "dramatic energy effects surrounding character, "
-    "glowing flames OR energy chains OR glitch distortion OR dark tendrils surrounding her, "
-    "energy particles floating around her, "
-    "neon sparks and embers in the air, "
-    "aura visible from behind and sides creating halo effect, "
-    "energy effect same color as eye glow, coherent color throughout, "
-    "smoke and fog at edges blending into black background"
-)
 
 # ══════════════════════════════════════════════════════════════════════
-# STYLE LOCK — DARK CUTE ANIME ESPECÍFICO
+# STYLE LOCK — v36 CLEAN ANIME HIGH QUALITY
 # ══════════════════════════════════════════════════════════════════════
 
 STYLE_LOCK = (
-    "premium 2D dark anime illustration, "
-    "extremely clean sharp lineart, bold cel shading high contrast, "
-    "glossy reflections on eyes and lips and hair, "
-    "deep cinematic shadows on face, "
-    "neon glow effects blended naturally into dark background, "
-    "professional anime music cover art quality, "
-    "dark cute aesthetic, not generic, not realistic, not 3D, "
-    "inspired by dark anime character art, yandere character design"
+    "premium 2D anime illustration, ultra clean sharp lineart, "
+    "professional cel shading, smooth gradient shading, "
+    "glossy reflections on eyes and hair, "
+    "detailed face with visible emotion, "
+    "NOT overly dark, NOT cluttered with excessive effects, "
+    "clean background that complements character, "
+    "professional music cover art quality, "
+    "anime key visual aesthetic, beautiful character design"
 )
 
+
 # ══════════════════════════════════════════════════════════════════════
-# PALETA — MAGENTA/VIOLET/CRIMSON + GREEN OPCIONAL
+# LIGHTING — v36 WARM/CINEMATIC FIRST (dados mostram isso performa mais)
 # ══════════════════════════════════════════════════════════════════════
 
-PALETTE_HARD_LOCK = (
-    "dominant dark palette with neon accents, "
-    "near-black background, character illuminated only by her own energy glow, "
-    "eye glow is the primary light source on her face, "
-    "magenta OR violet OR crimson OR green neon glow coherent throughout, "
-    "no mixed incompatible colors, single dominant neon color per image, "
-    "hair glowing with same neon color as eyes, "
-    "chains and accessories reflecting neon light, "
-    "deep shadows, high contrast, dramatic dark mood"
+LIGHTING_LOCK_WARM = (
+    "warm golden hour lighting bathing the scene, "
+    "soft amber light on character's face and hair, "
+    "warm light from slightly behind creating rim effect, "
+    "golden glow on environment, warm shadows, "
+    "natural cinematic warmth, sunset color temperature, "
+    "high contrast warm vs dark shadows for drama"
 )
 
-# ══════════════════════════════════════════════════════════════════════
-# LIGHTING — EYES AS LIGHT SOURCE
-# ══════════════════════════════════════════════════════════════════════
-
-LIGHTING_LOCK = (
-    "eyes emit strong neon glow illuminating the face from within, "
-    "eye glow creates soft light on cheeks and nose, "
-    "rim lighting from energy aura behind her, "
-    "face in dramatic shadow except where lit by own glow, "
-    "no external light sources, character is the light source, "
-    "deep blacks, strong contrast, glossy highlights on eyes and lips"
+LIGHTING_LOCK_TEAL = (
+    "moody cool teal/blue ambient lighting, "
+    "cinematic blue-teal color grading, "
+    "soft cool light on character's face, "
+    "atmospheric cool mist or bokeh in background, "
+    "high contrast cool light vs dark shadows, "
+    "film noir meets anime aesthetic"
 )
 
-# ══════════════════════════════════════════════════════════════════════
-# SKIN
-# ══════════════════════════════════════════════════════════════════════
-
-SKIN_LOCK = (
-    "warm pale anime skin tone, slightly illuminated by neon glow, "
-    "soft blush, clean smooth skin, "
-    "neon light casting colored tint on skin matching eye color"
+LIGHTING_LOCK_DARK = (
+    "dramatic dark cinematic lighting, "
+    "single strong light source illuminating character, "
+    "deep shadows creating mood and mystery, "
+    "colored rim light from background, "
+    "professional dark music cover lighting, "
+    "strong contrast between light and shadow"
 )
 
-RETENTION_LOCK = (
-    "scroll-stopping dark anime thumbnail, "
-    "EYES are the first thing viewer sees, massive visual impact, "
-    "instantly recognizable DJ Dark Mark visual identity, "
-    "beautiful but unsettling, cute but dangerous, "
-    "high CTR dark phonk trap thumbnail energy"
+
+# ══════════════════════════════════════════════════════════════════════
+# PALETA — v36 BASEADA EM PERFORMANCE REAL
+# ══════════════════════════════════════════════════════════════════════
+
+# PALETA A — Warm Golden/Sunset (288-400+ views, melhor consistência)
+PALETTE_WARM = (
+    "warm golden amber palette, "
+    "sunset orange and golden yellow tones dominating, "
+    "warm background with orange/amber bokeh or environment, "
+    "character bathed in warm golden light, "
+    "hair catching golden sunlight, skin warm and glowing, "
+    "orange-amber-gold color story throughout, "
+    "warm cinematic film look"
 )
+
+# PALETA B — Moody Blue/Teal (400-508 views, segundo mais forte)
+PALETTE_TEAL = (
+    "moody blue-teal cinematic palette, "
+    "deep navy and teal tones, cool atmospheric mood, "
+    "teal ambient glow in environment, "
+    "cool blue shadows and highlights, "
+    "hair catching cool blue-teal light, "
+    "atmospheric depth with cool color story, "
+    "cinematic blue-teal film look"
+)
+
+# PALETA C — Dark Dramatic (mantida para fontes dark/phonk intenso)
+PALETTE_DARK = (
+    "dark dramatic cinematic palette, "
+    "near-black background with strong single accent color, "
+    "accent color: deep magenta OR violet OR crimson, "
+    "character lit dramatically against dark, "
+    "high contrast dark vs accent, "
+    "professional dark music cover look"
+)
+
+# PALETA D — Pink/Rose Emotional (para dark pop)
+PALETTE_ROSE = (
+    "soft rose and deep pink cinematic palette, "
+    "warm pink ambient light in background, "
+    "deep rose shadows and pink highlights, "
+    "romantic but dark emotional mood, "
+    "pink bokeh and atmospheric depth, "
+    "dark pink to crimson gradient color story"
+)
+
+# PALETA E — Purple/Violet Atmospheric
+PALETTE_VIOLET = (
+    "deep violet and purple atmospheric palette, "
+    "rich purple ambient light and fog, "
+    "violet tones in background and shadows, "
+    "character with purple atmospheric rim light, "
+    "moody purple-indigo cinematic look"
+)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# QUALITY & RETENTION LOCKS
+# ══════════════════════════════════════════════════════════════════════
 
 QUALITY_LOCK = (
     "masterpiece, best quality, ultra detailed anime illustration, "
-    "beautiful detailed face, sharp expressive glowing eyes, "
-    "clean anatomy, detailed outfit and accessories, "
-    "professional dark anime art, high resolution, crisp lineart, "
-    "polished shading, premium channel branding quality"
+    "beautiful expressive face, detailed shining eyes, clean anatomy, "
+    "professional music cover art, high resolution crisp lineart, "
+    "polished cel shading, premium channel visual identity"
+)
+
+RETENTION_LOCK = (
+    "scroll-stopping thumbnail, "
+    "FACE is the first thing viewer sees, immediate emotional impact, "
+    "expression triggers curiosity or emotional resonance, "
+    "high CTR dark music thumbnail energy, "
+    "beautiful character that makes viewer want to know more, "
+    "visual hook in first millisecond"
 )
 
 CONSISTENCY_LOCK = (
-    "consistent channel branding, same visual universe, "
-    "recognizable recurring dark cute anime muse, "
-    "glowing eyes signature feature, dark outfit, neon energy identity, "
-    "not random, not generic"
+    "consistent channel branding, "
+    "recognizable anime muse recurring character, "
+    "dark music aesthetic with emotional depth, "
+    "professional, not generic, not stock art"
+)
+
+SKIN_LOCK = (
+    "warm pale to medium anime skin tone, "
+    "smooth clear skin with natural shading, "
+    "skin reacting to ambient lighting color, "
+    "soft blush on cheeks, healthy luminous skin"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT V35
+# NEGATIVE PROMPT v36 — AJUSTADO PARA CTR
 # ══════════════════════════════════════════════════════════════════════
 
 NEGATIVE_PROMPT = (
-    # Cores erradas
-    "washed out colors, desaturated, flat colors, muddy palette, "
-    "ugly filter, bad color grading, cold washed filter, "
-    # Anatomia ruim
+    # Qualidade ruim
     "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
     "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
     "long neck, disfigured, mutated, melted face, uncanny valley, "
-    "blurry, low quality, jpeg artifacts, noise, "
+    "blurry, low quality, jpeg artifacts, heavy noise, "
     # Estilo errado
-    "photorealistic, realistic, photography, real person, 3D render, CGI, "
-    "doll, plastic skin, western cartoon, simple cartoon, "
-    # Idade
-    "child, underage, loli, baby face, very young, "
-    # Conteúdo explícito
-    "nude, explicit nudity, genitalia, nipples, porn, erotic explicit, "
-    # Múltiplos personagens
-    "multiple people, crowd, two girls, group, duplicate character, "
-    # Texto
+    "photorealistic, real person, 3D render, CGI, "
+    "doll, plastic skin, western cartoon, simple cartoon, flat shading, "
+    # Composição que NÃO converte (dados do canal)
+    "cluttered background, busy background, too many effects, "
+    "overwhelming neon overload, too dark to see face, "
+    "face too small in frame, far away character, full body tiny, "
+    "excessive glitch effects, extreme neon chaos, "
+    # Conteúdo proibido/indesejado
+    "nude, explicit nudity, genitalia, nipples, "
+    "child, underage, loli, very young, baby face, "
+    "multiple people, crowd, two girls, duplicate character, "
+    # Texto na imagem
     "text, words, logo, watermark, signature, letters, numbers, "
-    # Composição ruim
-    "boring pose, generic anime girl, plain background without effects, "
-    "flat background, no energy effects, no glow, dull eyes, "
-    "normal eyes without glow, realistic eyes, "
-    # Overexposure
-    "overexposed, too much glow, bloom overload, color chaos, "
-    "rainbow colors, too many colors"
+    # Paleta que não performa
+    "washed out, desaturated, muddy colors, flat boring colors, "
+    "overly saturated rainbow chaos, mixed incompatible colors, "
+    # Overexposure de efeitos (v35 tinha isso em excesso)
+    "overexposed bloom, excessive glow overload, neon everywhere, "
+    "dark void where face is invisible, eyes lost in darkness"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES — V35 CUTE DARK ENERGY
+# VARIAÇÕES — v36 CALIBRADAS POR PERFORMANCE
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "black hair with glowing magenta edges, neon trim highlights, messy cute style",
-    "white platinum hair with magenta glow, soft flowing, black roots",
-    "dark violet hair with pink neon streaks, glossy finish",
-    "black wolfcut hair with crimson hot pink neon glow at tips",
-    "deep blue-black hair glowing with purple light, sleek and sharp",
-    "silver hair with violet rim glow, futuristic beautiful look",
-    "dark purple ombre hair flowing with energy wisps",
-    "black spiky hair with neon pink electricity crackling",
-    "long dark hair billowing as if in wind made of energy",
-    "white twin tails with glowing violet tips, edgy cute style",
-    "short black hair with glowing red-crimson edges, sharp jaw-length cut",
-    "dark hair with glowing strands weaving between energy effects",
+    # Warm tones — mais alto CTR
+    "long flowing dark brown hair with warm golden highlights, catching sunset light",
+    "dark black hair with warm amber rim light, glossy and detailed",
+    "rich dark auburn hair with golden sun catching through strands",
+    "chocolate brown hair flowing naturally, warm light creating shine",
+    "dark hair with rose-tinted highlights, romantic warm glow",
+    # Cool/teal tones — segundo maior CTR
+    "dark blue-black hair with cool teal highlights, cinematic and moody",
+    "deep navy hair with subtle cool blue sheen, atmospheric depth",
+    "silver-white hair with blue-teal tint, futuristic melancholic look",
+    "dark hair with violet-blue shimmer, moody and expressive",
+    # Neutros versáteis
+    "black hair with natural shine catching ambient color light",
+    "dark purple-black hair with soft glow from environment lighting",
+    "deep brown to black ombre hair, detailed natural strands",
 ]
 
 EYE_VARIATIONS = [
-    # OLHOS SÃO O ELEMENTO CENTRAL — descrições muito detalhadas
-    "GLOWING MAGENTA EYES: massive anime eyes, iris filled with pink plasma flame, "
-    "neon light bursting outward, pupils like dark voids surrounded by fire",
-    
-    "GLOWING VIOLET EYES: large glowing anime eyes, purple energy radiating from irises, "
-    "sparks of violet light, deep hypnotic stare, glow illuminating face",
-    
-    "GLOWING CRIMSON RED EYES: intense red neon eyes, dark flame inside iris, "
-    "dangerous stare, blood red glow on surrounding face",
-    
-    "GLOWING PINK NEON EYES: bright hot pink anime eyes, electric spark effects inside iris, "
-    "tears of glowing pink light at corners, overwhelming cute but unhinged look",
-    
-    "GLOWING GREEN EYES: bright toxic green glowing anime eyes, emerald fire in iris, "
-    "unsettling beautiful stare, green rim light on face",
-    
-    "GLOWING DEEP VIOLET EYES: large glowing purple-violet eyes, halo effect around iris, "
-    "obsessive hypnotic stare, violet light casting on cheeks",
-    
-    "GLOWING DUAL-COLOR EYES: heterochromia, one eye magenta one eye violet, "
-    "both glowing intensely, chaotic unstable beautiful look",
-    
-    "GLOWING WHITE-CORE EYES: eyes with bright white core surrounded by magenta ring, "
-    "overwhelming light, like looking into neon stars",
-    
-    "GLOWING ROSE PINK EYES: soft but intense rose neon eyes, romantic but unstable, "
-    "glossy wet look with inner glow, cute overwhelm",
-    
-    "GLOWING ELECTRIC PURPLE EYES: electric purple eyes with lightning cracks in iris, "
-    "dangerous cute stare, purple light on nose and cheeks",
+    # OLHOS EXPRESSIVOS — foco em emoção não em neon
+    # v36: emoção > efeito
+    "warm amber-honey eyes catching golden light, deep and emotional, "
+    "glossy natural reflections, expressive and beautiful",
+
+    "deep teal green eyes with natural sparkle, intense emotional gaze, "
+    "real depth and feeling, catching cool ambient light",
+
+    "soft rose pink eyes with gentle glow, romantic melancholic look, "
+    "glossy natural reflections, beautiful and expressive",
+
+    "deep violet purple eyes, atmospheric and dreamlike, "
+    "natural iris detail, emotionally resonant stare",
+
+    "rich brown eyes with golden light reflected, warm and deep, "
+    "glossy natural sheen, soulful and expressive",
+
+    "blue-grey eyes with silver light catching, cinematic cool tone, "
+    "detailed iris, intense emotional depth",
+
+    "warm copper-orange eyes with amber depth, glowing naturally from light, "
+    "expressive and emotionally intense",
+
+    "dark crimson eyes with deep emotional resonance, "
+    "glossy natural sheen, intense but beautiful",
+
+    "bright emerald green eyes catching light, vivid and expressive, "
+    "detailed iris, emotionally electric stare",
+
+    "soft gray-blue eyes with melancholic depth, cinematic muted cool, "
+    "emotional and resonant, natural glossy beauty",
 ]
 
 EXPRESSION_VARIATIONS = [
-    # Como nas referências — expressões intensas mas cute
-    "wide grin showing teeth, eyes glowing intensely, unhinged adorable smile",
-    "calm soft smile but eyes absolutely burning with obsession, yandere peak",
-    "shy cute smile with overwhelming eye contact, too intense to look away",
-    "gleeful smile, eyes full of chaotic energy, adorable but dangerous",
-    "expressionless face but eyes screaming unstable energy, eerie beautiful",
-    "sweet gentle smile, eyes too wide, too bright, deeply unsettling",
-    "small smirk, half-lidded glowing eyes, confident dark queen energy",
-    "open mouth smile showing fang, eyes bright with excitement and madness",
-    "melancholic expression, glowing eyes downcast but burning, sad villain energy",
-    "playful tongue-out, one eye winking glowing, chaotic cute energy",
-    "slightly open mouth, dazed beautiful expression, glowing eyes unfocused",
-    "intense direct stare, lips slightly parted, eyes consuming the viewer",
+    # BASEADO NOS TOPS DO CANAL — expressões que funcionam
+    # Simples, emocionais, relacionáveis
+    "soft melancholic gaze into distance, quiet longing expression, beautiful sadness",
+    "gentle slight smile with deep emotional eyes, warm and inviting, relatable",
+    "wide curious eyes slightly parted lips, moment of wonder and discovery",
+    "calm serene expression with subtle emotional depth in eyes, peaceful intensity",
+    "soft vulnerable expression, eyes slightly glistening, emotional moment",
+    "direct confident gaze at viewer, slight knowing smile, magnetic eye contact",
+    "pensive thoughtful expression, head slightly tilted, eyes full of thought",
+    "warm gentle smile not quite reaching eyes, something deeper underneath",
+    "slightly surprised expression, eyes bright and open, moment of realization",
+    "quiet intense stare, lips barely parted, overwhelming emotional presence",
+    "soft bittersweet smile, eyes carrying something unspoken, emotional weight",
+    "dreamy distant look, eyes half-lidded with feeling, lost in music",
 ]
 
-DEMON_ACCESSORY_VARIATIONS = [
-    # Como nas referências
-    "small cute curved black demon horns growing from forehead",
-    "fluffy black cat ears with inner neon glow matching eye color",
-    "small twisted demon horns with glowing cracks in same color as eyes",
-    "wolf ears dark and fluffy, alert and expressive",
-    "elegant curved horns with neon markings etched into them",
-    "tiny imp horns barely visible through dark hair, subtle cute detail",
-    "cat ears with glowing tips, matching energy color of her aura",
-    "broken halo hovering crookedly above her head, dark angel aesthetic",
-    "ram-style curved horns, dark and polished, intimidating but cute",
-    "no horns, just strong dark energy halo behind head like dark saint",
+MUSIC_ELEMENT_VARIATIONS = [
+    # Elementos musicais — aumentam relevância do contexto
+    "wearing sleek dark over-ear headphones around neck or on ears",
+    "holding a microphone loosely, casual performance energy",
+    "headphones resting on head, casual and cool",
+    "earbuds in, immersed in music, authentic listening moment",
+    "no music element, pure character expression",
+    "no music element, pure character expression",  # peso maior sem elemento
+    "no music element, pure character expression",  # peso maior sem elemento
+    "subtle music note motif in background, very minimal",
+    "faint waveform visualization in background, atmospheric",
+    "holding nothing, pure emotional portrait, music implied by mood",
 ]
 
-AURA_VARIATIONS = [
-    # ENERGIA VISÍVEL — como nas referências
-    "dark neon flames surrounding her entire silhouette, same color as eye glow, "
-    "fire licking upward behind head and shoulders, embers floating",
-    
-    "glowing chains wrapping around her body and floating in air beside her, "
-    "chains pulse with neon light, links detailed and sharp",
-    
-    "dark energy tendrils curling outward from her silhouette, "
-    "organic flowing shapes, same neon color as eyes, alive and moving",
-    
-    "glitch distortion surrounding edges of her form, "
-    "digital corruption aesthetic, neon pixels and scan lines at border",
-    
-    "dark petals and thorns made of neon energy floating around her, "
-    "gothic dark romance energy, petals glowing same color as eyes",
-    
-    "electrical arc chains floating beside her, neon lightning coiling, "
-    "energy cracking between floating chain links",
-    
-    "dark smoke pouring upward from around her, lit from within by neon glow, "
-    "fog and embers surrounding silhouette",
-    
-    "sharp crystal shards of energy radiating outward behind her, "
-    "dark gemstone aesthetic, shards glowing with neon color",
-    
-    "dark water ripple energy emanating outward from her, "
-    "neon-lit concentric rings distorting space around her",
-    
-    "floating dark feathers surrounding her, each feather edge glowing neon, "
-    "fallen angel aesthetic, feathers drifting slowly upward",
-]
+BACKGROUND_VARIATIONS = [
+    # WARM — maior CTR consistente no canal
+    "warm golden sunset sky background, city silhouette distant, bokeh light, "
+    "rich amber and orange atmospheric depth",
 
-SCENE_VARIATIONS = [
-    # Fundo extremamente escuro — personagem é a única luz (como nas refs)
-    "pure absolute black background, character is the only light source, "
-    "neon glow from eyes and aura painting the darkness",
-    
-    "near-black void background with faint smoke and particles, "
-    "depth created only by layers of dark fog",
-    
-    "black background with subtle dark texture, "
-    "energy effects creating all visible color and light",
-    
-    "deep dark environment barely visible, ruins or alley, "
-    "character's glow illuminating immediate surroundings only",
-    
-    "dark cinematic background, blurred and abstract, "
-    "neon smears of background light, bokeh effect, character sharp in foreground",
-    
-    "dark void with floating debris lit by character's glow, "
-    "particles of dust and embers in foreground",
-]
+    "warm golden room interior background, soft window light, bokeh, "
+    "cozy but cinematic amber atmosphere",
 
-ART_STYLE_VARIATIONS = [
-    "ultra detailed dark anime illustration, bold clean lineart, "
-    "high contrast cel shading, glossy eye highlights dominant, "
-    "professional dark character art, music cover quality",
-    
-    "premium dark anime character design, sharp expressive features, "
-    "detailed neon glow effects, clean polished finish, "
-    "yandere character art aesthetic",
-    
-    "high quality dark cute anime art, detailed eyes are focal point, "
-    "clean anatomy, bold color contrast, viral thumbnail composition",
-    
-    "dark anime key visual, cinematic portrait lighting, "
-    "detailed glow effects, sharp lineart, professional music cover",
-    
-    "dark pop anime cover art, beautiful character with intense eyes, "
-    "dramatic energy aura, premium phonk trap visual identity",
+    "sunset urban skyline background, warm orange glow, "
+    "city lights beginning to appear, cinematic warm depth",
+
+    "warm golden forest or nature background, soft sunlight filtering, "
+    "bokeh leaves and light, beautiful natural warmth",
+
+    "golden hour open space background, sky deep orange and amber, "
+    "wide cinematic warmth, emotional depth",
+
+    # TEAL/BLUE — segundo maior CTR
+    "moody night city background, cool teal blue neon reflections on wet street, "
+    "cinematic rain atmosphere, deep blue mood",
+
+    "cool blue-teal abstract background, atmospheric fog and depth, "
+    "cinematic moody interior, blue ambient glow",
+
+    "night sky background with cool blue-purple atmosphere, "
+    "stars faint, cinematic night mood",
+
+    "dark blue urban interior background, neon reflections in glass, "
+    "rain-soaked cinematic atmosphere, teal mood",
+
+    # DARK — para fontes mais pesadas
+    "deep dark background with single warm or cool accent, "
+    "character cleanly lit against darkness, professional dark cover",
+
+    "abstract dark atmosphere with subtle depth, "
+    "faint environmental glow framing character",
 ]
 
 MOOD_VARIATIONS = [
-    "fofa maluca malvada supreme — sweet face, broken mind, beautiful energy",
-    "cute exterior hiding chaotic obsessive soul, dark romance",
-    "adorable but emotionally dangerous, beautiful and unstable",
-    "cold dark queen with burning obsessive eyes, terrifying cute",
-    "sweet innocent smile, villain eyes, yandere at max level",
-    "calm serene face over boiling dark energy within",
-    "loveable but unpredictable, cute but haunted",
+    # Moods que conectam com audiência musical
+    "the feeling you get when a song hits exactly right",
+    "melancholic beauty, bittersweet emotional resonance",
+    "quiet intensity, music felt rather than heard",
+    "nostalgic longing, emotional depth under calm surface",
+    "dark romance, beautiful sadness, emotional richness",
+    "late night introspection, alone but feeling everything",
+    "the moment before everything changes, suspended feeling",
+    "overstimulated emotional overwhelm expressed through stillness",
+    "controlled chaos within, serene outside, dark pop energy",
+]
+
+ART_STYLE_VARIATIONS = [
+    "premium dark anime key visual, clean expressive lineart, "
+    "detailed emotional face, professional music cover quality",
+
+    "cinematic anime illustration, rich color depth, "
+    "emotional storytelling through expression, high production value",
+
+    "clean detailed anime character art, beautiful face dominant, "
+    "professional shading, high contrast, emotional resonance",
+
+    "dark pop anime aesthetic, moody but beautiful, "
+    "expressive character, rich environmental background",
+
+    "high quality anime portrait illustration, face as focal point, "
+    "detailed eyes catching light, premium digital art finish",
 ]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# MAPEAMENTO DE GÊNERO
+# MAPEAMENTO DE GÊNERO — v36 COM PALETAS CALIBRADAS
 # ══════════════════════════════════════════════════════════════════════
 
 GENRE_MAP = {
     "phonk":      "phonk",
     "trap":       "trap",
     "dark":       "dark",
-    "darkpop":    "dark",
-    "dark pop":   "dark",
+    "darkpop":    "darkpop",
+    "dark pop":   "darkpop",
     "electronic": "electronic",
     "edm":        "electronic",
     "dubstep":    "electronic",
     "funk":       "trap",
-    "rock":       "dark",
+    "rock":       "rock",
     "metal":      "dark",
-    "cinematic":  "dark",
-    "lofi":       "dark",
-    "indie":      "dark",
-    "pop":        "default",
+    "cinematic":  "darkpop",
+    "lofi":       "darkpop",
+    "indie":      "darkpop",
+    "pop":        "darkpop",
 }
 
+# v36: paletas rankeadas por CTR do canal real
+# Warm golden > Teal/blue > Dark neon (em termos de views)
 GENRE_PALETTES = {
     "phonk": [
-        "dominant color: hot magenta — eye glow magenta, aura magenta, "
-        "hair neon pink or black, near-black background",
-        "dominant color: crimson red — eye glow red, aura deep crimson flame, "
-        "hair dark with red highlights, absolute black background",
-        "dominant color: violet — eye glow deep violet, aura violet energy, "
-        "hair black-purple, background near-black void",
+        # Phonk: dark/dramático mas com luz quente ou fria clara
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "dominant warm golden phonk energy, dramatic sunset, "
+         "cinematic amber warmth matching heavy 808 bass"),
+
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "moody blue-teal phonk underground atmosphere, "
+         "cool cinematic depth, bass-heavy nighttime energy"),
+
+        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
+         "dark dramatic phonk, deep crimson accent, "
+         "single light source, powerful dark music cover"),
     ],
     "trap": [
-        "dominant color: hot pink — neon pink eyes, pink energy chains, "
-        "black outfit with pink glow, dark background",
-        "dominant color: magenta violet — violet eyes glowing, magenta rim, "
-        "dark streetwear, near-black cyberpunk void",
-        "dominant color: electric pink — bright pink neon eyes, pink sparks, "
-        "dramatic dark environment",
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "warm trap energy, golden urban sunset, "
+         "street cinematic warmth, city trap mood"),
+
+        ("rose", PALETTE_ROSE, LIGHTING_LOCK_DARK,
+         "dark rose trap aesthetic, pink-crimson drama, "
+         "emotional trap energy, dark pop crossover"),
+
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "cool urban trap atmosphere, blue-teal city night, "
+         "moody cinematic trap energy"),
     ],
     "electronic": [
-        "dominant color: electric violet — violet glowing eyes, purple plasma aura, "
-        "dark background with violet particles",
-        "dominant color: magenta — hot magenta eyes and aura, electric sparks, "
-        "dark digital void background",
-        "dominant color: deep purple — purple energy field, dark atmosphere, "
-        "character glowing purple from within",
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "electronic music teal-blue atmosphere, "
+         "clean cool electronic energy, futuristic mood"),
+
+        ("violet", PALETTE_VIOLET, LIGHTING_LOCK_DARK,
+         "electronic violet atmospheric depth, "
+         "rich purple electronic sound visualization"),
+
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "warm electronic energy, golden analog warmth, "
+         "emotional electronic music mood"),
+    ],
+    "darkpop": [
+        # Dark pop: mais emocional, warm funciona muito bem
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "warm emotional dark pop, golden melancholic beauty, "
+         "bittersweet warm aesthetic, dark pop crossing into light"),
+
+        ("rose", PALETTE_ROSE, LIGHTING_LOCK_DARK,
+         "dark rose pop romance, deep pink emotional depth, "
+         "beautiful dark pop feeling"),
+
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "cool melancholic dark pop, blue-teal emotional mood, "
+         "cinematic dark pop atmosphere"),
     ],
     "dark": [
-        "dominant color: deep crimson — blood red glowing eyes, dark flame aura, "
-        "absolute black background, minimal glow",
-        "dominant color: dark violet — muted violet eyes glowing, shadow tendrils, "
-        "deep black atmosphere",
-        "dominant color: cold white — white glowing eyes with violet rim, "
-        "dark ghost energy, near-black void",
+        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
+         "dark dramatic music cover, deep and powerful, "
+         "single accent color against darkness, intense mood"),
+
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "dark teal atmospheric intensity, "
+         "cool cinematic dark music energy"),
+
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "warm dark contrast, golden light in darkness, "
+         "dramatic chiaroscuro warm dark energy"),
     ],
-    "default": [
-        "dominant color: magenta violet — magenta eyes, violet aura energy, "
-        "dark background, professional palette",
+    "rock": [
+        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
+         "dramatic warm rock energy, fire and amber, "
+         "performance energy captured, warm concert atmosphere"),
+
+        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
+         "dark rock power, intense dramatic lighting, "
+         "raw energy and emotion"),
+
+        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
+         "cool rock atmosphere, cinematic dark blue energy, "
+         "intense moody rock mood"),
     ],
 }
+
+# Fallback
+GENRE_PALETTES["default"] = GENRE_PALETTES["darkpop"]
 
 
 # ══════════════════════════════════════════════════════════════════════
@@ -477,11 +581,11 @@ def _clean_song_name(filename: str) -> str:
     name = Path(filename).stem
     name = re.sub(r"\[[^\]]*\]|\{[^\}]*\}|\([^\)]*\)", "", name)
     name = re.sub(r"[_\-]+", " ", name)
-    return re.sub(r"\s+", " ", name).strip() or "dark trap phonk"
+    return re.sub(r"\s+", " ", name).strip() or "dark phonk"
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v35_glowing_eyes_cute_dark"
+    key = f"{style}|{filename}|{short_num}|darkmark_v36_high_ctr_channel_optimized"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -489,25 +593,108 @@ def _rng(style: str, filename: str, short_num: int) -> random.Random:
     return random.Random(_seed(style, filename, short_num))
 
 
-def _song_detail(song_name: str) -> str:
+def _song_mood_boost(song_name: str) -> str:
+    """Detecção de mood da música para ajustar descrição emocional do personagem."""
     clean = song_name.lower()
-    if any(w in clean for w in ["bass", "808", "drop"]):
-        return "shockwave rings of energy radiating outward from her"
-    if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada"]):
-        return "shadow tendrils wrapping around her, dark midnight energy aura"
-    if any(w in clean for w in ["rage", "fire", "burn"]):
-        return "flames surrounding her, aggressive fire energy aura"
-    if any(w in clean for w in ["drive", "drift", "car", "speed"]):
-        return "speed lines and energy streaks surrounding her form"
-    if any(w in clean for w in ["red", "blood", "demon", "devil"]):
-        return "dark blood red energy chains floating around her"
-    if any(w in clean for w in ["queen", "king", "rule", "boss"]):
-        return "dark crown energy halo, commanding powerful aura"
-    return "subtle neon energy particles orbiting around her silhouette"
+
+    if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite"]):
+        return (
+            "character with quiet haunted beauty, "
+            "eyes holding darkness and longing, "
+            "nighttime melancholic energy"
+        )
+    if any(w in clean for w in ["fire", "burn", "rage", "fury", "rage"]):
+        return (
+            "character with intense passionate energy, "
+            "eyes bright with contained fire, "
+            "powerful emotional intensity"
+        )
+    if any(w in clean for w in ["love", "heart", "amor", "coraçao", "rose", "cherry"]):
+        return (
+            "character with deep romantic feeling, "
+            "eyes full of emotion and longing, "
+            "beautiful dark romantic energy"
+        )
+    if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido"]):
+        return (
+            "character with profound loneliness, "
+            "eyes glistening with quiet sadness, "
+            "beautiful isolated melancholy"
+        )
+    if any(w in clean for w in ["drive", "speed", "run", "race", "corrida"]):
+        return (
+            "character with focused determined energy, "
+            "eyes sharp and forward, "
+            "driven intense expression"
+        )
+    if any(w in clean for w in ["queen", "king", "boss", "power", "rule"]):
+        return (
+            "character with commanding quiet confidence, "
+            "eyes of someone who owns the room, "
+            "dark queen energy expressed through stillness"
+        )
+    if any(w in clean for w in ["dream", "sonho", "sleep", "cloud"]):
+        return (
+            "character with dreamy distant expression, "
+            "eyes half-caught in another world, "
+            "ethereal floating feeling"
+        )
+
+    # Default genérico emocional
+    return (
+        "character with deep emotional presence, "
+        "eyes carrying the weight of the music, "
+        "expressive and resonant"
+    )
+
+
+def _pick_palette(
+    genre: str,
+    rng: random.Random,
+    force_warm: bool = False,
+    force_teal: bool = False,
+) -> tuple[str, str, str, str]:
+    """
+    Retorna (palette_name, palette_str, lighting_str, genre_detail).
+    v36: lógica de CTR — warm tem maior probabilidade.
+    """
+    options = GENRE_PALETTES.get(genre, GENRE_PALETTES["default"])
+
+    if force_warm:
+        warm_opts = [o for o in options if o[0] == "warm"]
+        if warm_opts:
+            return warm_opts[0]
+
+    if force_teal:
+        teal_opts = [o for o in options if o[0] == "teal"]
+        if teal_opts:
+            return teal_opts[0]
+
+    # Pesos baseados em CTR real do canal:
+    # warm = ~40% chance, teal = ~35% chance, dark/rose/violet = ~25%
+    weights = []
+    for opt in options:
+        name = opt[0]
+        if name == "warm":
+            weights.append(40)
+        elif name == "teal":
+            weights.append(35)
+        else:
+            weights.append(25)
+
+    total = sum(weights)
+    r = rng.random() * total
+    cumulative = 0
+    for opt, w in zip(options, weights):
+        cumulative += w
+        if r <= cumulative:
+            return opt
+
+    return options[0]
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — V35
+# PROMPT PRINCIPAL — v36 HIGH-CTR
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(
@@ -515,79 +702,86 @@ def build_ai_prompt(
     filename: str,
     styles: list | None = None,
     short_num: int = 1,
+    force_warm: bool = False,
+    force_teal: bool = False,
 ) -> str:
     styles = styles or []
     mapped = GENRE_MAP.get((style or "default").lower().strip(), "default")
-    rng    = _rng(mapped, filename, short_num)
+    rng = _rng(mapped, filename, short_num)
     song_name = _clean_song_name(filename)
 
-    hair        = rng.choice(HAIR_VARIATIONS)
-    eyes        = rng.choice(EYE_VARIATIONS)
-    expression  = rng.choice(EXPRESSION_VARIATIONS)
-    demon_acc   = rng.choice(DEMON_ACCESSORY_VARIATIONS)
-    aura        = rng.choice(AURA_VARIATIONS)
-    scene       = rng.choice(SCENE_VARIATIONS)
-    art         = rng.choice(ART_STYLE_VARIATIONS)
-    mood_mix    = rng.choice(MOOD_VARIATIONS)
-    palette     = rng.choice(GENRE_PALETTES.get(mapped, GENRE_PALETTES["default"]))
-    detail      = _song_detail(song_name)
+    # Seleção de variações
+    hair = rng.choice(HAIR_VARIATIONS)
+    eyes = rng.choice(EYE_VARIATIONS)
+    expression = rng.choice(EXPRESSION_VARIATIONS)
+    music_elem = rng.choice(MUSIC_ELEMENT_VARIATIONS)
+    background = rng.choice(BACKGROUND_VARIATIONS)
+    art_style = rng.choice(ART_STYLE_VARIATIONS)
+    mood_mix = rng.choice(MOOD_VARIATIONS)
+    song_mood = _song_mood_boost(song_name)
+
+    # Paleta com lógica de CTR
+    palette_name, palette_str, lighting_str, genre_detail = _pick_palette(
+        mapped, rng, force_warm=force_warm, force_teal=force_teal
+    )
 
     genre_text = ", ".join([style] + [s for s in styles if s and s != style])
 
     prompt = (
-        # ══ OLHOS VÊM PRIMEIRO — elementos dominantes nas refs ══
+        # ROSTO/EXPRESSÃO VÊM PRIMEIRO (CTR: face dominant)
+        f"beautiful adult anime woman, {expression}, "
         f"{eyes}, "
-
-        # EXPRESSÃO IMEDIATA
-        f"expression: {expression}, "
 
         # PERSONAGEM COMPLETO
         f"{TRAPSTAR_DNA}, "
 
-        # ACESSÓRIO DEMONÍACO
-        f"accessories: {demon_acc}, "
+        # DETALHES VISUAIS
+        f"hair: {hair}, "
+        f"music element: {music_elem}, "
 
-        # AURA DE ENERGIA
-        f"{AURA_ENERGY_LOCK}, "
-        f"specific aura: {aura}, "
-
-        # COMPOSIÇÃO
+        # COMPOSIÇÃO LIMPA
         f"{COMPOSITION_LOCK}, "
 
-        # ESTILO VISUAL
+        # BACKGROUND CONTEXTUAL
+        f"background: {background}, "
+
+        # ESTILO
         f"{STYLE_LOCK}, "
 
-        # PALETA
-        f"{PALETTE_HARD_LOCK}, "
-        f"{palette}, "
+        # PALETA (escolhida por CTR)
+        f"{palette_str}, "
 
-        # ILUMINAÇÃO
-        f"{LIGHTING_LOCK}, "
+        # ILUMINAÇÃO (combinada com paleta)
+        f"{lighting_str}, "
 
         # PELE
         f"{SKIN_LOCK}, "
 
-        # ENGAJAMENTO
+        # MOOD DA MÚSICA (contextual)
+        f"character mood: {song_mood}, "
+        f"emotional vibe: {mood_mix}, "
+
+        # DETALHE DE GÊNERO
+        f"genre atmosphere: {genre_detail}, "
+
+        # RETENÇÃO/CTR
         f"{RETENTION_LOCK}, "
 
         # QUALIDADE
         f"{QUALITY_LOCK}, "
         f"{CONSISTENCY_LOCK}, "
 
-        # VARIAÇÕES DINÂMICAS
-        f"hair: {hair}, "
-        f"scene: {scene}, "
-        f"mood: {mood_mix}, "
-        f"song detail: {detail}, "
+        # ARTE
+        f"art style: {art_style}, "
 
         # CONTEXTO MUSICAL
-        f"art style: {art}, "
-        f"genre mood: {genre_text}, "
+        f"genre: {genre_text}, "
         f"song mood: {song_name}, "
 
-        # REFORÇO FINAL
-        "glowing eyes dominant, dark background, energy aura visible, "
-        "cute but dangerous, fofa maluca malvada, "
+        # REFORÇO FINAL CTR
+        "beautiful expressive face dominant, eyes connecting with viewer, "
+        "emotional resonance, clean composition, "
+        "dark music aesthetic, premium quality, "
         "no text, no watermark, no logo"
     )
 
@@ -607,33 +801,29 @@ def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, st
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SUFIXO DE REFORÇO V35
+# SUFIXO DE REFORÇO v36 — CALIBRADO POR CTR
 # ══════════════════════════════════════════════════════════════════════
 
 GENERATION_SUFFIX = (
     ", "
-    # OLHOS — repetição intencional para reforço máximo
-    "glowing anime eyes, massive glowing iris, neon light emanating from eyes, "
-    "eyes illuminating the face, beautiful intense glowing stare, "
-    # AURA
-    "energy aura surrounding character, neon glow effects, "
-    "dark background contrasting with neon, "
-    # PERSONAGEM
-    "beautiful adult dark cute anime girl, yandere energy, "
-    "cute but dangerous, fofa maluca malvada, "
-    "demon horns OR cat ears, chains, dark cyberpunk outfit, "
-    # ESTILO
-    "premium 2D anime art, ultra sharp lineart, bold cel shading, "
-    "high contrast dark illustration, professional music cover quality, "
-    # PALETA
-    "vibrant neon single dominant color, dark background, deep shadows, "
-    # PROIBIÇÕES
-    "no text, no logo, no watermark, no extra characters"
+    # FACE DOMINANT — dado de CTR
+    "beautiful detailed anime face, expressive emotional eyes, "
+    "face filling frame, portrait composition dominant, "
+    # QUALIDADE
+    "masterpiece quality, ultra detailed, clean sharp lineart, "
+    "professional anime illustration, beautiful character art, "
+    # PALETA LIMPA
+    "rich coherent color palette, high contrast, clean background, "
+    "cinematic color grading, professional music cover quality, "
+    # PROIBIÇÕES EXPLÍCITAS
+    "no text, no logo, no watermark, no extra people, "
+    "no excessive neon overload, no cluttered effects, "
+    "face clearly visible, eyes expressive and readable"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO DE IMAGEM (REPLICATE)
+# GERAÇÃO DE IMAGEM (REPLICATE) — sem alteração funcional
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_image(prompt: str, output_path: str | None = None) -> str | None:
@@ -732,7 +922,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES DE CONVENIÊNCIA
+# FUNÇÕES DE CONVENIÊNCIA — v36
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_background_image(
@@ -740,6 +930,8 @@ def generate_background_image(
     output_path: str = "assets/background.png",
     seed_variant: int = 0,
     max_retries: int = 3,
+    force_warm: bool = False,
+    force_teal: bool = False,
 ) -> Optional[str]:
     prompt, _ = build_prompt(style=style, seed_variant=seed_variant)
     for attempt in range(1, max_retries + 1):
@@ -764,7 +956,7 @@ def get_or_generate_background(
         logger.info(f"Background reutilizado: {chosen}")
         return str(chosen)
 
-    variant     = random.randint(0, 99)
+    variant = random.randint(0, 99)
     output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
     return generate_background_image(style=style, output_path=output_path, seed_variant=variant)
 
@@ -792,7 +984,7 @@ def generate_background_batch(
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CLI
+# CLI — v36
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
@@ -801,15 +993,19 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v35 Glowing Eyes Cute Dark Energy"
+        description="AI Image Generator — DJ DARK MARK v36 High-CTR Channel-Optimized"
     )
     parser.add_argument("--style",       default="phonk",
-                        help="Gênero musical (phonk, trap, electronic, dark, etc.)")
+                        help="Gênero musical (phonk, trap, electronic, dark, darkpop, rock)")
     parser.add_argument("--filename",    default="dark phonk.mp3",
-                        help="Nome da música (usado para variar o prompt)")
+                        help="Nome da música (varia o prompt e o mood)")
     parser.add_argument("--short-num",   type=int, default=1,
                         help="Número do short (varia seed)")
     parser.add_argument("--output",      default="assets/background.png")
+    parser.add_argument("--force-warm",  action="store_true",
+                        help="Força paleta warm golden (maior CTR histórico do canal)")
+    parser.add_argument("--force-teal",  action="store_true",
+                        help="Força paleta teal/blue (segundo maior CTR)")
     parser.add_argument("--prompt-only", action="store_true",
                         help="Só imprime o prompt, não gera imagem")
     args = parser.parse_args()
@@ -819,10 +1015,12 @@ if __name__ == "__main__":
         filename=args.filename,
         styles=[args.style],
         short_num=args.short_num,
+        force_warm=getattr(args, "force_warm", False),
+        force_teal=getattr(args, "force_teal", False),
     )
 
     if args.prompt_only:
-        print("=== PROMPT ===")
+        print("=== PROMPT v36 ===")
         print(prompt)
         print("\n=== NEGATIVE PROMPT ===")
         print(NEGATIVE_PROMPT)
