@@ -590,9 +590,9 @@
       "name": "my head billie.mp3",
       "key": "1vqJUjuT4emHfrKdPlhFsHKTBgDyXia_J",
       "name_key": "my head billie",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1L1uq7D8bLHfC7xtfz_t-CdggGsXs9mMI",
