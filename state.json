@@ -626,9 +626,9 @@
       "name": "Black Cherry Lips.mp3",
       "key": "11M52t0gKktm83JIAYsLX8KfuWH0g35oC",
       "name_key": "black cherry lips",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1XzSxrLxkf3DPs_DoYipN7vWS7s98NF2_",
