@@ -242,6 +242,13 @@ HAIR_VARIATIONS = [
 ]
 
 EYE_VARIATIONS = [
+    "glowing pink eyes with obsessive stare, extremely detailed, hypnotic",
+    "neon violet eyes, wide open, slightly insane expression",
+    "bright magenta eyes with emotional intensity, unstable energy",
+    "deep pink eyes with crazy reflections, unhinged but beautiful",
+    "soft pink eyes but staring too intensely, unsettling feeling",
+    "glowing eyes with subtle glitch effect inside iris",
+    "half-lidded eyes with dangerous obsession vibe",
     "bright glowing pink eyes, extremely detailed, hypnotic, wet neon reflections",
     "neon violet eyes with sharp reflections, cute but insane stare",
     "glowing magenta eyes with tiny star highlights, unforgettable gaze",
@@ -255,6 +262,16 @@ EYE_VARIATIONS = [
 ]
 
 EXPRESSION_VARIATIONS = [
+    "cute smile but eyes completely insane, unsettling contrast",
+    "adorable expression with slightly broken emotional look",
+    "soft smile with obsessive stare, uncomfortable but attractive",
+    "playful cute smile hiding something dark",
+    "emotionless face with slight creepy smile forming",
+    "shy smile but intense eye contact, yandere vibe",
+    "gentle expression but mentally unstable aura",
+    "sweet face with subtle madness behind the eyes",
+    "small innocent smile but eyes screaming obsession",
+    "calm relaxed face with disturbing undertone",
     "cute but dangerous smile, slightly insane eyes, playful but threatening",
     "soft innocent face with crazy glowing eyes, unhinged beauty",
     "adorable smile hiding pure chaos, sweet but evil aura",
@@ -341,6 +358,14 @@ ART_STYLE_VARIATIONS = [
 ]
 
 MOOD_VARIATIONS = [
+    "yandere cyberpunk personality, cute but unstable, obsessive energy, beautiful but dangerous",
+    "sweet anime girl with hidden insanity, unpredictable emotions, slightly unhinged",
+    "adorable but mentally unstable, intense eye contact, emotionally dangerous",
+    "soft innocent look with obsessive dangerous aura, yandere energy",
+    "cute face, unstable mind, seductive but chaotic presence",
+    "calm exterior but internally chaotic, dangerous obsession vibe",
+    "playful but mentally unstable, cute smile with hidden madness",
+    "emotionally intense, slightly broken but beautiful, dark love obsession energy",
     "personality mix: 45% cute, 35% dangerous, 20% insane",
     "personality mix: soft pretty face, villain eyes, chaotic aura",
     "personality mix: adorable but unstable, cyberpunk bad girl",
