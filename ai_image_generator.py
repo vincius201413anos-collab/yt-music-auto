@@ -1,24 +1,11 @@
 """
-ai_image_generator.py — DJ DARK MARK v37 TREND WAIFU OPENING-FRAME
-=============================================================
-
-OBJETIVO v37:
-- Parar de pensar só em "thumbnail estática"
-- Gerar VISUAL DE ABERTURA para Shorts: o primeiro frame precisa prender atenção
-- Seguir tendência de anime/waifu sem copiar nomes oficiais de personagens famosos
-- Criar personagens com vibe reconhecível: shonen, dark fantasy, cyberpunk, idol, battle girl,
-  demon girl, yandere leve, gamer girl, gothic waifu, street waifu
-- Adult only: nada de loli, nada de underage, nada de personagem infantil
-- Visual limpo, rosto forte, olhos hipnóticos, cabelo em movimento, partículas e luz viva
-
-IMPORTANTE:
-Este arquivo NÃO usa nomes de personagens famosos.
-Ele usa arquétipos "inspirados em tendências" para evitar depender de IP/copyright
-e para deixar o canal com identidade própria.
+ai_image_generator.py — DJ DARK MARK v40 ULTIMATE TRAP/PHONK
+=======================================================
+100 WAIFUS ULTRA SEXY + MALVADAS + TRAPSTAR NEON
+Otimizado para Shorts de Trap e Phonk
 """
 
 from __future__ import annotations
-
 import hashlib
 import logging
 import os
@@ -26,703 +13,326 @@ import random
 import re
 import time
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
 import requests
 
 logger = logging.getLogger("ai_image_generator")
 
-
-# ══════════════════════════════════════════════════════════════════════
-# CONFIG
-# ══════════════════════════════════════════════════════════════════════
-
+# ======================= CONFIG =======================
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
+    "black-forest-labs/flux-dev",
     "cjwbw/animagine-xl-3.1",
     "lucataco/anything-v5-better-vae",
-    "black-forest-labs/flux-dev",
 ]
 
 FLUX_PARAMS = {
-    "width": int(os.getenv("FLUX_WIDTH", "768")),
-    "height": int(os.getenv("FLUX_HEIGHT", "1024")),
-    "num_inference_steps": int(os.getenv("FLUX_STEPS", "38")),
-    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "8.0")),
+    "width": 768,
+    "height": 1024,
+    "num_inference_steps": 42,
+    "guidance_scale": 7.8,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
     "disable_safety_checker": True,
 }
 
-
-# ══════════════════════════════════════════════════════════════════════
-# IDENTIDADE v37
-# ══════════════════════════════════════════════════════════════════════
-
-CHANNEL_IDENTITY = (
-    "DJ Dark Mark viral anime music visual identity, "
-    "adult waifu character, anime trend aesthetic, "
-    "dark trap phonk electronic music opening frame, "
-    "scroll-stopping first 2 seconds, high CTR, high retention, "
-    "premium YouTube Shorts anime visual universe"
+# ======================= LOCKS =======================
+CORE_IDENTITY = (
+    "DJ Dark Mark viral trap phonk anime visual, premium anime key visual, "
+    "adult extremely beautiful woman, clearly 20+, mature seductive proportions, "
+    "perfect face, scroll-stopping first frame, high CTR YouTube Shorts"
 )
 
-CORE_CHARACTER = (
-    "one adult anime woman, clearly adult, mature proportions, "
-    "beautiful waifu character, expressive face, hypnotic eyes, "
-    "magnetic emotional presence, strong visual identity, "
-    "alone, single character, no other people, no text"
+COMPOSITION = (
+    "face and upper body dominant, eyes in upper third, strong silhouette, "
+    "clean dark background, neon rim light, highly readable on mobile"
 )
 
-COMPOSITION_LOCK = (
-    "vertical 9:16 mobile-first composition, "
-    "face and upper body dominant, eyes in upper third, "
-    "character large in frame, readable at tiny phone size, "
-    "clean background, strong silhouette, clear focal point, "
-    "opening frame for YouTube Shorts, designed to stop scrolling immediately"
+MOTION = (
+    "alive cinematic frame, hair flowing in neon wind, glowing particles floating, "
+    "subtle energy aura, dynamic but clean, trap phonk atmosphere"
 )
 
-STYLE_LOCK = (
-    "premium anime key visual, clean sharp lineart, "
-    "high-end 2D anime illustration, polished cel shading, "
-    "cinematic lighting, glossy eyes, detailed hair, "
-    "rich colors, high contrast, professional music cover art, "
-    "not photorealistic, not 3d render"
+VIRAL_HOOK = (
+    "extreme viral hook: intense glowing eye reflection OR glowing neon tear OR "
+    "dramatic face neon light OR glowing tattoo pulsing OR seductive dangerous smirk"
 )
 
-MOTION_LOCK = (
-    "alive frame, subtle sense of motion, hair moving in wind, "
-    "floating particles, cinematic depth, glowing dust, "
-    "energy in the air, dynamic but not cluttered"
+QUALITY = (
+    "masterpiece, best quality, ultra detailed, absurdres, sharp lineart, "
+    "glossy reflective eyes, perfect seductive face, cinematic neon lighting, "
+    "high contrast, rich vibrant colors, professional trap phonk music visual"
 )
-
-VIRAL_HOOK_LOCK = (
-    "one strong visual hook: glowing tear OR intense eye reflection OR dramatic face light "
-    "OR hair blown by neon wind OR small aura around character, "
-    "instantly recognizable visual moment, memorable frame"
-)
-
-QUALITY_LOCK = (
-    "masterpiece, best quality, ultra detailed, crisp lineart, "
-    "beautiful face, detailed shining eyes, clean anatomy, "
-    "professional channel branding, high resolution, premium finish"
-)
-
-
-# ══════════════════════════════════════════════════════════════════════
-# PALETAS v37 — TREND + CTR
-# ══════════════════════════════════════════════════════════════════════
-
-PALETTE_WARM = (
-    "dominant warm golden amber palette, sunset orange light, "
-    "golden rim light on hair, warm cinematic shadows, "
-    "high contrast amber glow, emotional golden-hour anime look"
-)
-
-PALETTE_TEAL = (
-    "dominant teal blue cyber palette, deep navy shadows, "
-    "teal neon reflections, cool cinematic atmosphere, "
-    "blue-green glow around character, futuristic night mood"
-)
-
-PALETTE_CRIMSON = (
-    "dominant crimson red and black palette, dark dramatic shadows, "
-    "blood-red accent light, intense phonk energy, "
-    "dangerous but beautiful dark anime mood"
-)
-
-PALETTE_PURPLE = (
-    "dominant violet purple and indigo palette, magical dark aura, "
-    "purple rim light, dreamy anime atmosphere, "
-    "deep shadow with bright violet highlights"
-)
-
-PALETTE_PINK = (
-    "dominant hot pink and black palette, rose neon glow, "
-    "cute but dangerous dark pop mood, pink bokeh, "
-    "high contrast pink highlights"
-)
-
-PALETTES = [
-    ("warm", PALETTE_WARM, 30),
-    ("teal", PALETTE_TEAL, 28),
-    ("crimson", PALETTE_CRIMSON, 18),
-    ("purple", PALETTE_PURPLE, 14),
-    ("pink", PALETTE_PINK, 10),
-]
-
-
-# ══════════════════════════════════════════════════════════════════════
-# ARQUÉTIPOS TREND — SEM NOMES DE PERSONAGENS FAMOSOS
-# ══════════════════════════════════════════════════════════════════════
-
-TREND_WAIFU_ARCHETYPES = [
-    (
-        "dark fantasy battle waifu",
-        "adult dark fantasy anime heroine, black battle outfit, dramatic cloak movement, "
-        "confident dangerous aura, sword-like silhouette implied but not weapon-focused"
-    ),
-    (
-        "cyberpunk street waifu",
-        "adult cyberpunk anime girl, futuristic streetwear, neon city attitude, "
-        "tech accessories, glowing earrings, confident urban energy"
-    ),
-    (
-        "gothic vampire waifu",
-        "adult gothic anime woman, elegant dark outfit, crimson eyes, "
-        "romantic dangerous beauty, night atmosphere"
-    ),
-    (
-        "idol pop waifu",
-        "adult anime idol-inspired performer, stylish stage outfit, headphones, "
-        "sparkling emotional eyes, music video energy"
-    ),
-    (
-        "yandere soft waifu",
-        "adult anime woman with controlled chaotic expression, sweet but intense gaze, "
-        "subtle dangerous smile, emotional overload, not horror"
-    ),
-    (
-        "demon aura waifu",
-        "adult anime demon-girl inspired character, small subtle horns or aura, "
-        "glowing eyes, dark magical energy, elegant not monstrous"
-    ),
-    (
-        "gamer hacker waifu",
-        "adult anime gamer hacker girl, headset, neon monitor glow, "
-        "teal cyber atmosphere, smart intense stare"
-    ),
-    (
-        "street trap waifu",
-        "adult anime streetwear waifu, dark oversized jacket, chain accessories, "
-        "trap/phonk energy, confident pose, urban night background"
-    ),
-    (
-        "angel fallen waifu",
-        "adult fallen angel anime woman, dark wings implied by shadow shape, "
-        "golden or violet rim light, melancholic divine energy"
-    ),
-    (
-        "samurai neon waifu",
-        "adult neon samurai-inspired anime woman, sleek dark outfit, "
-        "windy hair, cinematic discipline, intense eyes"
-    ),
-]
-
-
-FACE_HOOKS = [
-    "hypnotic direct eye contact, viewer feels watched",
-    "one glowing tear on cheek catching neon light",
-    "eyes reflecting city lights and music waveform",
-    "slight dangerous smile with soft emotional eyes",
-    "wide emotional eyes, lips slightly parted, instant curiosity",
-    "half-lidded confident gaze, magnetic and calm",
-    "vulnerable melancholic stare, beautiful sadness",
-    "subtle crazy eyes but still beautiful and controlled",
-    "dreamy distant gaze as if hearing the song inside her head",
-    "sharp confident stare, dark queen energy"
-]
-
-HAIR_VARIATIONS = [
-    "long black hair with glowing teal highlights, wind-blown",
-    "dark purple hair with violet rim light, flowing dramatically",
-    "silver white hair with blue shadows, cinematic and clean",
-    "warm brown hair catching golden sunset, soft and emotional",
-    "black hair with crimson reflections, dangerous phonk mood",
-    "pink-black ombre hair glowing under neon, cute but dark",
-    "deep navy hair with electric blue edges, cyber mood",
-    "auburn hair with amber firelight, warm dramatic energy",
-    "messy short black hair with strong anime silhouette",
-    "long twin-tail inspired hair, clearly adult styling, dynamic motion"
-]
-
-OUTFIT_VARIATIONS = [
-    "dark futuristic jacket, stylish but tasteful, premium anime design",
-    "black streetwear outfit with small chains and choker, clean silhouette",
-    "gothic elegant dark outfit, lace details subtle, not revealing",
-    "cyberpunk cropped jacket over dark top, tasteful adult fashion",
-    "stage performer outfit with headphones, stylish music identity",
-    "dark battle-inspired outfit, sleek and cinematic, no armor clutter",
-    "oversized hoodie with neon trim, trap aesthetic, clean design",
-    "black dress with modern anime styling, elegant dark pop mood",
-    "techwear outfit, straps and reflective details, futuristic vibe",
-    "rock-inspired dark outfit, leather texture, subtle metal accessories"
-]
-
-BACKGROUND_VARIATIONS = [
-    "rainy neon city street, wet reflections, teal and pink bokeh",
-    "golden sunset skyline, cinematic clouds, warm emotional mood",
-    "dark abstract stage with smoke and rim lights",
-    "cyberpunk alley with blurred neon signs, clean depth",
-    "night rooftop with city lights far behind, dramatic wind",
-    "purple fog atmosphere with floating particles",
-    "warm indoor studio with glowing music equipment blurred behind",
-    "dark concert light beams, cinematic smoke, music performance feeling",
-    "black void with one strong colored rim light and particle depth",
-    "anime city sunset with soft bokeh, emotional ending scene"
-]
-
-MUSIC_ELEMENTS = [
-    "sleek headphones around neck",
-    "one earbud visible, immersed in the song",
-    "small glowing waveform behind character, very subtle",
-    "microphone silhouette blurred in background",
-    "music visualizer particles around her, not cluttered",
-    "no music prop, emotion carries the music",
-    "no music prop, pure cinematic anime portrait",
-]
-
-GENRE_MAP = {
-    "phonk": "phonk",
-    "trap": "trap",
-    "dark": "dark",
-    "darkpop": "darkpop",
-    "dark pop": "darkpop",
-    "electronic": "electronic",
-    "edm": "electronic",
-    "dubstep": "electronic",
-    "funk": "trap",
-    "rock": "rock",
-    "metal": "dark",
-    "cinematic": "darkpop",
-    "lofi": "darkpop",
-    "indie": "darkpop",
-    "pop": "darkpop",
-}
-
-GENRE_BOOSTS = {
-    "phonk": (
-        "phonk atmosphere, heavy 808 bass feeling, dark street energy, "
-        "crimson or teal contrast, aggressive but clean"
-    ),
-    "trap": (
-        "trap music atmosphere, urban night energy, stylish confidence, "
-        "warm or rose neon lighting, premium street aesthetic"
-    ),
-    "electronic": (
-        "electronic music atmosphere, futuristic energy, teal blue neon, "
-        "clean digital glow, cyber rhythm visual"
-    ),
-    "darkpop": (
-        "dark pop emotional atmosphere, romantic sadness, cinematic beauty, "
-        "warm golden or rose-violet color story"
-    ),
-    "dark": (
-        "dark music atmosphere, dramatic shadows, intense emotional presence, "
-        "single strong accent color against darkness"
-    ),
-    "rock": (
-        "rock energy atmosphere, warm firelight, concert smoke, "
-        "raw emotional power, dramatic rim lighting"
-    ),
-    "default": (
-        "dark music atmosphere, emotional anime beauty, cinematic contrast, "
-        "premium viral Shorts visual"
-    ),
-}
-
-
-# ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT
-# ══════════════════════════════════════════════════════════════════════
 
 NEGATIVE_PROMPT = (
-    "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
-    "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
-    "long neck, disfigured, mutated, melted face, uncanny valley, "
-    "blurry, low quality, jpeg artifacts, heavy noise, flat boring image, "
-    "photorealistic, real person, 3d render, CGI, doll, plastic skin, "
-    "western cartoon, simple cartoon, childish style, "
-    "child, underage, loli, young girl, schoolgirl, baby face, "
-    "nude, explicit nudity, nipples, genitalia, sexual act, pornographic, "
-    "multiple people, crowd, two girls, duplicate character, "
-    "text, words, logo, watermark, signature, letters, numbers, "
-    "famous anime character, exact character copy, cosplay of existing character, "
-    "too dark to see face, face too small, full body tiny, "
-    "cluttered background, excessive effects, neon overload, "
-    "overexposed bloom, muddy colors, washed out, desaturated, "
-    "messy composition, no focal point, bad eyes, dead eyes"
+    "ugly, bad anatomy, deformed, extra limbs, fused fingers, mutated, blurry, low quality, "
+    "watermark, text, logo, child, loli, underage, babyface, multiple people, "
+    "photorealistic, 3d render, western cartoon, bad proportions, overexposed"
 )
 
+# ======================= PALETAS =======================
+PALETTES = [
+    ("crimson", "dominant crimson red + black, blood neon accents, intense phonk energy", 35),
+    ("teal", "dominant cyber teal + deep purple, neon reflections, dark trap night", 30),
+    ("pink", "hot pink + black, rose neon glow, seductive dangerous vibe", 20),
+    ("purple", "deep violet + indigo, magical dark trap aura", 10),
+    ("warm", "amber red + gold neon, luxury trapstar sunset mood", 5),
+]
 
-GENERATION_SUFFIX = (
-    ", beautiful expressive adult anime face, eyes readable at small size, "
-    "first frame optimized for Shorts feed, high contrast, clear silhouette, "
-    "alive cinematic frame, motion feeling, polished anime art, "
-    "no text, no logo, no watermark, no extra people"
-)
+# ======================= 100 WAIFUS =======================
+TREND_WAIFUS = [
+    "long hot pink hair flowing, glowing neon pink eyes, seductive yandere trap queen, glowing heart tattoo on neck pulsing neon",
+    "teal blue long straight hair, electric cyan eyes, cold psycho street boss, neon circuit tattoo glowing on collarbone",
+    "crimson red wavy hair, blood red glowing eyes, dangerous mafia queen, rose tattoo with neon thorns on chest",
+    "silver white hair with black roots, violet neon eyes, ice cold luxury villainess, glowing spiderweb tattoo on neck",
+    "deep purple twin tails, hot magenta eyes, crazy seductive trapstar, neon barcode tattoo on throat glowing",
+    "black hair with neon pink streaks, electric blue eyes, dark gang leader queen, glowing dragon tattoo on arm",
+    "emerald green long hair, golden amber glowing eyes, venom beauty trap queen, neon poison ivy tattoo on collarbone",
+    "ruby red hair with black tips, crimson glowing eyes, seductive final boss waifu, glowing crown tattoo on forehead",
+    "lavender hair with silver highlights, neon purple eyes, yandere calm danger, glowing butterfly tattoo pulsing on neck",
+    "obsidian black hair with teal underlights, electric teal eyes, shadow assassin trapstar, neon skull tattoo glowing on chest",
+    "rose gold hair, hot pink glowing eyes, luxury mafia princess, glowing money rose tattoo on shoulder",
+    "neon blue bob cut, sapphire glowing eyes, cyber hacker queen, glowing circuit tattoo covering neck",
+    "fiery orange hair, lava red eyes, rage beauty trap queen, neon flame tattoo pulsing on collarbone",
+    "platinum blonde with black streaks, ice blue glowing eyes, cold emotionless killer queen, glowing dagger tattoo",
+    "candy pink long hair, glowing magenta eyes, psycho cute but deadly, neon heart dagger tattoo on chest",
+    "midnight purple hair, violet neon eyes, gothic trap queen, glowing bat wings tattoo on back visible on shoulders",
+    "toxic green hair, acid green glowing eyes, venomous seductive boss, glowing skull rose tattoo on neck",
+    "sunset orange hair, amber neon eyes, street racer queen, glowing speed lines tattoo on arm",
+    "blood red long hair, ruby glowing eyes, vampire trapstar, glowing bite mark tattoo pulsing neon",
+    "electric purple hair, neon violet eyes, chaotic yandere queen, glowing broken heart tattoo on chest",
+    "jet black hair with crimson highlights, blood neon eyes, silent assassin beauty, glowing katana tattoo on neck",
+    "neon yellow hair, electric lime eyes, hyper trapstar girl, glowing lightning tattoo pulsing",
+    "deep burgundy hair, garnet glowing eyes, luxury villainess, glowing diamond tattoo on collarbone",
+    "icy silver hair, arctic blue glowing eyes, emotionless mafia queen, glowing snowflake tattoo neon",
+    "hot magenta hair, glowing fuchsia eyes, dangerous flirt trap queen, glowing lips tattoo on neck",
+    "neon cyan hair, glowing turquoise eyes, cyberpunk street goddess, glowing binary tattoo on throat",
+    "ruby crimson hair, glowing scarlet eyes, final boss energy, glowing throne tattoo on chest",
+    "pastel pink with black roots, glowing pink eyes, soft but psycho trapstar, glowing teddy bear knife tattoo",
+    "dark navy hair with teal tips, glowing sea blue eyes, night club queen, glowing microphone tattoo neon",
+    "golden blonde with pink streaks, glowing rose gold eyes, rich drip trap queen, glowing chain tattoo",
+    "neon violet long hair, glowing amethyst eyes, dark pop trap idol, glowing music note tattoo pulsing",
+    "crimson black ombre hair, glowing ember eyes, fire rage beauty, glowing phoenix tattoo on shoulder",
+    "electric blue long hair, glowing sapphire eyes, hacker boss queen, glowing keyboard tattoo on neck",
+    "hot red hair with silver streaks, glowing ruby eyes, seductive gang leader, glowing gun rose tattoo",
+    "neon green hair, glowing emerald eyes, toxic cute deadly, glowing poison bottle tattoo",
+    "platinum silver hair, glowing diamond eyes, luxury ice queen, glowing crown of thorns tattoo",
+    "deep rose hair, glowing coral eyes, romantic toxic waifu, glowing broken chain tattoo",
+    "black hair with neon purple underlights, glowing amethyst eyes, shadow queen trapstar, glowing eclipse tattoo",
+    "fiery red hair, glowing lava eyes, unstoppable trap queen, glowing explosion tattoo on collarbone",
+    "neon pink bob hair, glowing bubblegum eyes, chaotic cute psycho, glowing lollipop knife tattoo",
+    "silver white hair with crimson tips, glowing blood eyes, fallen angel trapstar, glowing halo broken tattoo",
+    "teal and black hair, glowing cyan eyes, cyber street rebel, glowing glitch tattoo pulsing",
+    "hot purple hair, glowing violet eyes, yandere trap boss, glowing eye tattoo on neck",
+    "crimson wavy hair, glowing scarlet eyes, seductive dark siren, glowing wave tattoo neon",
+    "neon orange hair, glowing sunset eyes, speed queen trapstar, glowing tire burn tattoo",
+    "midnight black hair, glowing red eyes, ultimate boss queen, glowing throne of skulls tattoo",
+    "lavender silver hair, glowing lilac eyes, elegant dangerous beauty, glowing rose vine tattoo",
+    "electric pink hair, glowing hot pink eyes, hyper yandere queen, glowing knife heart tattoo",
+    "ruby red hair, glowing garnet eyes, mafia luxury queen, glowing money stack tattoo neon",
+    "neon teal hair, glowing aqua eyes, underwater trap queen, glowing mermaid skeleton tattoo",
+    "black hair with neon crimson streaks, glowing blood red eyes, silent killer beauty, glowing blood drip tattoo",
+    "golden pink hair, glowing champagne eyes, rich drip queen, glowing luxury bag tattoo",
+    "deep violet hair, glowing purple eyes, gothic neon queen, glowing bat neon tattoo",
+    "hot magenta long hair, glowing fuchsia eyes, club boss seductive, glowing stage light tattoo",
+    "neon lime hair, glowing acid green eyes, toxic street queen, glowing biohazard tattoo",
+    "silver blue hair, glowing ice eyes, cold emotionless trapstar, glowing snow storm tattoo",
+    "crimson purple ombre, glowing amethyst eyes, dark romantic queen, glowing heart cage tattoo",
+    "electric cyan hair, glowing blue eyes, cyber trap goddess, glowing robot heart tattoo",
+    "fiery orange red hair, glowing ember eyes, rage beauty final boss, glowing fire crown tattoo",
+    "pastel blue with pink tips, glowing bubblegum eyes, soft psycho trap queen, glowing candy skull tattoo",
+    "neon black hair with pink glow, glowing hot pink eyes, ultimate trapstar, glowing 808 tattoo pulsing",
+    "ruby silver hair, glowing scarlet eyes, luxury villainess, glowing diamond chain tattoo",
+    "electric purple bob, glowing violet eyes, hacker yandere, glowing code tattoo on neck",
+    "deep red hair, glowing blood eyes, seductive assassin queen, glowing dagger rose tattoo",
+    "neon green long hair, glowing emerald eyes, venom trap queen, glowing snake tattoo glowing",
+    "platinum blonde black roots, glowing arctic eyes, ice cold boss, glowing frost tattoo",
+    "hot pink silver hair, glowing magenta eyes, chaotic luxury queen, glowing money flame tattoo",
+    "midnight purple hair, glowing amethyst eyes, dark goddess trapstar, glowing moon tattoo pulsing",
+    "crimson teal hair, glowing ruby cyan eyes, fire ice queen, glowing split tattoo neon",
+    "neon yellow pink hair, glowing electric eyes, hyper street queen, glowing lightning rose tattoo",
+    "obsidian hair with neon red, glowing blood eyes, shadow trap queen, glowing void tattoo",
+    "rose gold long hair, glowing pink gold eyes, rich mafia beauty, glowing crown tattoo",
+    "electric blue purple hair, glowing sapphire violet eyes, cyber yandere boss, glowing glitch heart",
+    "fiery crimson hair, glowing lava eyes, unstoppable trap queen, glowing phoenix wings tattoo",
+    "neon teal silver hair, glowing cyan eyes, night club goddess, glowing microphone skull tattoo",
+    "black hair neon pink, glowing hot pink eyes, psycho seductive queen, glowing broken mirror tattoo",
+    "deep burgundy hair, glowing garnet eyes, elegant dark queen, glowing wine poison tattoo",
+    "silver lavender hair, glowing lilac eyes, fallen luxury queen, glowing angel wings broken neon",
+    "hot magenta teal hair, glowing fuchsia cyan eyes, chaotic trapstar, glowing dice skull tattoo",
+    "ruby black hair, glowing scarlet eyes, final boss seductive, glowing throne neon tattoo",
+    "neon orange silver hair, glowing sunset eyes, speed racer queen, glowing flame tire tattoo",
+    "platinum pink hair, glowing rose eyes, luxury psycho queen, glowing teddy bear gun tattoo",
+    "electric green hair, glowing acid eyes, toxic beauty boss, glowing bio rose tattoo",
+    "deep navy hair neon purple, glowing indigo eyes, night shadow queen, glowing eclipse rose tattoo",
+    "crimson gold hair, glowing amber eyes, rich trap queen, glowing money wings tattoo",
+    "neon violet red hair, glowing amethyst scarlet eyes, dark siren trapstar, glowing siren tattoo",
+    "silver black hair, glowing diamond eyes, ice mafia queen, glowing snow diamond tattoo",
+    "hot pink crimson hair, glowing magenta blood eyes, yandere final boss, glowing heart blood tattoo",
+    "electric cyan magenta hair, glowing turquoise pink eyes, cyber club queen, glowing stage glitch tattoo",
+    "ruby teal hair, glowing scarlet cyan eyes, fire water queen, glowing lava ice tattoo",
+    "neon black pink hair, glowing void pink eyes, ultimate dark queen, glowing 808 crown tattoo",
+    "lavender crimson hair, glowing lilac blood eyes, romantic psycho queen, glowing rose blood tattoo",
+    "platinum teal hair, glowing arctic cyan eyes, cold cyber queen, glowing robot rose tattoo",
+    "hot red silver hair, glowing ruby ice eyes, rage ice beauty, glowing fire snow tattoo",
+    "neon purple gold hair, glowing violet champagne eyes, luxury trap goddess, glowing money neon tattoo",
+    "obsidian crimson hair, glowing blood scarlet eyes, shadow final boss, glowing void throne tattoo",
+    "electric pink teal hair, glowing hot pink cyan eyes, hyper yandere trapstar, glowing knife neon tattoo",
+    "deep rose black hair, glowing coral dark eyes, seductive street queen, glowing lips chain tattoo",
+    "silver neon green hair, glowing diamond acid eyes, luxury toxic queen, glowing diamond poison tattoo",
+    "crimson neon blue hair, glowing scarlet electric eyes, ultimate trap phonk queen, glowing full neon tattoo set pulsing",
+]
 
+TREND_BAD_BOYS = [
+    "white-haired strongest sorcerer, godlike aura, piercing eyes",
+    "pink-haired cursed fighter, chaotic energy, dangerous smirk",
+    "black-haired cold rival, sharp jawline, intimidating presence",
+    "fire aura warrior, aggressive handsome face, glowing eyes",
+    "scarred street king, dominant bad boy, neck tattoos",
+]
 
-# ══════════════════════════════════════════════════════════════════════
-# HELPERS
-# ══════════════════════════════════════════════════════════════════════
-
-def _compact(text: str, max_len: int = 3000) -> str:
+# ======================= HELPERS =======================
+def _compact(text: str, max_len: int = 3800) -> str:
     text = re.sub(r"\s+", " ", text).strip()
-    text = text.replace(" ,", ",").replace(",,", ",")
-    return text[:max_len].rstrip(" ,")
+    return text[:max_len].rstrip(", ")
 
+def _seed(style: str, filename: str, num: int) -> int:
+    key = f"darkmark_v40_trap_phonk_{style}_{filename}_{num}"
+    return int(hashlib.md5(key.encode()).hexdigest(), 16) % 999999999
 
-def _clean_song_name(filename: str) -> str:
-    name = Path(filename).stem
-    name = re.sub(r"\[[^\]]*\]|\{[^\}]*\}|\([^\)]*\)", "", name)
-    name = re.sub(r"[_\-]+", " ", name)
-    return re.sub(r"\s+", " ", name).strip() or "dark phonk"
+def _rng(style: str, filename: str, num: int):
+    return random.Random(_seed(style, filename, num))
 
-
-def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v37_trend_waifu_opening_frame"
-    return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
-
-
-def _rng(style: str, filename: str, short_num: int) -> random.Random:
-    return random.Random(_seed(style, filename, short_num))
-
-
-def _weighted_palette(rng: random.Random) -> tuple[str, str]:
-    total = sum(weight for _, _, weight in PALETTES)
+def _get_palette(rng, force_palette: str | None = None) -> Tuple[str, str]:
+    if force_palette:
+        for name, desc, _ in PALETTES:
+            if name == force_palette:
+                return name, desc
+    total = sum(w for _, _, w in PALETTES)
     r = rng.random() * total
     acc = 0
-    for name, palette, weight in PALETTES:
+    for name, desc, weight in PALETTES:
         acc += weight
         if r <= acc:
-            return name, palette
+            return name, desc
     return PALETTES[0][0], PALETTES[0][1]
 
-
-def _song_mood_boost(song_name: str) -> str:
-    clean = song_name.lower()
-
-    if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite"]):
-        return "haunted night emotion, lonely but powerful, eyes carrying darkness"
-    if any(w in clean for w in ["fire", "burn", "rage", "fury", "angry"]):
-        return "intense fire emotion, contained rage, powerful passionate stare"
-    if any(w in clean for w in ["love", "heart", "amor", "coraçao", "coracao", "rose", "cherry"]):
-        return "dark romantic emotion, longing eyes, beautiful bittersweet mood"
-    if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido"]):
-        return "deep lonely emotion, quiet sadness, isolated cinematic feeling"
-    if any(w in clean for w in ["drive", "speed", "run", "race", "corrida"]):
-        return "fast motion energy, focused eyes, wind and speed feeling"
-    if any(w in clean for w in ["queen", "king", "boss", "power", "rule"]):
-        return "dominant confident aura, dark queen energy, commanding stare"
-    if any(w in clean for w in ["dream", "sonho", "sleep", "cloud"]):
-        return "dreamy floating emotion, soft surreal atmosphere, ethereal eyes"
-
-    return "emotion matching the music, magnetic presence, cinematic feeling"
-
-
-# ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL v37
-# ══════════════════════════════════════════════════════════════════════
-
+# ======================= PROMPT BUILDER =======================
 def build_ai_prompt(
-    style: str,
-    filename: str,
-    styles: list | None = None,
+    style: str = "phonk",
+    filename: str = "song.mp3",
     short_num: int = 1,
-    force_warm: bool = False,
-    force_teal: bool = False,
-    force_crimson: bool = False,
+    force_male: bool = False,
+    force_female: bool = False,
+    force_palette: str | None = None,
 ) -> str:
-    styles = styles or []
-    mapped = GENRE_MAP.get((style or "default").lower().strip(), "default")
-    rng = _rng(mapped, filename, short_num)
-    song_name = _clean_song_name(filename)
-
-    archetype_name, archetype_prompt = rng.choice(TREND_WAIFU_ARCHETYPES)
-    face_hook = rng.choice(FACE_HOOKS)
-    hair = rng.choice(HAIR_VARIATIONS)
-    outfit = rng.choice(OUTFIT_VARIATIONS)
-    background = rng.choice(BACKGROUND_VARIATIONS)
-    music_element = rng.choice(MUSIC_ELEMENTS)
-    song_mood = _song_mood_boost(song_name)
-
-    if force_warm:
-        palette_name, palette = "warm", PALETTE_WARM
-    elif force_teal:
-        palette_name, palette = "teal", PALETTE_TEAL
-    elif force_crimson:
-        palette_name, palette = "crimson", PALETTE_CRIMSON
+    rng = _rng(style, filename, short_num)
+    
+    if force_male:
+        is_male = True
+    elif force_female or rng.random() > 0.35:
+        is_male = False
     else:
-        palette_name, palette = _weighted_palette(rng)
+        is_male = True
 
-    genre_text = ", ".join([style] + [s for s in styles if s and s != style])
-    genre_boost = GENRE_BOOSTS.get(mapped, GENRE_BOOSTS["default"])
+    if is_male:
+        char = rng.choice(TREND_BAD_BOYS)
+        gender = "one adult anime man, masculine sharp jaw, strong male presence, attractive bad boy"
+    else:
+        char = rng.choice(TREND_WAIFUS)
+        gender = "one adult extremely beautiful anime woman, seductive face, villainous smirk, perfect body, sexy trapstar"
 
-    prompt = (
-        f"{CHANNEL_IDENTITY}, "
-        f"{CORE_CHARACTER}, "
+    palette_name, palette_desc = _get_palette(rng, force_palette)
 
-        # Trending archetype primeiro para direcionar o modelo
-        f"trend archetype: {archetype_name}, {archetype_prompt}, "
+    prompt = f"""
+    {CORE_IDENTITY}, {gender}, {char},
+    {style} trap phonk music atmosphere, dark street luxury aesthetic, heavy neon glow,
+    {COMPOSITION}, {MOTION}, {VIRAL_HOOK},
+    dominant palette: {palette_name}, {palette_desc},
+    dramatic cinematic neon lighting, high contrast, intense seductive expression,
+    {QUALITY}
+    """.strip()
 
-        # Hook visual
-        f"face hook: {face_hook}, "
-        f"{VIRAL_HOOK_LOCK}, "
+    return _compact(prompt)
 
-        # Detalhes principais
-        f"hair: {hair}, "
-        f"outfit: {outfit}, "
-        f"music element: {music_element}, "
-
-        # Composição e movimento
-        f"{COMPOSITION_LOCK}, "
-        f"{MOTION_LOCK}, "
-
-        # Fundo e paleta
-        f"background: {background}, "
-        f"dominant palette: {palette_name}, {palette}, "
-
-        # Música
-        f"genre atmosphere: {genre_boost}, "
-        f"genre: {genre_text}, "
-        f"song title mood: {song_name}, "
-        f"song emotion: {song_mood}, "
-
-        # Qualidade
-        f"{STYLE_LOCK}, "
-        f"{QUALITY_LOCK}, "
-
-        # Reforço final
-        "opening frame for viral music Short, "
-        "viewer must understand the mood instantly, "
-        "beautiful adult anime waifu, emotional, trendy, memorable, "
-        "no text, no watermark, no logo"
-    )
-
-    return _compact(prompt, max_len=3000)
-
-
-def build_prompt(style: str = "phonk", seed_variant: int = 0) -> tuple[str, str]:
-    fake_filename = f"{style}_variant_{seed_variant}.mp3"
-    prompt = build_ai_prompt(
-        style=style,
-        filename=fake_filename,
-        styles=[style],
-        short_num=seed_variant + 1,
-    )
-    return prompt, NEGATIVE_PROMPT
-
-
-# ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO DE IMAGEM
-# ══════════════════════════════════════════════════════════════════════
-
-def generate_image(prompt: str, output_path: str | None = None) -> str | None:
+# ======================= GENERATION =======================
+def generate_image(prompt: str, output_path: str = "output.png") -> Optional[str]:
     if not REPLICATE_API_TOKEN:
-        logger.error("REPLICATE_API_TOKEN não configurado.")
+        logger.error("REPLICATE_API_TOKEN não configurado")
         return None
 
-    output_path = output_path or "temp/generated_background.png"
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-
-    full_prompt = _compact(prompt + GENERATION_SUFFIX, max_len=3300)
-
-    headers = {
-        "Authorization": f"Token {REPLICATE_API_TOKEN}",
-        "Content-Type": "application/json",
-    }
-
-    last_error: Optional[Exception] = None
+    full_prompt = prompt + ", no text, no watermark, no logo, ultra vibrant neon"
 
     for model in REPLICATE_MODELS:
         for attempt in range(1, 4):
             try:
-                logger.info(f"[Replicate] Tentativa {attempt}/3 — {model}")
+                logger.info(f"Tentativa {attempt}/3 com {model}")
+                payload = {"input": {"prompt": full_prompt, "negative_prompt": NEGATIVE_PROMPT, **FLUX_PARAMS}}
+                headers = {"Authorization": f"Token {REPLICATE_API_TOKEN}", "Content-Type": "application/json"}
 
-                model_input = {
-                    "prompt": full_prompt,
-                    "negative_prompt": NEGATIVE_PROMPT,
-                    "width": FLUX_PARAMS["width"],
-                    "height": FLUX_PARAMS["height"],
-                    "num_inference_steps": FLUX_PARAMS["num_inference_steps"],
-                    "guidance_scale": FLUX_PARAMS["guidance_scale"],
-                    "seed": random.randint(1000, 999_999),
-                }
-
-                if "flux" in model:
-                    model_input.update({
-                        "num_outputs": FLUX_PARAMS["num_outputs"],
-                        "output_format": FLUX_PARAMS["output_format"],
-                        "output_quality": FLUX_PARAMS["output_quality"],
-                        "disable_safety_checker": FLUX_PARAMS["disable_safety_checker"],
-                    })
-
-                payload = {"input": model_input}
-
-                create_url = f"https://api.replicate.com/v1/models/{model}/predictions"
-                resp = requests.post(create_url, headers=headers, json=payload, timeout=45)
+                resp = requests.post(f"https://api.replicate.com/v1/models/{model}/predictions",
+                                   headers=headers, json=payload, timeout=30)
                 resp.raise_for_status()
                 pred = resp.json()
 
-                poll_url = (
-                    pred.get("urls", {}).get("get")
-                    or f"https://api.replicate.com/v1/predictions/{pred['id']}"
-                )
+                poll_url = pred.get("urls", {}).get("get") or f"https://api.replicate.com/v1/predictions/{pred['id']}"
 
-                for _ in range(120):
+                for _ in range(100):
                     time.sleep(2)
                     sr = requests.get(poll_url, headers=headers, timeout=30)
                     sr.raise_for_status()
                     data = sr.json()
-                    status = data.get("status")
 
-                    if status == "succeeded":
+                    if data.get("status") == "succeeded":
                         output = data.get("output")
-                        image_url = output[0] if isinstance(output, list) else output
-                        if not image_url:
-                            raise RuntimeError("Replicate retornou output vazio.")
-
-                        img = requests.get(image_url, timeout=90)
+                        img_url = output[0] if isinstance(output, list) else output
+                        img = requests.get(img_url, timeout=60)
                         img.raise_for_status()
                         Path(output_path).write_bytes(img.content)
-                        logger.info(f"[Replicate] Salvo: {output_path}")
+                        logger.info(f"✅ Imagem salva: {output_path}")
                         return output_path
 
-                    if status == "failed":
-                        raise RuntimeError(data.get("error") or "Replicate falhou.")
-
-                raise TimeoutError("Replicate demorou demais.")
-
+                    if data.get("status") == "failed":
+                        raise RuntimeError(data.get("error"))
+                raise TimeoutError("Timeout")
             except Exception as e:
-                last_error = e
-                logger.warning(f"[Replicate] Falhou tentativa {attempt}: {e}")
-                time.sleep(3 * attempt)
-
-    logger.error(f"[Replicate] Todas as tentativas falharam: {last_error}")
+                logger.warning(f"Falha {model} tentativa {attempt}: {e}")
+                time.sleep(3)
+    logger.error("Todas as tentativas falharam")
     return None
 
-
-# ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES DE CONVENIÊNCIA
-# ══════════════════════════════════════════════════════════════════════
-
-def generate_background_image(
-    style: str = "phonk",
-    output_path: str = "assets/background.png",
-    seed_variant: int = 0,
-    max_retries: int = 3,
-    force_warm: bool = False,
-    force_teal: bool = False,
-    force_crimson: bool = False,
-) -> Optional[str]:
-    prompt = build_ai_prompt(
-        style=style,
-        filename=f"{style}_variant_{seed_variant}.mp3",
-        styles=[style],
-        short_num=seed_variant + 1,
-        force_warm=force_warm,
-        force_teal=force_teal,
-        force_crimson=force_crimson,
-    )
-
-    for attempt in range(1, max_retries + 1):
-        result = generate_image(prompt, output_path)
-        if result:
-            return result
-        logger.warning(f"Tentativa background {attempt}/{max_retries} falhou.")
-        time.sleep(3 * attempt)
-
-    return None
-
-
-def get_or_generate_background(
-    style: str = "phonk",
-    output_dir: str = "assets/backgrounds",
-    force_new: bool = False,
-) -> Optional[str]:
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    existing = list(Path(output_dir).glob(f"{style}_bg_*.png"))
-
-    if existing and not force_new:
-        chosen = random.choice(existing)
-        logger.info(f"Background reutilizado: {chosen}")
-        return str(chosen)
-
-    variant = random.randint(0, 99)
-    output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
-    return generate_background_image(
-        style=style,
-        output_path=output_path,
-        seed_variant=variant,
-    )
-
-
-def generate_background_batch(
-    styles: list[str],
-    output_dir: str = "assets/backgrounds",
-    variants_per_style: int = 3,
-) -> dict[str, list[str]]:
-    Path(output_dir).mkdir(parents=True, exist_ok=True)
-    results: dict[str, list[str]] = {}
-
-    for style in styles:
-        results[style] = []
-        for v in range(variants_per_style):
-            output_path = str(Path(output_dir) / f"{style}_bg_{v:02d}.png")
-            if os.path.exists(output_path):
-                results[style].append(output_path)
-                continue
-
-            path = generate_background_image(
-                style=style,
-                output_path=output_path,
-                seed_variant=v,
-            )
-            if path:
-                results[style].append(path)
-
-    return results
-
-
-# ══════════════════════════════════════════════════════════════════════
-# CLI
-# ══════════════════════════════════════════════════════════════════════
-
+# ======================= CLI =======================
 if __name__ == "__main__":
     import argparse
-
     logging.basicConfig(level=logging.INFO)
-
-    parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v37 Trend Waifu Opening Frame"
-    )
-    parser.add_argument("--style", default="phonk",
-                        help="Gênero musical: phonk, trap, electronic, dark, darkpop, rock")
-    parser.add_argument("--filename", default="dark phonk.mp3",
-                        help="Nome da música para adaptar mood")
-    parser.add_argument("--short-num", type=int, default=1,
-                        help="Número do short, muda seed")
+    
+    parser = argparse.ArgumentParser(description="DJ DARK MARK v40 — 100 Waifus Trap/Phonk")
+    parser.add_argument("--style", default="phonk")
+    parser.add_argument("--filename", default="song.mp3")
+    parser.add_argument("--short-num", type=int, default=1)
     parser.add_argument("--output", default="assets/background.png")
-    parser.add_argument("--force-warm", action="store_true",
-                        help="Força paleta warm golden")
-    parser.add_argument("--force-teal", action="store_true",
-                        help="Força paleta teal blue")
-    parser.add_argument("--force-crimson", action="store_true",
-                        help="Força paleta crimson dark phonk")
-    parser.add_argument("--prompt-only", action="store_true",
-                        help="Só imprime prompt, não gera imagem")
+    parser.add_argument("--male", action="store_true")
+    parser.add_argument("--female", action="store_true")
+    parser.add_argument("--palette", choices=["crimson", "teal", "pink", "purple", "warm"])
+    parser.add_argument("--prompt-only", action="store_true")
+
     args = parser.parse_args()
 
     prompt = build_ai_prompt(
         style=args.style,
         filename=args.filename,
-        styles=[args.style],
         short_num=args.short_num,
-        force_warm=args.force_warm,
-        force_teal=args.force_teal,
-        force_crimson=args.force_crimson,
+        force_male=args.male,
+        force_female=args.female,
+        force_palette=args.palette,
     )
 
     if args.prompt_only:
-        print("=== PROMPT v37 ===")
         print(prompt)
-        print("\n=== NEGATIVE PROMPT ===")
-        print(NEGATIVE_PROMPT)
-        print("\n=== GENERATION SUFFIX ===")
-        print(GENERATION_SUFFIX)
     else:
-        path = generate_image(prompt, args.output)
-        print(f"✅ Salvo: {path}" if path else "✗ Falha na geração.")
+        result = generate_image(prompt, args.output)
+        print("✅ Gerado com sucesso!" if result else "❌ Falha na geração")
