@@ -670,9 +670,9 @@
       "id": "1xXXSOhUq_i6twy9-Sa9OTMD8Jyg9_uGS",
       "name": "With You (1).mp3",
       "key": "1xXXSOhUq_i6twy9-Sa9OTMD8Jyg9_uGS",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "with you"
     },
     {
