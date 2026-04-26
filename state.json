@@ -634,9 +634,9 @@
       "id": "1XzSxrLxkf3DPs_DoYipN7vWS7s98NF2_",
       "name": "Sad Girl Forever (1).mp3",
       "key": "1XzSxrLxkf3DPs_DoYipN7vWS7s98NF2_",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "sad girl forever"
     },
     {
