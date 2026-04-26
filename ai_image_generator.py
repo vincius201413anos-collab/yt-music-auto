@@ -1,13 +1,14 @@
 """
-ai_image_generator.py — DJ DARK MARK v26 FULL BODY ULTRA VIRAL ENGINE
+ai_image_generator.py — DJ DARK MARK v27 FULL BODY HARD FIX
 =============================================================
-CHANGELOG v26:
-- HARD BAN azul/cyan em todo o sistema (paleta + negative prompt reforçado)
-- BODY LOCK reescrito com linguagem mais agressiva para forçar corpo inteiro
-- Novas poses focadas em corpo completo visível
-- Paleta principal: magenta + violeta + vermelho + preto
-- Referências visuais: dark queen cyberpunk, phonk cover art, trap girl
-- Sem close-up de rosto. Sempre corpo inteiro ou 3/4.
+CHANGELOG v27:
+- MODELOS TROCADOS: adicionado animagine-xl e anything-v5 (muito melhores para full body anime)
+- FLUX_PARAMS: resolução alterada para 768x1344 (ratio 4:7 força mais espaço vertical para corpo)
+- PROMPT REORDENADO: pose/composição vem PRIMEIRO antes de qualquer descrição de rosto
+- BODY_LOCK v3: linguagem ainda mais direta, frases curtas que os modelos entendem melhor
+- GENERATION_SUFFIX reforçado com triggers técnicos: "full body", "wide shot", "from head to toe"
+- NEGATIVE PROMPT: adicionado "portrait", "face focus", "upper body" explicitamente
+- PALETA: azul/cyan banido em todas as camadas
 """
 
 from __future__ import annotations
@@ -33,12 +34,19 @@ logger = logging.getLogger("ai_image_generator")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
+    # Animagine XL — melhor para anime full body, composição vertical
+    "cjwbw/animagine-xl-3.1",
+    # Fallback: Anything v5 — clássico anime, respeita bem composição de corpo
+    "lucataco/anything-v5-better-vae",
+    # Último fallback: Flux-dev
     "black-forest-labs/flux-dev",
 ]
 
 FLUX_PARAMS = {
-    "width":               int(os.getenv("FLUX_WIDTH",    "832")),
-    "height":              int(os.getenv("FLUX_HEIGHT",   "1216")),
+    # 768x1344 = ratio ~1:1.75 — força mais espaço vertical, menos tendência a focar no rosto
+    # Equivale a aprox. 9:16 mas com pixels suficientes para mostrar corpo completo
+    "width":               int(os.getenv("FLUX_WIDTH",    "768")),
+    "height":              int(os.getenv("FLUX_HEIGHT",   "1344")),
     "num_inference_steps": int(os.getenv("FLUX_STEPS",    "35")),
     "guidance_scale":      float(os.getenv("FLUX_GUIDANCE", "7.5")),
     "num_outputs": 1,
@@ -53,255 +61,296 @@ FLUX_PARAMS = {
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
-    "DJ darkMark visual identity, dark anime edit, viral phonk cover art, "
-    "YouTube Shorts music visualizer background, underground trap and electronic music aesthetic"
+    "DJ darkMark visual identity, dark anime trapstar edit, viral phonk cover art, "
+    "YouTube Shorts music visualizer, underground trap phonk cyberpunk aesthetic"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# LOCKS PRINCIPAIS — V26 FULL BODY REWRITE
+# LOCKS PRINCIPAIS — V28 TRAPSTAR CYBERPUNK + ANTI-BLUE NUCLEAR
 # ══════════════════════════════════════════════════════════════════════
 
 TRAPSTAR_DNA = (
-    "one adult anime woman only, "
-    "extremely beautiful and sensual anime girl, "
-    "perfect symmetrical face, smooth flawless skin, glossy lips, sharp eyeliner, "
-    "ultra attractive mature face, seductive and confident energy, "
-    "strong dark queen presence, slightly dangerous mysterious vibe, "
-    "modern trapstar streetwear aesthetic, choker, chain accessories, subtle jewelry, "
-    "subtle tattoos on neck or arms, nose or lip piercing optional, "
-    "alone in frame, no other characters"
+    # IDENTIDADE — trapstar real, não anime genérico
+    "one adult anime woman, "
+    "dark trapstar queen, underground phonk cyberpunk aesthetic, "
+    "extremely beautiful face, mature and seductive, glossy lips, sharp cat eyeliner, "
+    "heavy mascara, intense gaze, dangerous energy, "
+    "trap queen vibe — confident, cold, powerful, slightly unhinged, "
+    # ROUPA — real trapstar pieces
+    "wearing: oversized black hoodie OR dark leather jacket OR black techwear vest, "
+    "chunky gold or silver chain necklace, black choker, "
+    "fingerless gloves OR arm sleeves, dark cargo pants OR black shorts with thigh-high boots, "
+    "chunky platform boots OR combat boots, "
+    "subtle neck tattoo OR arm tattoo visible, "
+    "nose ring OR lip ring OR eyebrow piercing, "
+    "alone, no other characters, no crowds"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# BODY LOCK — O MAIS IMPORTANTE — V26 REFORÇADO
+# BODY LOCK V4 — FRASES CURTAS + ORDEM PRIORITÁRIA
 # ══════════════════════════════════════════════════════════════════════
 
 BODY_LOCK = (
-    "ABSOLUTE MANDATORY RULE: show FULL BODY from head to feet, "
-    "complete body visible: head, neck, shoulders, chest, waist, hips, thighs, knees, legs, boots or feet, "
-    "camera positioned FAR BACK — medium-long shot or long shot ONLY, "
-    "character height fills 70 to 85 percent of the vertical frame, "
-    "face is SMALL — face takes only 10 to 18 percent of total image height, "
-    "body silhouette is the main visual element — outfit, chains, tattoos, legs clearly visible, "
-    "vertical 9:16 full body composition like a premium anime poster, "
-    "BANNED: portrait framing, headshot, bust shot, close-up, face dominant, cropped body, "
-    "BANNED: face bigger than 20 percent of frame, BANNED: missing legs, BANNED: missing torso, "
-    "BANNED: half body only, BANNED: waist cut, BANNED: shoulder crop"
+    "full body, "
+    "full length, "
+    "wide shot, "
+    "long shot, "
+    "head to toe, "
+    "whole body visible, "
+    "legs visible, "
+    "boots visible, "
+    "feet in frame, "
+    "complete figure, "
+    "outfit fully visible, "
+    "face small in frame, "
+    "body dominant composition, "
+    "vertical poster framing, "
+    "9:16 aspect ratio"
 )
+
+# ══════════════════════════════════════════════════════════════════════
+# STYLE LOCK — CYBERPUNK TRAPSTAR ESPECÍFICO
+# ══════════════════════════════════════════════════════════════════════
 
 STYLE_LOCK = (
-    "2D anime illustration only, premium dark anime key visual, "
-    "sharp clean black lineart, polished cel shading with smooth gradients, "
-    "high contrast cinematic composition, "
-    "dark cyberpunk anime aesthetic, phonk trap cover art energy, "
-    "very dark background — nearly black, "
-    "neon magenta and violet as the ONLY rim lights, "
-    "warm red or orange as secondary accent, "
-    "cinematic moody lighting, controlled atmospheric glow, "
-    "NOT photorealistic, NOT 3D render, NOT noisy, NOT blurry"
+    # estilo de arte
+    "2D anime illustration, "
+    "dark cyberpunk anime art style, "
+    "sharp clean lineart, "
+    "polished cel shading, "
+    "high contrast shadows, "
+    "cinematic dark mood, "
+    # referências visuais que os modelos conhecem bem
+    "inspired by dark phonk music cover art, "
+    "trap queen anime poster, "
+    "underground cyberpunk streetwear aesthetic, "
+    "similar to dark anime music video thumbnail"
 )
+
+# ══════════════════════════════════════════════════════════════════════
+# PALETA — ANTI-AZUL NUCLEAR V28
+# ══════════════════════════════════════════════════════════════════════
 
 PALETTE_HARD_LOCK = (
-    "COLOR HARD LOCK — STRICTLY ENFORCED: "
-    "dominant colors MUST BE: neon magenta, deep violet, hot pink, crimson red, "
-    "secondary colors ALLOWED: warm orange, dark red, black, near-black, "
-    "COMPLETELY BANNED COLORS: blue, cyan, teal, turquoise, aqua, green, yellow, "
-    "NO BLUE ANYWHERE — not in background, not in hair, not in eyes, not in lighting, "
-    "NO CYAN ANYWHERE — not as rim light, not as glow, not as aura, "
-    "background must be dark near-black with only magenta or violet or red neon accents"
+    # O QUE DEVE EXISTIR — dito de forma positiva primeiro
+    "warm color palette, "
+    "magenta dominant, "
+    "hot pink neon accents, "
+    "deep violet shadows, "
+    "crimson red highlights, "
+    "warm orange secondary light, "
+    "near-black background, "
+    "dark red atmosphere, "
+    # O QUE É PROIBIDO — repetido várias vezes de formas diferentes
+    "no blue, no cyan, no teal, no turquoise, no aqua, "
+    "no cold colors, no cool tones, no icy colors, "
+    "not blue, not cyan, not teal, "
+    "avoid blue, avoid cyan, avoid teal, "
+    "warm tones only, hot colors only"
 )
+
+# ══════════════════════════════════════════════════════════════════════
+# LIGHTING — QUENTE E DIRECIONAL
+# ══════════════════════════════════════════════════════════════════════
 
 LIGHTING_LOCK = (
-    "cinematic split lighting: "
-    "primary light — warm orange or red from one side, strong and directional, "
-    "secondary light — neon magenta or violet from opposite side as rim light, "
-    "face clearly illuminated and glowing beautifully, "
-    "eyes highlighted with matching neon color, "
-    "soft bloom glow — not overexposed, background significantly darker than subject, "
-    "BANNED: blue light, BANNED: cyan rim light, BANNED: teal glow, BANNED: cold white light"
+    "dramatic cinematic lighting, "
+    "warm orange or red key light from one side, "
+    "hot magenta or violet rim light from opposite side, "
+    "strong directional shadows, "
+    "face beautifully lit, "
+    "eyes glowing with neon reflection, "
+    "dark background, subject brighter than background, "
+    "no blue light, no cold light, no white overexposure"
 )
 
+# ══════════════════════════════════════════════════════════════════════
+# SKIN — TOM NATURAL ANIME
+# ══════════════════════════════════════════════════════════════════════
+
 SKIN_LOCK = (
-    "anime skin tone: pale or light warm beige, "
-    "smooth soft shading with subtle blush on cheeks, "
-    "natural clean readable face under neon light, "
-    "BANNED: blue skin tone, BANNED: cyan skin, BANNED: green skin, "
-    "BANNED: purple skin, BANNED: overexposed white face"
+    "warm pale anime skin, "
+    "natural skin tone, "
+    "light beige or warm ivory, "
+    "soft blush on cheeks, "
+    "no blue skin, no cyan skin, no cold skin tone, "
+    "not blue-tinted, not cyan-tinted, "
+    "warm skin color"
 )
 
 RETENTION_LOCK = (
-    "scroll-stopping viral composition for YouTube Shorts and TikTok 9:16, "
-    "full body character dominates the vertical frame, "
-    "strong center focal point — character perfectly centered or slightly off-center, "
-    "instant impact readable in under 1 second, "
-    "body pose and outfit silhouette create visual tension, "
-    "space reserved near bottom of frame for waveform visualizer and DJ logo overlay, "
-    "high click-through rate aesthetic, professional viral anime thumbnail energy"
+    "scroll-stopping viral thumbnail, "
+    "strong visual impact in under 1 second, "
+    "character centered, full body dominant, "
+    "space at bottom for DJ logo and waveform overlay, "
+    "high CTR dark anime thumbnail energy"
 )
 
 QUALITY_LOCK = (
-    "masterpiece quality, best anime illustration, ultra clean lineart, "
-    "beautiful detailed anatomy, clean proportions, cinematic composition, "
-    "professional dark anime poster quality, "
-    "looks like top viral phonk anime YouTube thumbnail"
+    "masterpiece, best quality, "
+    "ultra detailed anime illustration, "
+    "sharp lineart, clean anatomy, "
+    "professional dark phonk anime poster"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT — V26 AZUL/CYAN TOTALMENTE BANIDO
+# NEGATIVE PROMPT V28 — ANTI-AZUL MÁXIMO + COMPOSIÇÃO FORÇADA
 # ══════════════════════════════════════════════════════════════════════
 
 NEGATIVE_PROMPT = (
-    # qualidade anatômica
+    # ═══ AZUL/CYAN — LISTADO O MÁXIMO POSSÍVEL ═══
+    "blue, cyan, teal, turquoise, aqua, cobalt, azure, cerulean, indigo, "
+    "blue background, cyan background, teal background, "
+    "blue hair, cyan hair, teal hair, blue highlights, cyan highlights, "
+    "blue eyes, cyan eyes, teal eyes, blue iris, "
+    "blue skin, cyan skin, teal skin, blue-tinted skin, cold skin, "
+    "blue light, cyan light, teal light, cold light, ice light, "
+    "blue neon, cyan neon, teal neon, blue glow, cyan glow, teal glow, "
+    "blue aura, cyan aura, blue rim light, cyan rim light, teal rim light, "
+    "blue atmosphere, cyan atmosphere, cold atmosphere, cold color palette, "
+    "blue tones, cyan tones, cool tones, cold tones, icy tones, "
+    "electric blue, ice blue, navy blue, sky blue, "
+
+    # ═══ OUTRAS CORES INDESEJADAS ═══
+    "green, green tones, green skin, "
+    "yellow, yellow tones, "
+    "washed out colors, desaturated, flat colors, "
+
+    # ═══ QUALIDADE ANATÔMICA ═══
     "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, lazy eye, "
-    "bad hands, extra fingers, missing fingers, extra limbs, fused limbs, "
-    "long neck, tiny head, melted face, uncanny valley, "
-    "blurry, low quality, noise, grain, jpeg artifacts, muddy colors, washed out, "
+    "bad hands, extra fingers, missing fingers, fused limbs, long neck, "
+    "melted face, uncanny valley, blurry, low quality, noise, jpeg artifacts, "
 
-    # AZUL E CYAN — COMPLETAMENTE BANIDO
-    "blue, cyan, teal, turquoise, aqua, blue background, cyan glow, teal rim light, "
-    "blue hair, cyan hair, teal hair, blue eyes, cyan eyes, teal eyes, "
-    "blue lighting, cyan lighting, cold blue light, ice blue, electric blue, "
-    "blue skin, cyan skin, blue tones, cyan tones, cold color palette, "
-    "blue neon, cyan neon, teal neon, blue aura, cyan aura, "
-
-    # outras cores indesejadas
-    "green, yellow, orange dominant, color pollution, mixed color chaos, "
-    "green skin, purple skin, gray skin, unnatural skin tone, "
-    "overexposed face, white overexposed skin, neon skin, "
-
-    # realismo
+    # ═══ REALISMO ═══
     "photorealistic, realistic, photography, real person, 3D render, CGI, "
-    "doll, plastic skin, lifeless eyes, hyperrealistic, "
+    "hyperrealistic, plastic skin, lifeless eyes, "
 
-    # personagens proibidos
-    "child, teen, underage, loli, chibi, schoolgirl, baby face, "
+    # ═══ PERSONAGENS PROIBIDOS ═══
+    "child, underage, loli, chibi, schoolgirl, baby face, "
 
-    # nsfw excessivo
-    "nsfw explicit, nude, genitalia, explicit sexual content, "
-    "fully exposed body, extreme nudity, "
+    # ═══ NSFW ═══
+    "nude, explicit nudity, genitalia, "
 
-    # outros personagens
-    "multiple people, crowd, duplicate character, two girls, group, "
+    # ═══ MÚLTIPLOS PERSONAGENS ═══
+    "multiple people, crowd, two girls, group, duplicate, "
 
-    # texto / logo
-    "text, letters, words, captions, logo, watermark, signature, UI, numbers, "
+    # ═══ TEXTO ═══
+    "text, words, logo, watermark, signature, letters, numbers, "
 
-    # COMPOSIÇÃO RUIM — CLOSE NO ROSTO BANIDO
-    "face only, headshot, portrait close-up, extreme close-up, "
-    "face filling frame, face dominant, huge face, zoomed face, "
-    "only eyes, bust portrait, portrait framing, close framing, "
-    "cropped chest, cropped shoulders, cropped arms, cropped waist, "
-    "cropped body, missing legs, missing torso, missing lower body, "
-    "half body, waist up only, shoulders up only, neck up, "
-    "small character in frame, character too small, empty background, "
+    # ═══ COMPOSIÇÃO ERRADA — CLOSE/ROSTO ═══
+    "portrait, headshot, bust shot, close-up, extreme close-up, "
+    "face shot, face focus, head focus, face filling frame, "
+    "face dominant, zoomed face, face only, eyes only, "
+    "upper body only, waist up, shoulders up, "
+    "cropped legs, cropped body, missing legs, missing feet, missing lower body, "
+    "half body, portrait framing, "
 
-    # excesso de glow
-    "overexposed, too much glow, messy colors, bloom everywhere, "
-    "toxic neon overload, 5 colors simultaneously, color chaos, "
-
-    # estilo indesejado
-    "flat lighting, generic AI art, boring composition, clutter, "
-    "low contrast, washed out colors, desaturated, dull"
+    # ═══ GLOW EXCESSIVO ═══
+    "overexposed, too much glow, bloom overload, color chaos"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES — V26 PALETA CORRIGIDA (SEM AZUL)
+# VARIAÇÕES — V28 TRAPSTAR CYBERPUNK, SEM AZUL
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "long black hair with subtle neon violet reflections, smooth glossy strands",
-    "dark hair with hot pink neon highlights, flowing and detailed",
-    "black and deep violet gradient hair, beautifully shaded",
-    "dark hair softly lit by neon magenta rim light from behind",
-    "long black hair with crimson red streaks, dramatic and bold",
-    "dark maroon-black hair with violet sheen, elegant and dark",
-    "black hair under oversized dark hood, colored strands escaping",
-    "dark red and black ombre hair, wet-look shine, warm backlight",
-    "short sleek black bob with violet undertones, sharp clean silhouette",
-    "white silver hair with black tips, sharp bangs, magenta rim glow",
-    "long silver-white hair, glowing pink under neon light",
-    "black twintails with hot pink ribbon accents, cyberpunk style",
+    # PRETO / DARK — principal
+    "long straight black hair, glossy, lit by magenta rim light",
+    "black hair with dark crimson streaks, edgy and bold",
+    "black hair pulled into messy high bun, strands falling loose, gothic",
+    "short sharp black bob, undercut sides, dark streetwear energy",
+    "black hair under oversized dark hood, neon pink strands visible at edges",
+    "black wavy hair with subtle dark red highlights, flowing",
+    "black twintails secured with dark chains, alternative punk style",
+    # BRANCO / PRATA — contraste dramático
+    "long silver white hair with black roots, dramatic contrast, magenta glow",
+    "white platinum hair, sharp straight cut bangs, violet rim backlight",
+    "silver white hair streaked with hot pink, cyberpunk trapstar",
+    # VERMELHO / VIOLETA — quente
+    "dark maroon red hair, deep rich color, lit by warm neon",
+    "black to deep violet gradient hair, rich dark ombre",
+    "dark burgundy hair, glossy, cinematic warm lighting",
 ]
 
 EYE_VARIATIONS = [
-    "bright glowing magenta eyes with intense reflections",
-    "deep violet eyes, glossy and emotionally powerful",
-    "glowing hot pink eyes with subtle sparkle",
-    "intense red-violet eyes with cinematic rim reflection",
-    "glowing crimson eyes, cold hypnotic dangerous stare",
-    "deep purple glowing eyes, mysterious and captivating",
+    "glowing neon magenta eyes, intense and hypnotic",
+    "deep violet glowing eyes, dangerous and captivating",
+    "bright hot pink eyes with star-shaped reflections",
+    "deep crimson red eyes, cold killer stare",
+    "glowing pink-violet eyes, seductive and dark",
+    "sharp red eyes with vertical slit pupils, demonic energy",
 ]
 
 EXPRESSION_VARIATIONS = [
-    "slightly crazy beautiful smile, hypnotic eyes staring directly at viewer",
-    "seductive smirk, confident dark queen energy, direct gaze",
-    "cold dominant stare, emotionless but powerfully attractive",
-    "intense mysterious expression, slightly parted glossy lips",
-    "playful psycho smile, charming but dangerously beautiful",
-    "soft emotional gaze, deep soul connection with the viewer",
-    "controlled rage expression, sharp cold stare, jaw set",
-    "evil confident queen smirk, trap queen dark energy",
-    "sultry half-lidded eyes, slow dangerous smile",
+    "cold dead stare directly into camera, dominant trap queen energy",
+    "slow dangerous smirk, one eyebrow raised, confident and threatening",
+    "slightly open mouth, glossy lips, heavy-lidded seductive gaze",
+    "sharp psychotic smile, eyes wide and glowing, unhinged beauty",
+    "expressionless cold face, jaw set, eyes burning with intensity",
+    "subtle evil smile, looking down at viewer from above, superior energy",
+    "fierce rage barely contained, clenched jaw, glowing eyes narrowed",
+    "charming smile hiding danger, trap queen vibe, direct eye contact",
 ]
 
 POSE_VARIATIONS = [
-    "standing full body pose, head to boots visible, strong confident silhouette, arms at sides or one hand on hip",
-    "full body standing, one hand touching dark choker, looking directly at viewer, legs visible to ankles",
-    "walking toward camera, full body head to feet, chains swinging, dark outfit flowing",
-    "low-angle full body shot looking slightly down at viewer, complete body from crown to boots visible",
-    "leaning against dark neon wall, full body visible head to knees minimum, one leg bent confidently",
-    "three-quarter body turn, facing viewer, full silhouette clear from head to thighs or lower",
-    "arms crossed over chest, full upper body and legs visible, dominant boss energy pose",
-    "one hand raised touching hair, body fully visible from head to ankles, relaxed sensual confidence",
-    "standing in dark alley, complete trapstar outfit visible head to boots, strong vertical frame",
-    "dynamic full body stance, weight on one hip, knees visible, neon rim light outlining full silhouette",
-    "sitting on dark throne or ledge, full body or nearly full body visible, legs crossed, sultry",
-    "back slightly turned, looking over shoulder at viewer, full body silhouette visible",
+    # CORPO INTEIRO — forçar o modelo
+    "full body standing pose, arms slightly out, legs apart, complete figure head to boots",
+    "full body walking toward camera, coat or jacket flowing, chains moving, feet visible",
+    "full body low angle shot, character looking down at viewer, boots in foreground, crown at top",
+    "full body leaning on dark wall, one knee bent, hand on wall, complete body visible",
+    "full body arms crossed, weight on one hip, dominant stance, complete silhouette",
+    "full body sitting on concrete ledge, legs hanging, boots visible, full figure in frame",
+    "full body back against wall, sliding down slightly, legs stretched out, full length",
+    "full body standing with chain in hand, draped low, whole body from head to ankle visible",
+    "full body three-quarter turn, looking back over shoulder, complete figure visible",
+    "full body dynamic stance, hand reaching toward camera, full length visible behind",
 ]
 
 OUTFIT_VARIATIONS = [
-    "black oversized hoodie half-zipped, chains, black choker, dark baggy pants, chunky boots",
-    "dark techwear outfit — straps, tactical belts, arm sleeves, fingerless gloves, black boots",
-    "black cropped leather jacket, gothic streetwear corset underneath, dark pants, choker",
-    "dark leather jacket open, chain belt, black high-waisted pants, platform boots",
-    "black cyberpunk vest with red details, cargo pants, fingerless gloves, dark boots",
-    "hooded black longcoat with violet seam details, chains wrapped around waist, dark boots",
-    "black and violet trap streetwear — layered belts, arm warmers, chunky black boots",
-    "oversized black hoodie, tactical straps, dark shorts with thigh-high boots",
-    "black bodysuit under sheer dark jacket, chains, choker, thigh-high boots",
-    "dark goth dress with black corset overlay, chains, fishnet stockings, platform boots",
+    # TRAPSTAR REAL — roupas específicas
+    "oversized black Trapstar hoodie, matching dark joggers, chunky white sole sneakers, gold chain",
+    "black leather biker jacket open, dark sports bra visible, black joggers, chunky black boots, silver chain",
+    "dark techwear — black tactical vest, cargo pants with straps, platform boots, arm sleeves, chain belt",
+    "black oversized puffer jacket, dark tracksuit underneath, gold Cuban chain, black boots",
+    "black cropped hoodie with skull graphic, high-waisted black pants, chunky platform boots, choker and chains",
+    "black full-length trench coat open, dark outfit underneath, heavy chains, combat boots",
+    "dark gothic corset top, black wide-leg pants, platform stomper boots, multiple chain layers",
+    "black zip-up tracksuit top half open, dark shorts, thigh-high black boots, chain accessories",
+    "oversized black graphic tee tucked in, black mini skirt, thigh-high stockings, platform boots, chains",
+    "black techwear bodysuit, dark cargo straps over it, chunky boots, fingerless gloves, choker",
 ]
 
 SCENE_VARIATIONS = [
-    "dark neon alley at night, wet ground reflecting only magenta and violet neon signs",
-    "cyberpunk city rooftop at midnight, deep violet atmospheric haze behind character",
-    "underground club entrance, walls lit only by magenta and red neon, heavy shadows",
-    "pure near-black background with controlled magenta and violet atmospheric glow — minimal and clean",
-    "abandoned dark urban street, warm red traffic light glow, violet mist rising from ground",
-    "dark music studio with crimson and violet laser light beams, smoky trap atmosphere",
-    "crumbling dark building interior, vine of neon magenta light through cracks",
-    "rooftop edge at night, blood moon partially visible, violet and red sky glow",
+    # CENAS ESCURAS COM ILUMINAÇÃO QUENTE
+    "dark rainy alley, neon magenta signs reflecting on wet asphalt, heavy shadows, red car lights far back",
+    "underground parking garage, hot pink and violet neon tubes, concrete walls, dark atmosphere",
+    "rooftop at night, blood red moon, violet fog, city lights blurred far below",
+    "dark nightclub hallway, magenta laser beams, smoke machine haze, red velvet walls",
+    "abandoned warehouse, single magenta spotlight from above, dust particles, pure darkness around",
+    "pure black background, only character lit by dual neon: magenta left, red-orange right, no environment",
+    "dark cyberpunk street, warm red and pink neon shop signs, wet black ground reflection",
+    "dark concrete tunnel, violet neon strips along walls, red glow at end, foggy",
 ]
 
 AURA_VARIATIONS = [
-    "subtle violet electric aura tracing her full body silhouette",
-    "soft crimson neon smoke wrapping around her arms and waist",
-    "hot magenta glitch particles scattered around her body",
-    "dark purple energy mist rising from the ground around her feet",
-    "deep red flame-like neon aura, subtle and controlled, outlining her form",
-    "black ink shadow tendrils with magenta sparks at the edges",
-    "warm orange-red energy wisps surrounding her lower body",
+    "deep magenta electric sparks tracing her silhouette from feet upward",
+    "dark red energy smoke rising from ground around her boots",
+    "hot pink glitch distortion effect at edges of her body",
+    "violet shadow tendrils curling around her arms and legs",
+    "crimson flame aura wrapping her lower body, controlled and dark",
+    "dark ink bleeding effect at edges of her silhouette, magenta glow within",
+    "subtle warm orange heat shimmer rising from ground at her feet",
 ]
 
 ART_STYLE_VARIATIONS = [
-    "premium dark anime key visual, ultra sharp lineart, polished cel shading with deep shadows",
-    "viral dark anime music cover art, cinematic lighting, professional full body composition",
-    "cyberpunk anime poster art, clean dramatic silhouette, high contrast magenta and black",
-    "phonk trap anime edit style, beautiful sensual character, detailed dark streetwear",
-    "dark manga cover energy, deep neon glow, powerful full body vertical composition",
+    "premium dark 2D anime, ultra sharp lineart, polished high-contrast cel shading, dark phonk poster quality",
+    "dark cyberpunk anime illustration, crisp clean lines, deep shadows, professional music cover energy",
+    "underground trap anime art, bold silhouette, neon accents, viral thumbnail composition",
+    "dark anime key visual style, cinematic lighting, clean anatomy, phonk trapstar aesthetic",
+    "high quality dark anime poster art, sharp details, moody atmosphere, dark queen protagonist energy",
 ]
 
 
@@ -373,7 +422,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v26_fullbody_noblue"
+    key = f"{style}|{filename}|{short_num}|darkmark_v28_trapstar_noblue"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -427,11 +476,11 @@ def build_ai_prompt(
     genre_text = ", ".join([style] + [s for s in styles if s and s != style])
 
     prompt = (
-        # IDENTIDADE E PERSONAGEM
-        f"{TRAPSTAR_DNA}, "
-
-        # CORPO — REGRA MAIS IMPORTANTE
+        # ══ COMPOSIÇÃO VEM PRIMEIRO — isso é o que o modelo prioriza ══
         f"{BODY_LOCK}, "
+
+        # PERSONAGEM
+        f"{TRAPSTAR_DNA}, "
 
         # ESTILO VISUAL
         f"{STYLE_LOCK}, "
@@ -451,13 +500,13 @@ def build_ai_prompt(
         # QUALIDADE
         f"{QUALITY_LOCK}, "
 
-        # VARIAÇÕES DINÂMICAS
-        f"hair: {hair}, "
-        f"eyes: {eyes}, "
-        f"expression: {expression}, "
+        # VARIAÇÕES DINÂMICAS — pose vem antes de hair/eyes
         f"pose: {pose}, "
         f"outfit: {outfit}, "
         f"scene: {scene}, "
+        f"hair: {hair}, "
+        f"eyes: {eyes}, "
+        f"expression: {expression}, "
         f"aura: {aura}, "
         f"detail: {detail}, "
 
@@ -468,15 +517,9 @@ def build_ai_prompt(
         f"{art}, "
 
         # REGRAS CRÍTICAS FINAIS
-        "CRITICAL FINAL RULES: "
-        "MUST show complete full body from head to feet or head to knees minimum, "
-        "camera MUST be pulled far back in medium-long or long shot, "
-        "face MUST be small — body and outfit are the main visual focus, "
-        "ABSOLUTE BAN on blue cyan teal anywhere in the image, "
-        "ABSOLUTE BAN on face-only or headshot framing, "
-        "character must be extremely attractive and sensual — viral dark anime queen energy, "
-        "no text, no watermark, no logo, "
-        "professional quality — looks like the best dark anime channel thumbnail on YouTube"
+        "full body, wide shot, whole body visible from head to toe, "
+        "NO BLUE NO CYAN NO TEAL, "
+        "no text, no watermark, no logo"
     )
 
     return _compact(prompt, max_len=3800)
@@ -499,14 +542,19 @@ def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, st
 # ══════════════════════════════════════════════════════════════════════
 
 GENERATION_SUFFIX = (
-    ", 2D anime illustration only, dark cyberpunk anime art, "
-    "FULL BODY VISIBLE head to feet, camera far back long shot, "
-    "extremely beautiful dark anime girl, sensual confident pose, "
-    "neon magenta and violet ONLY as accent colors, "
-    "NO BLUE NO CYAN NO TEAL ANYWHERE, "
-    "dark near-black background, "
-    "no text no logo no watermark, "
-    "viral YouTube Shorts 9:16 thumbnail"
+    # COMPOSIÇÃO — sempre primeiro
+    ", full body, full length, wide shot, long shot, head to toe, "
+    "legs visible, boots visible, complete figure, "
+    # ESTILO
+    "2D anime art, dark cyberpunk trapstar anime, "
+    "dark phonk music cover aesthetic, "
+    # PALETA — anti-azul repetido no sufixo também
+    "warm magenta and violet palette, no blue, no cyan, no teal, not blue, not cyan, "
+    "warm colors only, magenta dominant, "
+    # PERSONAGEM
+    "beautiful dark anime trapstar girl, sensual confident pose, "
+    # BÁSICOS
+    "dark background, no text, no logo, no watermark"
 )
 
 
