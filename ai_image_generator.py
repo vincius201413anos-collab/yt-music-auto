@@ -1,33 +1,20 @@
 """
-ai_image_generator.py — DJ DARK MARK v36 HIGH-CTR CHANNEL-OPTIMIZED
+ai_image_generator.py — DJ DARK MARK v37 TREND WAIFU OPENING-FRAME
 =============================================================
-CHANGELOG v36 — BASEADO EM DADOS REAIS DO CANAL:
 
-DIAGNÓSTICO DO v35:
-- Dark neon glowing eyes (Black Cherry Lips): 224 views → PIOR performer
-- O estilo "yandere dark neon" não converte no algoritmo
+OBJETIVO v37:
+- Parar de pensar só em "thumbnail estática"
+- Gerar VISUAL DE ABERTURA para Shorts: o primeiro frame precisa prender atenção
+- Seguir tendência de anime/waifu sem copiar nomes oficiais de personagens famosos
+- Criar personagens com vibe reconhecível: shonen, dark fantasy, cyberpunk, idol, battle girl,
+  demon girl, yandere leve, gamer girl, gothic waifu, street waifu
+- Adult only: nada de loli, nada de underage, nada de personagem infantil
+- Visual limpo, rosto forte, olhos hipnóticos, cabelo em movimento, partículas e luz viva
 
-O QUE REALMENTE PERFORMA (dados do canal):
-- 1.9k views: performer real com fogo dramático → energia humana/quente
-- 508-417 views: anime girl azul/teal moody, composição limpa → paleta fria clara
-- 399-304 views: anime girl warm golden/sunset, expressão emocional → paleta quente
-- 288-215 views: sunset city anime girl → fundo dourado cinematic
-
-NOVA ESTRATÉGIA v36:
-- PALETA PRINCIPAL: warm golden/amber/sunset (maior CTR consistente)
-- PALETA SECUNDÁRIA: moody blue/teal (segunda maior performance)
-- DARK NEON: mantido como variação, mas nunca dominante
-- PERSONAGEM: expressivo, emocional, cute acessível — NÃO yandere perigosa
-- COMPOSIÇÃO: portrait limpo, menos poluído, foco na expressão facial
-- ILUMINAÇÃO: luz quente (golden hour, sunset, luz ambiente) > só escuridão
-- ELEMENTOS: fones de ouvido, microfone, headphones — música visível
-- REGRA DE CTR: uma só cor dominante, alto contraste, face centralizada
-
-REFERÊNCIAS DE PERFORMANCE:
-- Teal/blue moody clean → 400-500 views
-- Warm golden sunset → 280-400 views
-- Cute emotional face dominant → +30% CTR (dado vidIQ)
-- Composição simples > efeitos complexos (pesquisa 2025)
+IMPORTANTE:
+Este arquivo NÃO usa nomes de personagens famosos.
+Ele usa arquétipos "inspirados em tendências" para evitar depender de IP/copyright
+e para deixar o canal com identidade própria.
 """
 
 from __future__ import annotations
@@ -53,20 +40,16 @@ logger = logging.getLogger("ai_image_generator")
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
 
 REPLICATE_MODELS = [
-    # Animagine XL — melhor qualidade anime, paletas ricas
     "cjwbw/animagine-xl-3.1",
-    # Anything v5 — linhas limpas, rostos expressivos
     "lucataco/anything-v5-better-vae",
-    # Flux-dev — fallback final
     "black-forest-labs/flux-dev",
 ]
 
 FLUX_PARAMS = {
-    # Portrait vertical — rosto dominante, olhos expressivos
-    "width":               int(os.getenv("FLUX_WIDTH",    "768")),
-    "height":              int(os.getenv("FLUX_HEIGHT",   "1024")),
-    "num_inference_steps": int(os.getenv("FLUX_STEPS",    "35")),
-    "guidance_scale":      float(os.getenv("FLUX_GUIDANCE", "7.5")),
+    "width": int(os.getenv("FLUX_WIDTH", "768")),
+    "height": int(os.getenv("FLUX_HEIGHT", "1024")),
+    "num_inference_steps": int(os.getenv("FLUX_STEPS", "38")),
+    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "8.0")),
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -75,503 +58,308 @@ FLUX_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════
-# IDENTIDADE DO CANAL — v36 REALINHADA COM CTR REAL
+# IDENTIDADE v37
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
-    "DJ Dark Mark music channel visual identity, "
-    "emotional anime muse, expressive face dominant, beautiful melancholic energy, "
-    "dark pop trap phonk electronic music cover art, "
-    "warm golden OR moody teal OR cinematic dark palette, "
-    "premium YouTube Shorts thumbnail universe, high CTR emotional hook"
+    "DJ Dark Mark viral anime music visual identity, "
+    "adult waifu character, anime trend aesthetic, "
+    "dark trap phonk electronic music opening frame, "
+    "scroll-stopping first 2 seconds, high CTR, high retention, "
+    "premium YouTube Shorts anime visual universe"
 )
 
-
-# ══════════════════════════════════════════════════════════════════════
-# CORE CHARACTER — v36 EMOTIONAL CUTE HIGH-CTR
-# ══════════════════════════════════════════════════════════════════════
-
-TRAPSTAR_DNA = (
-    "one adult anime woman, clearly adult, "
-    "beautiful expressive anime muse, emotionally resonant, "
-    "cute melancholic energy, deeply felt, relatable but intense, "
-    # ROSTO — elemento #1 de CTR (dado: faces = +30% CTR)
-    "FACE IS THE FOCAL POINT: beautiful detailed anime face, "
-    "large expressive emotional anime eyes, visible emotion in eyes, "
-    "eyes with depth and feeling, catching light naturally, "
-    "soft glossy lips, defined eyelashes, subtle blush on cheeks, "
-    "expression that makes viewer stop scrolling, "
-    # CABELO — define o mood
-    "detailed flowing hair catching ambient light, "
-    "hair with natural sheen and movement, "
-    # ROUPA — sutil, não dominante
-    "dark aesthetic outfit, tasteful, "
-    "subtle accessory details, clean look, "
-    # IDENTIDADE
+CORE_CHARACTER = (
+    "one adult anime woman, clearly adult, mature proportions, "
+    "beautiful waifu character, expressive face, hypnotic eyes, "
+    "magnetic emotional presence, strong visual identity, "
     "alone, single character, no other people, no text"
 )
 
-
-# ══════════════════════════════════════════════════════════════════════
-# COMPOSIÇÃO — v36 CLEAN PORTRAIT FIRST
-# ══════════════════════════════════════════════════════════════════════
-
 COMPOSITION_LOCK = (
-    "tight portrait or close upper body shot, "
-    "face filling majority of frame, eyes at upper third of composition, "
-    "character centered or slightly off-center for dynamic feel, "
-    "clean uncluttered composition, one clear focal point, "
-    "vertical 9:16 format optimized for mobile, "
-    "generous negative space around character for text placement, "
-    "mobile-first design: readable at small thumbnail size, "
-    "cinematic portrait framing, professional music cover composition"
+    "vertical 9:16 mobile-first composition, "
+    "face and upper body dominant, eyes in upper third, "
+    "character large in frame, readable at tiny phone size, "
+    "clean background, strong silhouette, clear focal point, "
+    "opening frame for YouTube Shorts, designed to stop scrolling immediately"
 )
-
-
-# ══════════════════════════════════════════════════════════════════════
-# STYLE LOCK — v36 CLEAN ANIME HIGH QUALITY
-# ══════════════════════════════════════════════════════════════════════
 
 STYLE_LOCK = (
-    "premium 2D anime illustration, ultra clean sharp lineart, "
-    "professional cel shading, smooth gradient shading, "
-    "glossy reflections on eyes and hair, "
-    "detailed face with visible emotion, "
-    "NOT overly dark, NOT cluttered with excessive effects, "
-    "clean background that complements character, "
-    "professional music cover art quality, "
-    "anime key visual aesthetic, beautiful character design"
+    "premium anime key visual, clean sharp lineart, "
+    "high-end 2D anime illustration, polished cel shading, "
+    "cinematic lighting, glossy eyes, detailed hair, "
+    "rich colors, high contrast, professional music cover art, "
+    "not photorealistic, not 3d render"
 )
 
-
-# ══════════════════════════════════════════════════════════════════════
-# LIGHTING — v36 WARM/CINEMATIC FIRST (dados mostram isso performa mais)
-# ══════════════════════════════════════════════════════════════════════
-
-LIGHTING_LOCK_WARM = (
-    "warm golden hour lighting bathing the scene, "
-    "soft amber light on character's face and hair, "
-    "warm light from slightly behind creating rim effect, "
-    "golden glow on environment, warm shadows, "
-    "natural cinematic warmth, sunset color temperature, "
-    "high contrast warm vs dark shadows for drama"
+MOTION_LOCK = (
+    "alive frame, subtle sense of motion, hair moving in wind, "
+    "floating particles, cinematic depth, glowing dust, "
+    "energy in the air, dynamic but not cluttered"
 )
 
-LIGHTING_LOCK_TEAL = (
-    "moody cool teal/blue ambient lighting, "
-    "cinematic blue-teal color grading, "
-    "soft cool light on character's face, "
-    "atmospheric cool mist or bokeh in background, "
-    "high contrast cool light vs dark shadows, "
-    "film noir meets anime aesthetic"
+VIRAL_HOOK_LOCK = (
+    "one strong visual hook: glowing tear OR intense eye reflection OR dramatic face light "
+    "OR hair blown by neon wind OR small aura around character, "
+    "instantly recognizable visual moment, memorable frame"
 )
-
-LIGHTING_LOCK_DARK = (
-    "dramatic dark cinematic lighting, "
-    "single strong light source illuminating character, "
-    "deep shadows creating mood and mystery, "
-    "colored rim light from background, "
-    "professional dark music cover lighting, "
-    "strong contrast between light and shadow"
-)
-
-
-# ══════════════════════════════════════════════════════════════════════
-# PALETA — v36 BASEADA EM PERFORMANCE REAL
-# ══════════════════════════════════════════════════════════════════════
-
-# PALETA A — Warm Golden/Sunset (288-400+ views, melhor consistência)
-PALETTE_WARM = (
-    "warm golden amber palette, "
-    "sunset orange and golden yellow tones dominating, "
-    "warm background with orange/amber bokeh or environment, "
-    "character bathed in warm golden light, "
-    "hair catching golden sunlight, skin warm and glowing, "
-    "orange-amber-gold color story throughout, "
-    "warm cinematic film look"
-)
-
-# PALETA B — Moody Blue/Teal (400-508 views, segundo mais forte)
-PALETTE_TEAL = (
-    "moody blue-teal cinematic palette, "
-    "deep navy and teal tones, cool atmospheric mood, "
-    "teal ambient glow in environment, "
-    "cool blue shadows and highlights, "
-    "hair catching cool blue-teal light, "
-    "atmospheric depth with cool color story, "
-    "cinematic blue-teal film look"
-)
-
-# PALETA C — Dark Dramatic (mantida para fontes dark/phonk intenso)
-PALETTE_DARK = (
-    "dark dramatic cinematic palette, "
-    "near-black background with strong single accent color, "
-    "accent color: deep magenta OR violet OR crimson, "
-    "character lit dramatically against dark, "
-    "high contrast dark vs accent, "
-    "professional dark music cover look"
-)
-
-# PALETA D — Pink/Rose Emotional (para dark pop)
-PALETTE_ROSE = (
-    "soft rose and deep pink cinematic palette, "
-    "warm pink ambient light in background, "
-    "deep rose shadows and pink highlights, "
-    "romantic but dark emotional mood, "
-    "pink bokeh and atmospheric depth, "
-    "dark pink to crimson gradient color story"
-)
-
-# PALETA E — Purple/Violet Atmospheric
-PALETTE_VIOLET = (
-    "deep violet and purple atmospheric palette, "
-    "rich purple ambient light and fog, "
-    "violet tones in background and shadows, "
-    "character with purple atmospheric rim light, "
-    "moody purple-indigo cinematic look"
-)
-
-
-# ══════════════════════════════════════════════════════════════════════
-# QUALITY & RETENTION LOCKS
-# ══════════════════════════════════════════════════════════════════════
 
 QUALITY_LOCK = (
-    "masterpiece, best quality, ultra detailed anime illustration, "
-    "beautiful expressive face, detailed shining eyes, clean anatomy, "
-    "professional music cover art, high resolution crisp lineart, "
-    "polished cel shading, premium channel visual identity"
-)
-
-RETENTION_LOCK = (
-    "scroll-stopping thumbnail, "
-    "FACE is the first thing viewer sees, immediate emotional impact, "
-    "expression triggers curiosity or emotional resonance, "
-    "high CTR dark music thumbnail energy, "
-    "beautiful character that makes viewer want to know more, "
-    "visual hook in first millisecond"
-)
-
-CONSISTENCY_LOCK = (
-    "consistent channel branding, "
-    "recognizable anime muse recurring character, "
-    "dark music aesthetic with emotional depth, "
-    "professional, not generic, not stock art"
-)
-
-SKIN_LOCK = (
-    "warm pale to medium anime skin tone, "
-    "smooth clear skin with natural shading, "
-    "skin reacting to ambient lighting color, "
-    "soft blush on cheeks, healthy luminous skin"
+    "masterpiece, best quality, ultra detailed, crisp lineart, "
+    "beautiful face, detailed shining eyes, clean anatomy, "
+    "professional channel branding, high resolution, premium finish"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT v36 — AJUSTADO PARA CTR
+# PALETAS v37 — TREND + CTR
 # ══════════════════════════════════════════════════════════════════════
 
-NEGATIVE_PROMPT = (
-    # Qualidade ruim
-    "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
-    "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
-    "long neck, disfigured, mutated, melted face, uncanny valley, "
-    "blurry, low quality, jpeg artifacts, heavy noise, "
-    # Estilo errado
-    "photorealistic, real person, 3D render, CGI, "
-    "doll, plastic skin, western cartoon, simple cartoon, flat shading, "
-    # Composição que NÃO converte (dados do canal)
-    "cluttered background, busy background, too many effects, "
-    "overwhelming neon overload, too dark to see face, "
-    "face too small in frame, far away character, full body tiny, "
-    "excessive glitch effects, extreme neon chaos, "
-    # Conteúdo proibido/indesejado
-    "nude, explicit nudity, genitalia, nipples, "
-    "child, underage, loli, very young, baby face, "
-    "multiple people, crowd, two girls, duplicate character, "
-    # Texto na imagem
-    "text, words, logo, watermark, signature, letters, numbers, "
-    # Paleta que não performa
-    "washed out, desaturated, muddy colors, flat boring colors, "
-    "overly saturated rainbow chaos, mixed incompatible colors, "
-    # Overexposure de efeitos (v35 tinha isso em excesso)
-    "overexposed bloom, excessive glow overload, neon everywhere, "
-    "dark void where face is invisible, eyes lost in darkness"
+PALETTE_WARM = (
+    "dominant warm golden amber palette, sunset orange light, "
+    "golden rim light on hair, warm cinematic shadows, "
+    "high contrast amber glow, emotional golden-hour anime look"
 )
 
+PALETTE_TEAL = (
+    "dominant teal blue cyber palette, deep navy shadows, "
+    "teal neon reflections, cool cinematic atmosphere, "
+    "blue-green glow around character, futuristic night mood"
+)
+
+PALETTE_CRIMSON = (
+    "dominant crimson red and black palette, dark dramatic shadows, "
+    "blood-red accent light, intense phonk energy, "
+    "dangerous but beautiful dark anime mood"
+)
+
+PALETTE_PURPLE = (
+    "dominant violet purple and indigo palette, magical dark aura, "
+    "purple rim light, dreamy anime atmosphere, "
+    "deep shadow with bright violet highlights"
+)
+
+PALETTE_PINK = (
+    "dominant hot pink and black palette, rose neon glow, "
+    "cute but dangerous dark pop mood, pink bokeh, "
+    "high contrast pink highlights"
+)
+
+PALETTES = [
+    ("warm", PALETTE_WARM, 30),
+    ("teal", PALETTE_TEAL, 28),
+    ("crimson", PALETTE_CRIMSON, 18),
+    ("purple", PALETTE_PURPLE, 14),
+    ("pink", PALETTE_PINK, 10),
+]
+
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES — v36 CALIBRADAS POR PERFORMANCE
+# ARQUÉTIPOS TREND — SEM NOMES DE PERSONAGENS FAMOSOS
 # ══════════════════════════════════════════════════════════════════════
+
+TREND_WAIFU_ARCHETYPES = [
+    (
+        "dark fantasy battle waifu",
+        "adult dark fantasy anime heroine, black battle outfit, dramatic cloak movement, "
+        "confident dangerous aura, sword-like silhouette implied but not weapon-focused"
+    ),
+    (
+        "cyberpunk street waifu",
+        "adult cyberpunk anime girl, futuristic streetwear, neon city attitude, "
+        "tech accessories, glowing earrings, confident urban energy"
+    ),
+    (
+        "gothic vampire waifu",
+        "adult gothic anime woman, elegant dark outfit, crimson eyes, "
+        "romantic dangerous beauty, night atmosphere"
+    ),
+    (
+        "idol pop waifu",
+        "adult anime idol-inspired performer, stylish stage outfit, headphones, "
+        "sparkling emotional eyes, music video energy"
+    ),
+    (
+        "yandere soft waifu",
+        "adult anime woman with controlled chaotic expression, sweet but intense gaze, "
+        "subtle dangerous smile, emotional overload, not horror"
+    ),
+    (
+        "demon aura waifu",
+        "adult anime demon-girl inspired character, small subtle horns or aura, "
+        "glowing eyes, dark magical energy, elegant not monstrous"
+    ),
+    (
+        "gamer hacker waifu",
+        "adult anime gamer hacker girl, headset, neon monitor glow, "
+        "teal cyber atmosphere, smart intense stare"
+    ),
+    (
+        "street trap waifu",
+        "adult anime streetwear waifu, dark oversized jacket, chain accessories, "
+        "trap/phonk energy, confident pose, urban night background"
+    ),
+    (
+        "angel fallen waifu",
+        "adult fallen angel anime woman, dark wings implied by shadow shape, "
+        "golden or violet rim light, melancholic divine energy"
+    ),
+    (
+        "samurai neon waifu",
+        "adult neon samurai-inspired anime woman, sleek dark outfit, "
+        "windy hair, cinematic discipline, intense eyes"
+    ),
+]
+
+
+FACE_HOOKS = [
+    "hypnotic direct eye contact, viewer feels watched",
+    "one glowing tear on cheek catching neon light",
+    "eyes reflecting city lights and music waveform",
+    "slight dangerous smile with soft emotional eyes",
+    "wide emotional eyes, lips slightly parted, instant curiosity",
+    "half-lidded confident gaze, magnetic and calm",
+    "vulnerable melancholic stare, beautiful sadness",
+    "subtle crazy eyes but still beautiful and controlled",
+    "dreamy distant gaze as if hearing the song inside her head",
+    "sharp confident stare, dark queen energy"
+]
 
 HAIR_VARIATIONS = [
-    # Warm tones — mais alto CTR
-    "long flowing dark brown hair with warm golden highlights, catching sunset light",
-    "dark black hair with warm amber rim light, glossy and detailed",
-    "rich dark auburn hair with golden sun catching through strands",
-    "chocolate brown hair flowing naturally, warm light creating shine",
-    "dark hair with rose-tinted highlights, romantic warm glow",
-    # Cool/teal tones — segundo maior CTR
-    "dark blue-black hair with cool teal highlights, cinematic and moody",
-    "deep navy hair with subtle cool blue sheen, atmospheric depth",
-    "silver-white hair with blue-teal tint, futuristic melancholic look",
-    "dark hair with violet-blue shimmer, moody and expressive",
-    # Neutros versáteis
-    "black hair with natural shine catching ambient color light",
-    "dark purple-black hair with soft glow from environment lighting",
-    "deep brown to black ombre hair, detailed natural strands",
+    "long black hair with glowing teal highlights, wind-blown",
+    "dark purple hair with violet rim light, flowing dramatically",
+    "silver white hair with blue shadows, cinematic and clean",
+    "warm brown hair catching golden sunset, soft and emotional",
+    "black hair with crimson reflections, dangerous phonk mood",
+    "pink-black ombre hair glowing under neon, cute but dark",
+    "deep navy hair with electric blue edges, cyber mood",
+    "auburn hair with amber firelight, warm dramatic energy",
+    "messy short black hair with strong anime silhouette",
+    "long twin-tail inspired hair, clearly adult styling, dynamic motion"
 ]
 
-EYE_VARIATIONS = [
-    # OLHOS EXPRESSIVOS — foco em emoção não em neon
-    # v36: emoção > efeito
-    "warm amber-honey eyes catching golden light, deep and emotional, "
-    "glossy natural reflections, expressive and beautiful",
-
-    "deep teal green eyes with natural sparkle, intense emotional gaze, "
-    "real depth and feeling, catching cool ambient light",
-
-    "soft rose pink eyes with gentle glow, romantic melancholic look, "
-    "glossy natural reflections, beautiful and expressive",
-
-    "deep violet purple eyes, atmospheric and dreamlike, "
-    "natural iris detail, emotionally resonant stare",
-
-    "rich brown eyes with golden light reflected, warm and deep, "
-    "glossy natural sheen, soulful and expressive",
-
-    "blue-grey eyes with silver light catching, cinematic cool tone, "
-    "detailed iris, intense emotional depth",
-
-    "warm copper-orange eyes with amber depth, glowing naturally from light, "
-    "expressive and emotionally intense",
-
-    "dark crimson eyes with deep emotional resonance, "
-    "glossy natural sheen, intense but beautiful",
-
-    "bright emerald green eyes catching light, vivid and expressive, "
-    "detailed iris, emotionally electric stare",
-
-    "soft gray-blue eyes with melancholic depth, cinematic muted cool, "
-    "emotional and resonant, natural glossy beauty",
-]
-
-EXPRESSION_VARIATIONS = [
-    # BASEADO NOS TOPS DO CANAL — expressões que funcionam
-    # Simples, emocionais, relacionáveis
-    "soft melancholic gaze into distance, quiet longing expression, beautiful sadness",
-    "gentle slight smile with deep emotional eyes, warm and inviting, relatable",
-    "wide curious eyes slightly parted lips, moment of wonder and discovery",
-    "calm serene expression with subtle emotional depth in eyes, peaceful intensity",
-    "soft vulnerable expression, eyes slightly glistening, emotional moment",
-    "direct confident gaze at viewer, slight knowing smile, magnetic eye contact",
-    "pensive thoughtful expression, head slightly tilted, eyes full of thought",
-    "warm gentle smile not quite reaching eyes, something deeper underneath",
-    "slightly surprised expression, eyes bright and open, moment of realization",
-    "quiet intense stare, lips barely parted, overwhelming emotional presence",
-    "soft bittersweet smile, eyes carrying something unspoken, emotional weight",
-    "dreamy distant look, eyes half-lidded with feeling, lost in music",
-]
-
-MUSIC_ELEMENT_VARIATIONS = [
-    # Elementos musicais — aumentam relevância do contexto
-    "wearing sleek dark over-ear headphones around neck or on ears",
-    "holding a microphone loosely, casual performance energy",
-    "headphones resting on head, casual and cool",
-    "earbuds in, immersed in music, authentic listening moment",
-    "no music element, pure character expression",
-    "no music element, pure character expression",  # peso maior sem elemento
-    "no music element, pure character expression",  # peso maior sem elemento
-    "subtle music note motif in background, very minimal",
-    "faint waveform visualization in background, atmospheric",
-    "holding nothing, pure emotional portrait, music implied by mood",
+OUTFIT_VARIATIONS = [
+    "dark futuristic jacket, stylish but tasteful, premium anime design",
+    "black streetwear outfit with small chains and choker, clean silhouette",
+    "gothic elegant dark outfit, lace details subtle, not revealing",
+    "cyberpunk cropped jacket over dark top, tasteful adult fashion",
+    "stage performer outfit with headphones, stylish music identity",
+    "dark battle-inspired outfit, sleek and cinematic, no armor clutter",
+    "oversized hoodie with neon trim, trap aesthetic, clean design",
+    "black dress with modern anime styling, elegant dark pop mood",
+    "techwear outfit, straps and reflective details, futuristic vibe",
+    "rock-inspired dark outfit, leather texture, subtle metal accessories"
 ]
 
 BACKGROUND_VARIATIONS = [
-    # WARM — maior CTR consistente no canal
-    "warm golden sunset sky background, city silhouette distant, bokeh light, "
-    "rich amber and orange atmospheric depth",
-
-    "warm golden room interior background, soft window light, bokeh, "
-    "cozy but cinematic amber atmosphere",
-
-    "sunset urban skyline background, warm orange glow, "
-    "city lights beginning to appear, cinematic warm depth",
-
-    "warm golden forest or nature background, soft sunlight filtering, "
-    "bokeh leaves and light, beautiful natural warmth",
-
-    "golden hour open space background, sky deep orange and amber, "
-    "wide cinematic warmth, emotional depth",
-
-    # TEAL/BLUE — segundo maior CTR
-    "moody night city background, cool teal blue neon reflections on wet street, "
-    "cinematic rain atmosphere, deep blue mood",
-
-    "cool blue-teal abstract background, atmospheric fog and depth, "
-    "cinematic moody interior, blue ambient glow",
-
-    "night sky background with cool blue-purple atmosphere, "
-    "stars faint, cinematic night mood",
-
-    "dark blue urban interior background, neon reflections in glass, "
-    "rain-soaked cinematic atmosphere, teal mood",
-
-    # DARK — para fontes mais pesadas
-    "deep dark background with single warm or cool accent, "
-    "character cleanly lit against darkness, professional dark cover",
-
-    "abstract dark atmosphere with subtle depth, "
-    "faint environmental glow framing character",
+    "rainy neon city street, wet reflections, teal and pink bokeh",
+    "golden sunset skyline, cinematic clouds, warm emotional mood",
+    "dark abstract stage with smoke and rim lights",
+    "cyberpunk alley with blurred neon signs, clean depth",
+    "night rooftop with city lights far behind, dramatic wind",
+    "purple fog atmosphere with floating particles",
+    "warm indoor studio with glowing music equipment blurred behind",
+    "dark concert light beams, cinematic smoke, music performance feeling",
+    "black void with one strong colored rim light and particle depth",
+    "anime city sunset with soft bokeh, emotional ending scene"
 ]
 
-MOOD_VARIATIONS = [
-    # Moods que conectam com audiência musical
-    "the feeling you get when a song hits exactly right",
-    "melancholic beauty, bittersweet emotional resonance",
-    "quiet intensity, music felt rather than heard",
-    "nostalgic longing, emotional depth under calm surface",
-    "dark romance, beautiful sadness, emotional richness",
-    "late night introspection, alone but feeling everything",
-    "the moment before everything changes, suspended feeling",
-    "overstimulated emotional overwhelm expressed through stillness",
-    "controlled chaos within, serene outside, dark pop energy",
+MUSIC_ELEMENTS = [
+    "sleek headphones around neck",
+    "one earbud visible, immersed in the song",
+    "small glowing waveform behind character, very subtle",
+    "microphone silhouette blurred in background",
+    "music visualizer particles around her, not cluttered",
+    "no music prop, emotion carries the music",
+    "no music prop, pure cinematic anime portrait",
 ]
-
-ART_STYLE_VARIATIONS = [
-    "premium dark anime key visual, clean expressive lineart, "
-    "detailed emotional face, professional music cover quality",
-
-    "cinematic anime illustration, rich color depth, "
-    "emotional storytelling through expression, high production value",
-
-    "clean detailed anime character art, beautiful face dominant, "
-    "professional shading, high contrast, emotional resonance",
-
-    "dark pop anime aesthetic, moody but beautiful, "
-    "expressive character, rich environmental background",
-
-    "high quality anime portrait illustration, face as focal point, "
-    "detailed eyes catching light, premium digital art finish",
-]
-
-
-# ══════════════════════════════════════════════════════════════════════
-# MAPEAMENTO DE GÊNERO — v36 COM PALETAS CALIBRADAS
-# ══════════════════════════════════════════════════════════════════════
 
 GENRE_MAP = {
-    "phonk":      "phonk",
-    "trap":       "trap",
-    "dark":       "dark",
-    "darkpop":    "darkpop",
-    "dark pop":   "darkpop",
+    "phonk": "phonk",
+    "trap": "trap",
+    "dark": "dark",
+    "darkpop": "darkpop",
+    "dark pop": "darkpop",
     "electronic": "electronic",
-    "edm":        "electronic",
-    "dubstep":    "electronic",
-    "funk":       "trap",
-    "rock":       "rock",
-    "metal":      "dark",
-    "cinematic":  "darkpop",
-    "lofi":       "darkpop",
-    "indie":      "darkpop",
-    "pop":        "darkpop",
+    "edm": "electronic",
+    "dubstep": "electronic",
+    "funk": "trap",
+    "rock": "rock",
+    "metal": "dark",
+    "cinematic": "darkpop",
+    "lofi": "darkpop",
+    "indie": "darkpop",
+    "pop": "darkpop",
 }
 
-# v36: paletas rankeadas por CTR do canal real
-# Warm golden > Teal/blue > Dark neon (em termos de views)
-GENRE_PALETTES = {
-    "phonk": [
-        # Phonk: dark/dramático mas com luz quente ou fria clara
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "dominant warm golden phonk energy, dramatic sunset, "
-         "cinematic amber warmth matching heavy 808 bass"),
-
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "moody blue-teal phonk underground atmosphere, "
-         "cool cinematic depth, bass-heavy nighttime energy"),
-
-        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
-         "dark dramatic phonk, deep crimson accent, "
-         "single light source, powerful dark music cover"),
-    ],
-    "trap": [
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "warm trap energy, golden urban sunset, "
-         "street cinematic warmth, city trap mood"),
-
-        ("rose", PALETTE_ROSE, LIGHTING_LOCK_DARK,
-         "dark rose trap aesthetic, pink-crimson drama, "
-         "emotional trap energy, dark pop crossover"),
-
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "cool urban trap atmosphere, blue-teal city night, "
-         "moody cinematic trap energy"),
-    ],
-    "electronic": [
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "electronic music teal-blue atmosphere, "
-         "clean cool electronic energy, futuristic mood"),
-
-        ("violet", PALETTE_VIOLET, LIGHTING_LOCK_DARK,
-         "electronic violet atmospheric depth, "
-         "rich purple electronic sound visualization"),
-
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "warm electronic energy, golden analog warmth, "
-         "emotional electronic music mood"),
-    ],
-    "darkpop": [
-        # Dark pop: mais emocional, warm funciona muito bem
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "warm emotional dark pop, golden melancholic beauty, "
-         "bittersweet warm aesthetic, dark pop crossing into light"),
-
-        ("rose", PALETTE_ROSE, LIGHTING_LOCK_DARK,
-         "dark rose pop romance, deep pink emotional depth, "
-         "beautiful dark pop feeling"),
-
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "cool melancholic dark pop, blue-teal emotional mood, "
-         "cinematic dark pop atmosphere"),
-    ],
-    "dark": [
-        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
-         "dark dramatic music cover, deep and powerful, "
-         "single accent color against darkness, intense mood"),
-
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "dark teal atmospheric intensity, "
-         "cool cinematic dark music energy"),
-
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "warm dark contrast, golden light in darkness, "
-         "dramatic chiaroscuro warm dark energy"),
-    ],
-    "rock": [
-        ("warm", PALETTE_WARM, LIGHTING_LOCK_WARM,
-         "dramatic warm rock energy, fire and amber, "
-         "performance energy captured, warm concert atmosphere"),
-
-        ("dark", PALETTE_DARK, LIGHTING_LOCK_DARK,
-         "dark rock power, intense dramatic lighting, "
-         "raw energy and emotion"),
-
-        ("teal", PALETTE_TEAL, LIGHTING_LOCK_TEAL,
-         "cool rock atmosphere, cinematic dark blue energy, "
-         "intense moody rock mood"),
-    ],
+GENRE_BOOSTS = {
+    "phonk": (
+        "phonk atmosphere, heavy 808 bass feeling, dark street energy, "
+        "crimson or teal contrast, aggressive but clean"
+    ),
+    "trap": (
+        "trap music atmosphere, urban night energy, stylish confidence, "
+        "warm or rose neon lighting, premium street aesthetic"
+    ),
+    "electronic": (
+        "electronic music atmosphere, futuristic energy, teal blue neon, "
+        "clean digital glow, cyber rhythm visual"
+    ),
+    "darkpop": (
+        "dark pop emotional atmosphere, romantic sadness, cinematic beauty, "
+        "warm golden or rose-violet color story"
+    ),
+    "dark": (
+        "dark music atmosphere, dramatic shadows, intense emotional presence, "
+        "single strong accent color against darkness"
+    ),
+    "rock": (
+        "rock energy atmosphere, warm firelight, concert smoke, "
+        "raw emotional power, dramatic rim lighting"
+    ),
+    "default": (
+        "dark music atmosphere, emotional anime beauty, cinematic contrast, "
+        "premium viral Shorts visual"
+    ),
 }
 
-# Fallback
-GENRE_PALETTES["default"] = GENRE_PALETTES["darkpop"]
+
+# ══════════════════════════════════════════════════════════════════════
+# NEGATIVE PROMPT
+# ══════════════════════════════════════════════════════════════════════
+
+NEGATIVE_PROMPT = (
+    "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
+    "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
+    "long neck, disfigured, mutated, melted face, uncanny valley, "
+    "blurry, low quality, jpeg artifacts, heavy noise, flat boring image, "
+    "photorealistic, real person, 3d render, CGI, doll, plastic skin, "
+    "western cartoon, simple cartoon, childish style, "
+    "child, underage, loli, young girl, schoolgirl, baby face, "
+    "nude, explicit nudity, nipples, genitalia, sexual act, pornographic, "
+    "multiple people, crowd, two girls, duplicate character, "
+    "text, words, logo, watermark, signature, letters, numbers, "
+    "famous anime character, exact character copy, cosplay of existing character, "
+    "too dark to see face, face too small, full body tiny, "
+    "cluttered background, excessive effects, neon overload, "
+    "overexposed bloom, muddy colors, washed out, desaturated, "
+    "messy composition, no focal point, bad eyes, dead eyes"
+)
+
+
+GENERATION_SUFFIX = (
+    ", beautiful expressive adult anime face, eyes readable at small size, "
+    "first frame optimized for Shorts feed, high contrast, clear silhouette, "
+    "alive cinematic frame, motion feeling, polished anime art, "
+    "no text, no logo, no watermark, no extra people"
+)
 
 
 # ══════════════════════════════════════════════════════════════════════
 # HELPERS
 # ══════════════════════════════════════════════════════════════════════
 
-def _compact(text: str, max_len: int = 3800) -> str:
+def _compact(text: str, max_len: int = 3000) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     text = text.replace(" ,", ",").replace(",,", ",")
     return text[:max_len].rstrip(" ,")
@@ -585,7 +373,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v36_high_ctr_channel_optimized"
+    key = f"{style}|{filename}|{short_num}|darkmark_v37_trend_waifu_opening_frame"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -593,108 +381,40 @@ def _rng(style: str, filename: str, short_num: int) -> random.Random:
     return random.Random(_seed(style, filename, short_num))
 
 
+def _weighted_palette(rng: random.Random) -> tuple[str, str]:
+    total = sum(weight for _, _, weight in PALETTES)
+    r = rng.random() * total
+    acc = 0
+    for name, palette, weight in PALETTES:
+        acc += weight
+        if r <= acc:
+            return name, palette
+    return PALETTES[0][0], PALETTES[0][1]
+
+
 def _song_mood_boost(song_name: str) -> str:
-    """Detecção de mood da música para ajustar descrição emocional do personagem."""
     clean = song_name.lower()
 
     if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite"]):
-        return (
-            "character with quiet haunted beauty, "
-            "eyes holding darkness and longing, "
-            "nighttime melancholic energy"
-        )
-    if any(w in clean for w in ["fire", "burn", "rage", "fury", "rage"]):
-        return (
-            "character with intense passionate energy, "
-            "eyes bright with contained fire, "
-            "powerful emotional intensity"
-        )
-    if any(w in clean for w in ["love", "heart", "amor", "coraçao", "rose", "cherry"]):
-        return (
-            "character with deep romantic feeling, "
-            "eyes full of emotion and longing, "
-            "beautiful dark romantic energy"
-        )
+        return "haunted night emotion, lonely but powerful, eyes carrying darkness"
+    if any(w in clean for w in ["fire", "burn", "rage", "fury", "angry"]):
+        return "intense fire emotion, contained rage, powerful passionate stare"
+    if any(w in clean for w in ["love", "heart", "amor", "coraçao", "coracao", "rose", "cherry"]):
+        return "dark romantic emotion, longing eyes, beautiful bittersweet mood"
     if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido"]):
-        return (
-            "character with profound loneliness, "
-            "eyes glistening with quiet sadness, "
-            "beautiful isolated melancholy"
-        )
+        return "deep lonely emotion, quiet sadness, isolated cinematic feeling"
     if any(w in clean for w in ["drive", "speed", "run", "race", "corrida"]):
-        return (
-            "character with focused determined energy, "
-            "eyes sharp and forward, "
-            "driven intense expression"
-        )
+        return "fast motion energy, focused eyes, wind and speed feeling"
     if any(w in clean for w in ["queen", "king", "boss", "power", "rule"]):
-        return (
-            "character with commanding quiet confidence, "
-            "eyes of someone who owns the room, "
-            "dark queen energy expressed through stillness"
-        )
+        return "dominant confident aura, dark queen energy, commanding stare"
     if any(w in clean for w in ["dream", "sonho", "sleep", "cloud"]):
-        return (
-            "character with dreamy distant expression, "
-            "eyes half-caught in another world, "
-            "ethereal floating feeling"
-        )
+        return "dreamy floating emotion, soft surreal atmosphere, ethereal eyes"
 
-    # Default genérico emocional
-    return (
-        "character with deep emotional presence, "
-        "eyes carrying the weight of the music, "
-        "expressive and resonant"
-    )
-
-
-def _pick_palette(
-    genre: str,
-    rng: random.Random,
-    force_warm: bool = False,
-    force_teal: bool = False,
-) -> tuple[str, str, str, str]:
-    """
-    Retorna (palette_name, palette_str, lighting_str, genre_detail).
-    v36: lógica de CTR — warm tem maior probabilidade.
-    """
-    options = GENRE_PALETTES.get(genre, GENRE_PALETTES["default"])
-
-    if force_warm:
-        warm_opts = [o for o in options if o[0] == "warm"]
-        if warm_opts:
-            return warm_opts[0]
-
-    if force_teal:
-        teal_opts = [o for o in options if o[0] == "teal"]
-        if teal_opts:
-            return teal_opts[0]
-
-    # Pesos baseados em CTR real do canal:
-    # warm = ~40% chance, teal = ~35% chance, dark/rose/violet = ~25%
-    weights = []
-    for opt in options:
-        name = opt[0]
-        if name == "warm":
-            weights.append(40)
-        elif name == "teal":
-            weights.append(35)
-        else:
-            weights.append(25)
-
-    total = sum(weights)
-    r = rng.random() * total
-    cumulative = 0
-    for opt, w in zip(options, weights):
-        cumulative += w
-        if r <= cumulative:
-            return opt
-
-    return options[0]
+    return "emotion matching the music, magnetic presence, cinematic feeling"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — v36 HIGH-CTR
+# PROMPT PRINCIPAL v37
 # ══════════════════════════════════════════════════════════════════════
 
 def build_ai_prompt(
@@ -704,92 +424,78 @@ def build_ai_prompt(
     short_num: int = 1,
     force_warm: bool = False,
     force_teal: bool = False,
+    force_crimson: bool = False,
 ) -> str:
     styles = styles or []
     mapped = GENRE_MAP.get((style or "default").lower().strip(), "default")
     rng = _rng(mapped, filename, short_num)
     song_name = _clean_song_name(filename)
 
-    # Seleção de variações
+    archetype_name, archetype_prompt = rng.choice(TREND_WAIFU_ARCHETYPES)
+    face_hook = rng.choice(FACE_HOOKS)
     hair = rng.choice(HAIR_VARIATIONS)
-    eyes = rng.choice(EYE_VARIATIONS)
-    expression = rng.choice(EXPRESSION_VARIATIONS)
-    music_elem = rng.choice(MUSIC_ELEMENT_VARIATIONS)
+    outfit = rng.choice(OUTFIT_VARIATIONS)
     background = rng.choice(BACKGROUND_VARIATIONS)
-    art_style = rng.choice(ART_STYLE_VARIATIONS)
-    mood_mix = rng.choice(MOOD_VARIATIONS)
+    music_element = rng.choice(MUSIC_ELEMENTS)
     song_mood = _song_mood_boost(song_name)
 
-    # Paleta com lógica de CTR
-    palette_name, palette_str, lighting_str, genre_detail = _pick_palette(
-        mapped, rng, force_warm=force_warm, force_teal=force_teal
-    )
+    if force_warm:
+        palette_name, palette = "warm", PALETTE_WARM
+    elif force_teal:
+        palette_name, palette = "teal", PALETTE_TEAL
+    elif force_crimson:
+        palette_name, palette = "crimson", PALETTE_CRIMSON
+    else:
+        palette_name, palette = _weighted_palette(rng)
 
     genre_text = ", ".join([style] + [s for s in styles if s and s != style])
+    genre_boost = GENRE_BOOSTS.get(mapped, GENRE_BOOSTS["default"])
 
     prompt = (
-        # ROSTO/EXPRESSÃO VÊM PRIMEIRO (CTR: face dominant)
-        f"beautiful adult anime woman, {expression}, "
-        f"{eyes}, "
+        f"{CHANNEL_IDENTITY}, "
+        f"{CORE_CHARACTER}, "
 
-        # PERSONAGEM COMPLETO
-        f"{TRAPSTAR_DNA}, "
+        # Trending archetype primeiro para direcionar o modelo
+        f"trend archetype: {archetype_name}, {archetype_prompt}, "
 
-        # DETALHES VISUAIS
+        # Hook visual
+        f"face hook: {face_hook}, "
+        f"{VIRAL_HOOK_LOCK}, "
+
+        # Detalhes principais
         f"hair: {hair}, "
-        f"music element: {music_elem}, "
+        f"outfit: {outfit}, "
+        f"music element: {music_element}, "
 
-        # COMPOSIÇÃO LIMPA
+        # Composição e movimento
         f"{COMPOSITION_LOCK}, "
+        f"{MOTION_LOCK}, "
 
-        # BACKGROUND CONTEXTUAL
+        # Fundo e paleta
         f"background: {background}, "
+        f"dominant palette: {palette_name}, {palette}, "
 
-        # ESTILO
-        f"{STYLE_LOCK}, "
-
-        # PALETA (escolhida por CTR)
-        f"{palette_str}, "
-
-        # ILUMINAÇÃO (combinada com paleta)
-        f"{lighting_str}, "
-
-        # PELE
-        f"{SKIN_LOCK}, "
-
-        # MOOD DA MÚSICA (contextual)
-        f"character mood: {song_mood}, "
-        f"emotional vibe: {mood_mix}, "
-
-        # DETALHE DE GÊNERO
-        f"genre atmosphere: {genre_detail}, "
-
-        # RETENÇÃO/CTR
-        f"{RETENTION_LOCK}, "
-
-        # QUALIDADE
-        f"{QUALITY_LOCK}, "
-        f"{CONSISTENCY_LOCK}, "
-
-        # ARTE
-        f"art style: {art_style}, "
-
-        # CONTEXTO MUSICAL
+        # Música
+        f"genre atmosphere: {genre_boost}, "
         f"genre: {genre_text}, "
-        f"song mood: {song_name}, "
+        f"song title mood: {song_name}, "
+        f"song emotion: {song_mood}, "
 
-        # REFORÇO FINAL CTR
-        "beautiful expressive face dominant, eyes connecting with viewer, "
-        "emotional resonance, clean composition, "
-        "dark music aesthetic, premium quality, "
+        # Qualidade
+        f"{STYLE_LOCK}, "
+        f"{QUALITY_LOCK}, "
+
+        # Reforço final
+        "opening frame for viral music Short, "
+        "viewer must understand the mood instantly, "
+        "beautiful adult anime waifu, emotional, trendy, memorable, "
         "no text, no watermark, no logo"
     )
 
-    return _compact(prompt, max_len=3800)
+    return _compact(prompt, max_len=3000)
 
 
-def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, str]:
-    """Atalho para gerar prompt sem arquivo real."""
+def build_prompt(style: str = "phonk", seed_variant: int = 0) -> tuple[str, str]:
     fake_filename = f"{style}_variant_{seed_variant}.mp3"
     prompt = build_ai_prompt(
         style=style,
@@ -801,29 +507,7 @@ def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, st
 
 
 # ══════════════════════════════════════════════════════════════════════
-# SUFIXO DE REFORÇO v36 — CALIBRADO POR CTR
-# ══════════════════════════════════════════════════════════════════════
-
-GENERATION_SUFFIX = (
-    ", "
-    # FACE DOMINANT — dado de CTR
-    "beautiful detailed anime face, expressive emotional eyes, "
-    "face filling frame, portrait composition dominant, "
-    # QUALIDADE
-    "masterpiece quality, ultra detailed, clean sharp lineart, "
-    "professional anime illustration, beautiful character art, "
-    # PALETA LIMPA
-    "rich coherent color palette, high contrast, clean background, "
-    "cinematic color grading, professional music cover quality, "
-    # PROIBIÇÕES EXPLÍCITAS
-    "no text, no logo, no watermark, no extra people, "
-    "no excessive neon overload, no cluttered effects, "
-    "face clearly visible, eyes expressive and readable"
-)
-
-
-# ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO DE IMAGEM (REPLICATE) — sem alteração funcional
+# GERAÇÃO DE IMAGEM
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_image(prompt: str, output_path: str | None = None) -> str | None:
@@ -834,7 +518,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     output_path = output_path or "temp/generated_background.png"
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    full_prompt = _compact(prompt + GENERATION_SUFFIX)
+    full_prompt = _compact(prompt + GENERATION_SUFFIX, max_len=3300)
 
     headers = {
         "Authorization": f"Token {REPLICATE_API_TOKEN}",
@@ -848,33 +532,23 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
             try:
                 logger.info(f"[Replicate] Tentativa {attempt}/3 — {model}")
 
+                model_input = {
+                    "prompt": full_prompt,
+                    "negative_prompt": NEGATIVE_PROMPT,
+                    "width": FLUX_PARAMS["width"],
+                    "height": FLUX_PARAMS["height"],
+                    "num_inference_steps": FLUX_PARAMS["num_inference_steps"],
+                    "guidance_scale": FLUX_PARAMS["guidance_scale"],
+                    "seed": random.randint(1000, 999_999),
+                }
+
                 if "flux" in model:
-                    model_input = {
-                        **FLUX_PARAMS,
-                        "prompt": full_prompt,
-                        "negative_prompt": NEGATIVE_PROMPT,
-                        "seed": random.randint(1000, 999_999),
-                    }
-                elif "animagine" in model:
-                    model_input = {
-                        "prompt": full_prompt,
-                        "negative_prompt": NEGATIVE_PROMPT,
-                        "width": FLUX_PARAMS["width"],
-                        "height": FLUX_PARAMS["height"],
-                        "num_inference_steps": FLUX_PARAMS["num_inference_steps"],
-                        "guidance_scale": FLUX_PARAMS["guidance_scale"],
-                        "seed": random.randint(1000, 999_999),
-                    }
-                else:
-                    model_input = {
-                        "prompt": full_prompt,
-                        "negative_prompt": NEGATIVE_PROMPT,
-                        "width": FLUX_PARAMS["width"],
-                        "height": FLUX_PARAMS["height"],
-                        "num_inference_steps": FLUX_PARAMS["num_inference_steps"],
-                        "guidance_scale": FLUX_PARAMS["guidance_scale"],
-                        "seed": random.randint(1000, 999_999),
-                    }
+                    model_input.update({
+                        "num_outputs": FLUX_PARAMS["num_outputs"],
+                        "output_format": FLUX_PARAMS["output_format"],
+                        "output_quality": FLUX_PARAMS["output_quality"],
+                        "disable_safety_checker": FLUX_PARAMS["disable_safety_checker"],
+                    })
 
                 payload = {"input": model_input}
 
@@ -892,11 +566,11 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
                     time.sleep(2)
                     sr = requests.get(poll_url, headers=headers, timeout=30)
                     sr.raise_for_status()
-                    data   = sr.json()
+                    data = sr.json()
                     status = data.get("status")
 
                     if status == "succeeded":
-                        output    = data.get("output")
+                        output = data.get("output")
                         image_url = output[0] if isinstance(output, list) else output
                         if not image_url:
                             raise RuntimeError("Replicate retornou output vazio.")
@@ -922,7 +596,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES DE CONVENIÊNCIA — v36
+# FUNÇÕES DE CONVENIÊNCIA
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_background_image(
@@ -932,14 +606,25 @@ def generate_background_image(
     max_retries: int = 3,
     force_warm: bool = False,
     force_teal: bool = False,
+    force_crimson: bool = False,
 ) -> Optional[str]:
-    prompt, _ = build_prompt(style=style, seed_variant=seed_variant)
+    prompt = build_ai_prompt(
+        style=style,
+        filename=f"{style}_variant_{seed_variant}.mp3",
+        styles=[style],
+        short_num=seed_variant + 1,
+        force_warm=force_warm,
+        force_teal=force_teal,
+        force_crimson=force_crimson,
+    )
+
     for attempt in range(1, max_retries + 1):
         result = generate_image(prompt, output_path)
         if result:
             return result
         logger.warning(f"Tentativa background {attempt}/{max_retries} falhou.")
         time.sleep(3 * attempt)
+
     return None
 
 
@@ -958,13 +643,17 @@ def get_or_generate_background(
 
     variant = random.randint(0, 99)
     output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
-    return generate_background_image(style=style, output_path=output_path, seed_variant=variant)
+    return generate_background_image(
+        style=style,
+        output_path=output_path,
+        seed_variant=variant,
+    )
 
 
 def generate_background_batch(
     styles: list[str],
     output_dir: str = "assets/backgrounds",
-    variants_per_style: int = 2,
+    variants_per_style: int = 3,
 ) -> dict[str, list[str]]:
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     results: dict[str, list[str]] = {}
@@ -976,7 +665,12 @@ def generate_background_batch(
             if os.path.exists(output_path):
                 results[style].append(output_path)
                 continue
-            path = generate_background_image(style=style, output_path=output_path, seed_variant=v)
+
+            path = generate_background_image(
+                style=style,
+                output_path=output_path,
+                seed_variant=v,
+            )
             if path:
                 results[style].append(path)
 
@@ -984,7 +678,7 @@ def generate_background_batch(
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CLI — v36
+# CLI
 # ══════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
@@ -993,21 +687,23 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v36 High-CTR Channel-Optimized"
+        description="AI Image Generator — DJ DARK MARK v37 Trend Waifu Opening Frame"
     )
-    parser.add_argument("--style",       default="phonk",
-                        help="Gênero musical (phonk, trap, electronic, dark, darkpop, rock)")
-    parser.add_argument("--filename",    default="dark phonk.mp3",
-                        help="Nome da música (varia o prompt e o mood)")
-    parser.add_argument("--short-num",   type=int, default=1,
-                        help="Número do short (varia seed)")
-    parser.add_argument("--output",      default="assets/background.png")
-    parser.add_argument("--force-warm",  action="store_true",
-                        help="Força paleta warm golden (maior CTR histórico do canal)")
-    parser.add_argument("--force-teal",  action="store_true",
-                        help="Força paleta teal/blue (segundo maior CTR)")
+    parser.add_argument("--style", default="phonk",
+                        help="Gênero musical: phonk, trap, electronic, dark, darkpop, rock")
+    parser.add_argument("--filename", default="dark phonk.mp3",
+                        help="Nome da música para adaptar mood")
+    parser.add_argument("--short-num", type=int, default=1,
+                        help="Número do short, muda seed")
+    parser.add_argument("--output", default="assets/background.png")
+    parser.add_argument("--force-warm", action="store_true",
+                        help="Força paleta warm golden")
+    parser.add_argument("--force-teal", action="store_true",
+                        help="Força paleta teal blue")
+    parser.add_argument("--force-crimson", action="store_true",
+                        help="Força paleta crimson dark phonk")
     parser.add_argument("--prompt-only", action="store_true",
-                        help="Só imprime o prompt, não gera imagem")
+                        help="Só imprime prompt, não gera imagem")
     args = parser.parse_args()
 
     prompt = build_ai_prompt(
@@ -1015,12 +711,13 @@ if __name__ == "__main__":
         filename=args.filename,
         styles=[args.style],
         short_num=args.short_num,
-        force_warm=getattr(args, "force_warm", False),
-        force_teal=getattr(args, "force_teal", False),
+        force_warm=args.force_warm,
+        force_teal=args.force_teal,
+        force_crimson=args.force_crimson,
     )
 
     if args.prompt_only:
-        print("=== PROMPT v36 ===")
+        print("=== PROMPT v37 ===")
         print(prompt)
         print("\n=== NEGATIVE PROMPT ===")
         print(NEGATIVE_PROMPT)
