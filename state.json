@@ -761,9 +761,9 @@
       "name": "Signal Lost.mp3",
       "key": "1s6MwU34Ohf5sDjePJjTOQvj-hIoh8hNd",
       "name_key": "signal lost",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1Yzea5c967XtWyDbWBLycR90myQ8sQL6J",
