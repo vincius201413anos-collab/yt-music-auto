@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — DJ DARK MARK v25 BODY FIXED ULTRA VIRAL ENGINE
+ai_image_generator.py — DJ DARK MARK v25 HARD LOCK FULL BODY ULTRA VIRAL ENGINE
 =============================================================
 Versão profissional unificada (V18→V24 best-of merge).
 
@@ -75,14 +75,16 @@ TRAPSTAR_DNA = (
 )
 
 BODY_LOCK = (
-    "MANDATORY: show character from head to thighs or knees, "
-    "full upper body clearly visible, including torso, waist, arms and outfit, "
-    "character fills 65 to 85 percent of vertical frame height, "
-    "face must NOT dominate the frame, face takes only 25 to 35 percent of image, "
-    "camera pulled back, medium shot or three-quarter body shot, "
-    "outfit, chains, tattoos, piercings and silhouette clearly visible, "
-    "not a face-only headshot, not bust portrait, not cropped at neck, "
-    "not tiny in background"
+    "HARD LOCK COMPOSITION: full body or three-quarter body only, "
+    "MANDATORY: show the character from head to at least knees, preferably full body head to boots, "
+    "torso, waist, hips, thighs, arms, hands, outfit, chains, tattoos and silhouette must be clearly visible, "
+    "camera pulled far back, medium-long shot, not portrait framing, "
+    "character fills 60 to 78 percent of vertical frame height, "
+    "face must be small inside the composition, face takes only 12 to 22 percent of the image, "
+    "eyes visible but NOT zoomed in, body and outfit are the main focus, "
+    "vertical 9:16 full body anime cover composition, "
+    "not a face-only headshot, not close-up, not bust portrait, not cropped at shoulders, "
+    "not cropped at chest, not cropped at waist, not cropped at neck, not only face, not only eyes"
 )
 
 STYLE_LOCK = (
@@ -96,10 +98,11 @@ STYLE_LOCK = (
 
 RETENTION_LOCK = (
     "extreme scroll-stopping composition, strong center focal point, "
-    "body dominant composition, character visible from head to thighs or knees, "
-    "face takes only 25 to 35 percent of frame, "
-    "eyes positioned slightly above center but body and outfit remain clearly visible, "
-    "medium shot or three-quarter body framing, perfect for vertical 9:16 YouTube Shorts and TikTok, "
+    "full body dominant composition, character visible from head to knees or full body, "
+    "face takes only 12 to 22 percent of frame, "
+    "outfit, body pose and silhouette remain clearly visible, "
+    "camera pulled back, medium-long shot, full body framing, "
+    "perfect for vertical 9:16 YouTube Shorts and TikTok, "
     "instant readability in under 1 second, "
     "space near bottom for waveform and DJ logo overlay"
 )
@@ -163,8 +166,9 @@ NEGATIVE_PROMPT = (
     "toxic neon overload, 5 colors at once, "
     # composição ruim
     "face only, headshot only, portrait only, extreme close-up, close-up face, "
-    "face filling frame, only face, only eyes, bust portrait, cropped chest, "
-    "cropped shoulders, cropped body, missing legs, missing torso, "
+    "face filling frame, only face, only eyes, bust portrait, portrait closeup, "
+    "close framing, face dominant, huge face, zoomed face, cropped chest, "
+    "cropped shoulders, cropped arms, cropped hands, cropped waist, cropped body, missing legs, missing torso, "
     "small character, character too far, empty background without character, "
     # estilo indesejado
     "low quality, flat lighting, generic AI art, boring composition, clutter, bad crop"
@@ -208,16 +212,16 @@ EXPRESSION_VARIATIONS = [
 ]
 
 POSE_VARIATIONS = [
-    "leaning slightly forward toward viewer, intense direct eye contact",
-    "hand near lips, teasing expression, eyes locked on viewer",
-    "head tilted slightly, eyes glowing, soft smile",
-    "looking over shoulder, direct eye contact, tattoos visible",
-    "arms crossed, chin down, dominant boss pose",
-    "one hand touching hair, relaxed but confident",
-    "standing confidently, full outfit visible, strong silhouette",
-    "low angle full body, looking down at viewer",
-    "walking toward viewer, chains swinging",
-    "close framing, face dominant, soft body angle",
+    "standing confidently, full body visible from head to boots, strong silhouette",
+    "standing waist-up to knees, arms visible, outfit and chains clearly visible",
+    "walking toward viewer, full body visible, chains swinging, camera pulled back",
+    "low angle full body pose, looking down at viewer, boots visible",
+    "leaning against neon wall, body visible from head to knees, outfit readable",
+    "three-quarter body pose, turned slightly, face looking at viewer, tattoos visible",
+    "arms crossed, full upper body and waist visible, dominant boss pose",
+    "one hand touching hair, body visible from head to thighs, relaxed confident pose",
+    "standing in alley, full trapstar outfit visible, strong vertical composition",
+    "dynamic full body stance, knees and boots visible, neon rim light on silhouette",
 ]
 
 OUTFIT_VARIATIONS = [
@@ -408,8 +412,9 @@ def build_ai_prompt(
         # regras críticas finais
         "CRITICAL: must be extremely attractive, scroll-stopping, visually clean, "
         "must look like viral anime thumbnail with high click-through rate, "
-        "body and outfit must be clearly visible, not a close-up portrait, camera pulled back, "
-        "face must stay beautiful but must not dominate the frame, "
+        "HARD LOCK: full body or head-to-knees body must be visible, camera pulled far back, "
+        "body, outfit, waist, thighs, arms and silhouette must be clearly visible, "
+        "face must stay beautiful but must be small and must not dominate the frame, "
         "no text anywhere, no watermark, no logo, no letters, "
         "no messy glow, no color pollution, no overexposure, "
         "must look professional and viral, must create emotional reaction in first second"
@@ -447,7 +452,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
         prompt
         + ", 2D anime only, premium dark trapstar anime girl, beautiful face, "
         + "clean anatomy, natural anime skin tone, neon only as rim light and eye glow, "
-        + "no text, no logo, no watermark, body visible head to thighs, camera pulled back, viral YouTube Shorts thumbnail"
+        + "no text, no logo, no watermark, full body visible head to knees or boots, camera pulled far back, no close-up face, viral YouTube Shorts thumbnail"
     )
 
     headers = {
