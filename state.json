@@ -724,9 +724,9 @@
       "id": "11jd0JZHrEn7oqJuKYgjPHWSk9QnigxGU",
       "name": "Void Rider (1).mp3",
       "key": "11jd0JZHrEn7oqJuKYgjPHWSk9QnigxGU",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "void rider"
     },
     {
