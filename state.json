@@ -680,9 +680,9 @@
       "name": "With You.mp3",
       "key": "1cnVKrEafQ0fNNyFfafDG_DjzLaqfqJ_L",
       "name_key": "with you",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1G-Tmr17NmIbkmDebVskAbhoSr75DZKuZ",
