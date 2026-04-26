@@ -1,7 +1,7 @@
 """
-video_generator.py — DJ DARK MARK v14 CLEAN 4K MAX
+video_generator.py — DJ DARK MARK v14.1 CLEAN FIXED
 =========================================================
-V14 — Versão limpa: mantém efeitos hipnóticos sincronizados, mas remove grain/noise para imagem mais nítida em telas 4K/OLED.
+V14.1 — Versão limpa corrigida: mantém efeitos hipnóticos sincronizados, mas remove grain/noise para imagem mais nítida em telas 4K/OLED.
 Tudo testado e seguro para GitHub Actions gratuito (sem alpha dinâmico,
 sem matriz par no unsharp, sem filtros experimentais).
 
@@ -168,29 +168,29 @@ GENRE_COLOR_GRADE = {
         "colorbalance=rh=-0.06:gh=0.04:bh=0.22,"
         "eq=contrast=1.42:brightness=-0.048:saturation=1.32:gamma=0.95,"
         "curves=r='0/0 0.25/0.10 1/1':g='0/0 0.30/0.08 1/0.88':b='0/0 0.18/0.23 1/1',"
-        "unsharp=5:5:1.8:5:5:0,"    ),
+        "unsharp=5:5:1.8:5:5:0"    ),
     "trap": (
         "colorbalance=rs=-0.08:gs=0.04:bs=0.18,"
         "colorbalance=rh=-0.04:gh=0.08:bh=0.20,"
         "eq=contrast=1.38:brightness=-0.042:saturation=1.32:gamma=0.96,"
         "curves=r='0/0 0.3/0.10 1/0.92':b='0/0 0.2/0.20 1/1',"
-        "unsharp=5:5:1.5:5:5:0,"    ),
+        "unsharp=5:5:1.5:5:5:0"    ),
     "dark": (
         "colorbalance=rs=0.02:gs=-0.10:bs=0.28,"
         "colorbalance=rh=0.10:gh=-0.04:bh=0.18,"
         "eq=contrast=1.46:brightness=-0.078:saturation=1.14:gamma=0.93,"
         "curves=all='0/0 0.16/0.03 0.55/0.42 1/1',"
-        "unsharp=5:5:1.45:5:5:0,"    ),
+        "unsharp=5:5:1.45:5:5:0"    ),
     "dubstep": (
         "colorbalance=rs=-0.15:gs=0.18:bs=0.35,"
         "colorbalance=rh=0.25:gh=-0.08:bh=0.18,"
         "eq=contrast=1.44:brightness=-0.060:saturation=1.55:gamma=0.94,"
-        "unsharp=5:5:1.4:5:5:0,"    ),
+        "unsharp=5:5:1.4:5:5:0"    ),
     "darkpop": (
         "colorbalance=rs=0.16:gs=-0.06:bs=0.20,"
         "colorbalance=rh=-0.04:gh=0.04:bh=0.24,"
         "eq=contrast=1.34:brightness=-0.035:saturation=1.28:gamma=0.96,"
-        "unsharp=5:5:1.35:5:5:0,"    ),
+        "unsharp=5:5:1.35:5:5:0"    ),
     "electronic": (
         "colorbalance=rs=-0.20:gs=0.15:bs=0.38,"
         "colorbalance=rh=0.30:gh=-0.10:bh=0.20,"
@@ -204,7 +204,7 @@ GENRE_COLOR_GRADE = {
     "rock": (
         "colorbalance=rs=0.20:gs=0.06:bs=-0.15,"
         "eq=contrast=1.40:brightness=0.004:saturation=1.30,"
-        "unsharp=5:5:1.5:5:5:0,"    ),
+        "unsharp=5:5:1.5:5:5:0"    ),
     "metal": (
         "colorbalance=rs=-0.18:gs=-0.12:bs=0.15,"
         "eq=contrast=1.60:brightness=-0.10:saturation=0.70,"
@@ -335,7 +335,20 @@ def escape_text(text: str) -> str:
 
 
 def join_filters(parts: list[str]) -> str:
-    return ",".join([p for p in parts if p and str(p).strip()])
+    """Junta filtros FFmpeg sem deixar filtros vazios.
+
+    Corrige o bug do V14 onde uma parte terminava com vírgula e a próxima
+    também era unida por vírgula, gerando `,,` e o erro:
+    No such filter: ''.
+    """
+    cleaned = []
+    for p in parts:
+        if not p or not str(p).strip():
+            continue
+        item = str(p).strip().strip(",")
+        if item:
+            cleaned.append(item)
+    return ",".join(cleaned)
 
 
 def _odd(value: int, fallback: int = 5) -> int:
@@ -367,6 +380,10 @@ def sanitize_ffmpeg_filter(vf: str) -> str:
         r"\1@0.025",
         vf,
     )
+
+    # Segurança final: remove filtros vazios causados por vírgula dupla.
+    # Exemplo que quebrava: `unsharp=5:5:1.5:5:5:0,,drawbox=...`
+    vf = re.sub(r",{2,}", ",", vf).strip(",")
     return vf
 
 
@@ -1647,10 +1664,10 @@ def create_short(
         cmd = _build_cmd(inputs, vf, audio_filter, dur, output_name, audio_input_idx=1)
 
     # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Render V14 CLEAN 4K MAX…")
+    logger.info("  ► Render V14.1 CLEAN FIXED…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            run_cmd_safe(cmd, "FFmpeg V14", FFMPEG_RENDER_TIMEOUT_S, capture=True)
+            run_cmd_safe(cmd, "FFmpeg V14.1", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
         except subprocess.TimeoutExpired:
