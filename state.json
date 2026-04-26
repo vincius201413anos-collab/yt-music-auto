@@ -662,9 +662,9 @@
       "name": "American Dream.mp3",
       "key": "1r4eFMm1CO4yV5VRMqRBSmBNCQpE-tokS",
       "name_key": "american dream",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1xXXSOhUq_i6twy9-Sa9OTMD8Jyg9_uGS",
