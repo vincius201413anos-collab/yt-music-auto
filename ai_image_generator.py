@@ -1,15 +1,15 @@
 """
-ai_image_generator.py — DJ DARK MARK v18 TRAPSTAR BEAUTY LOCK
-============================================================
-Versão profissional para gastar crédito de imagem com mais chance de valer a pena.
+ai_image_generator.py — DJ DARK MARK v25 ULTRA VIRAL ENGINE
+=============================================================
+Versão profissional unificada (V18→V24 best-of merge).
 
 Objetivo visual:
-- Anime 2D premium, dark cyberpunk, trap/phonk/electronic.
-- Garotas adultas com vibe trapstar/dark queen, SEM escrever "trapstar" na imagem.
-- Muitas variações: cabelo colorido, olhos brilhando, piercings, tattoos, roupas e poses.
-- Corpo inteiro ou meio-corpo amplo: roupa/silhueta aparecem; evita close genérico.
-- Foco em beleza + atitude forte: brava, maluca, dominante, perigosa, muito bonita.
-- Sem texto, sem logo, sem watermark; a logo fica melhor como overlay no video_generator.
+- Anime 2D premium, dark cyberpunk, phonk / trap / electronic / dark pop.
+- Garota adulta com vibe trapstar/dark queen — sempre bonita, sempre viral.
+- Composição pensada para CTR alto em YouTube Shorts e TikTok.
+- Paleta controlada: magenta + violeta + preto (sem poluição de cor).
+- Expressão emocional forte: olhar direto na câmera, impacto em 0.5s.
+- Sem texto, sem logo, sem watermark.
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ logger = logging.getLogger("ai_image_generator")
 
 
 # ══════════════════════════════════════════════════════════════════════
-# CONFIG — seguro para GitHub/Replicate
+# CONFIG
 # ══════════════════════════════════════════════════════════════════════
 
 REPLICATE_API_TOKEN = os.getenv("REPLICATE_API_TOKEN", "")
@@ -39,10 +39,10 @@ REPLICATE_MODELS = [
 ]
 
 FLUX_PARAMS = {
-    "width": int(os.getenv("FLUX_WIDTH", "1080")),
-    "height": int(os.getenv("FLUX_HEIGHT", "1920")),
-    "num_inference_steps": int(os.getenv("FLUX_STEPS", "42")),
-    "guidance_scale": float(os.getenv("FLUX_GUIDANCE", "7.7")),
+    "width":               int(os.getenv("FLUX_WIDTH",    "832")),
+    "height":              int(os.getenv("FLUX_HEIGHT",   "1216")),
+    "num_inference_steps": int(os.getenv("FLUX_STEPS",    "30")),
+    "guidance_scale":      float(os.getenv("FLUX_GUIDANCE", "7.0")),
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -51,7 +51,7 @@ FLUX_PARAMS = {
 
 
 # ══════════════════════════════════════════════════════════════════════
-# LOCK PRINCIPAL
+# IDENTIDADE DO CANAL
 # ══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
@@ -59,220 +59,248 @@ CHANNEL_IDENTITY = (
     "YouTube Shorts music visualizer background, underground trap and electronic music aesthetic"
 )
 
+
+# ══════════════════════════════════════════════════════════════════════
+# LOCKS PRINCIPAIS (V25 MERGED)
+# ══════════════════════════════════════════════════════════════════════
+
 TRAPSTAR_DNA = (
-    "one adult anime woman only, beautiful trapstar cyberpunk anime girl, "
-    "dark queen energy, rebellious streetwear attitude, intimidating beauty, "
-    "very beautiful face, sharp jawline, glossy lips, sharp eyeliner, soft blush, "
-    "natural anime skin tone, glowing hypnotic eyes matching the music mood, "
-    "angry expression or crazy expression or cold dominant stare, "
-    "confident dangerous aura, expensive underground street style, "
-    "subtle face tattoos, neck tattoos, arm tattoos, hand tattoos, "
-    "nose piercing, eyebrow piercing, lip piercing or ear piercings, "
-    "black choker, silver chains, rings, cyber jewelry, "
-    "colorful hair, neon dyed hair, black hair with red streaks, blue hair, pink hair, purple hair, "
-    "black techwear, gothic streetwear, glossy black jacket, oversized hoodie, cargo pants, skirt with chains, "
-    "platform boots or chunky boots visible, full outfit visible, "
-    "platform-safe outfit, no nudity, no explicit outfit, alone in frame, no crowd"
+    "one adult anime woman only, extremely beautiful anime girl, "
+    "perfect symmetrical face, smooth soft skin, subtle blush, glossy lips, "
+    "sharp eyeliner, ultra attractive face, hypnotic beauty, "
+    "strong emotional presence, captivating personality, slightly crazy or mysterious vibe, "
+    "clean modern trapstar streetwear aesthetic, choker, minimal chains, subtle jewelry, "
+    "subtle face or neck or arm tattoos, nose or eyebrow or lip piercing, "
+    "clean composition, visually striking, alone in frame, no crowd"
 )
 
 BODY_LOCK = (
-    "medium full body or full body composition, character visible from head to knees or head to feet, "
-    "character fills 70 to 85 percent of vertical 9:16 frame, "
-    "outfit, tattoos, piercings and silhouette clearly visible, "
-    "not a face-only portrait, not a generic close-up, not cropped at neck, not tiny in the background"
+    "medium full body or upper body portrait, character visible from head to thighs or knees, "
+    "body centered, fills most of vertical frame, "
+    "outfit and silhouette clearly visible, strong pose, "
+    "not a face-only headshot, not cropped at neck, not tiny in background"
 )
 
 STYLE_LOCK = (
-    "2D anime illustration only, premium anime key visual, sharp manga lineart, polished cel shading, "
-    "dark cyberpunk anime edit, viral phonk anime cover, dark trap cover art, "
-    "deep black shadows, neon magenta, violet, red, cyan and toxic green rim lights, "
-    "high contrast, clean readable face, cinematic lighting, smoky glitch background, "
-    "neon rain, dark city bokeh, electric aura, bass shockwave particles, "
-    "beautiful vibrant glow but not messy, not overexposed, not realistic, not 3D"
+    "2D anime illustration only, premium anime key visual, sharp clean lineart, "
+    "polished cel shading, soft smooth shading, high contrast but clean, "
+    "dark cyberpunk anime aesthetic, viral phonk/trap cover art energy, "
+    "dark background, neon magenta and violet rim light only, "
+    "cinematic lighting, soft controlled glow, not overexposed, "
+    "not realistic, not 3D, not noisy, not messy"
 )
 
 RETENTION_LOCK = (
-    "scroll stopping first frame, strong centered focal point, phone-screen readable, "
-    "eyes and face instantly visible, body pose strong and memorable, "
-    "dark background with one dominant neon color, clean composition, no clutter, "
+    "extreme scroll-stopping composition, strong center focal point, "
+    "face dominant, takes 50 to 65 percent of frame, "
+    "eyes positioned slightly above center for mobile framing, "
+    "tight cinematic portrait, perfect for vertical 9:16 YouTube Shorts and TikTok, "
+    "instant readability in under 1 second, "
     "space near bottom for waveform and DJ logo overlay"
 )
 
+LIGHTING_LOCK = (
+    "cinematic high-contrast lighting, "
+    "strong warm light from one side (orange or red), "
+    "cool neon magenta or violet from opposite side, "
+    "face clearly lit and glowing, eyes highlighted, "
+    "soft bloom — no overexposure, background darker than subject"
+)
+
+COLOR_LOCK = (
+    "dominant neon magenta and violet tones, "
+    "secondary warm orange or red highlights, "
+    "clean controlled palette, no color pollution, "
+    "no green dominance, no yellow, no cyan overload, no mixed tones"
+)
+
 SKIN_LOCK = (
-    "natural anime skin tone preserved, pale or warm anime skin, "
-    "skin is not blue, face is not fully cyan, neon colors only as rim light and eye glow, "
-    "soft blush visible, natural face shading, beautiful readable face"
+    "natural anime skin tone, pale or light warm skin, "
+    "smooth shading, soft blush, clean readable face, "
+    "no blue skin, no green skin, no purple skin, no overexposed cyan face"
 )
 
-QUALITY_TAGS = (
-    "masterpiece, best quality, high-end anime illustration, ultra sharp, clean anatomy, "
-    "beautiful anime woman, detailed tattoos, detailed piercings, detailed hair, glossy glowing eyes, "
-    "cinematic shadows, high retention music cover, 9:16 vertical, 4k look"
-)
-
-NEGATIVE_PROMPT = (
-    "photorealistic, realistic, photography, real person, 3d, CGI, doll, plastic skin, "
-    "child, teen, underage, loli, chibi, schoolgirl, baby face, mascot, "
-    "nsfw, nude, explicit, lingerie, fetish, overly revealing outfit, cleavage focus, "
-    "gore, horror monster, ugly, creepy, deformed face, bad anatomy, bad hands, "
-    "extra fingers, missing fingers, extra arms, extra legs, fused limbs, long neck, tiny head, "
-    "lazy eye, crossed eyes, asymmetrical eyes, distorted mouth, melted face, uncanny, "
-    "multiple people, crowd, duplicate character, two girls, text, letters, words, captions, "
-    "trapstar text, DJ text, logo, watermark, signature, username, UI, number, "
-    "low quality, blurry, low resolution, muddy colors, washed out, flat lighting, "
-    "generic AI art, generic purple gradient, boring composition, clutter, bad crop, "
-    "yellow dominant, orange sunset dominant, daylight, sunny, photobash, "
-    "blue skin, cyan skin, fully blue face, blue body, neon skin, overexposed cyan face, "
-    "face only, headshot only, portrait only, cropped body, missing legs, missing torso, "
-    "small character, character too far, empty background without character"
+QUALITY_LOCK = (
+    "masterpiece, best quality, ultra clean anime illustration, "
+    "sharp lineart, clean anatomy, beautiful detailed face, "
+    "high resolution look, cinematic shadows, "
+    "looks like viral anime thumbnail with high click-through rate"
 )
 
 
 # ══════════════════════════════════════════════════════════════════════
-# VARIAÇÕES ANTI-GENÉRICO
+# NEGATIVE PROMPT DEFINITIVO
+# ══════════════════════════════════════════════════════════════════════
+
+NEGATIVE_PROMPT = (
+    # qualidade
+    "ugly, bad face, distorted face, bad anatomy, bad hands, extra fingers, "
+    "missing fingers, extra arms, extra legs, fused limbs, long neck, tiny head, "
+    "lazy eye, crossed eyes, asymmetrical eyes, distorted mouth, melted face, uncanny, "
+    "blurry, low quality, noise, grain, jpeg artifacts, low resolution, muddy colors, "
+    # pele / cor
+    "blue skin, green skin, purple skin, gray skin, cyan skin, neon skin, "
+    "overexposed cyan face, fully blue face, unnatural skin tone, "
+    "color pollution, mixed color chaos, green dominance, yellow dominance, "
+    # realismo / 3D
+    "photorealistic, realistic, photography, real person, 3D, CGI, "
+    "doll, plastic skin, lifeless eyes, "
+    # idades / personagens proibidos
+    "child, teen, underage, loli, chibi, schoolgirl, baby face, mascot, "
+    # nsfw
+    "nsfw, nude, explicit, cleavage focus, fetish, overly revealing outfit, "
+    # outros personagens
+    "multiple people, crowd, duplicate character, two girls, "
+    # texto / logo
+    "text, letters, words, captions, logo, watermark, signature, username, UI, numbers, "
+    # excesso de glow
+    "overexposed, too much glow, messy colors, heavy glow everywhere, "
+    "toxic neon overload, 5 colors at once, "
+    # composição ruim
+    "face only, headshot only, portrait only, cropped body, missing legs, missing torso, "
+    "small character, character too far, empty background without character, "
+    # estilo indesejado
+    "low quality, flat lighting, generic AI art, boring composition, clutter, bad crop"
+)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# VARIAÇÕES (ANTI-GENÉRICO)
 # ══════════════════════════════════════════════════════════════════════
 
 HAIR_VARIATIONS = [
-    "long black hair with red neon streaks, wet bangs, glowing red eye reflections",
-    "electric blue hair with black underlayer, twin tails, cyan rim light",
-    "hot pink hair with purple roots, messy trapstar style, glossy strands",
-    "white silver hair with black tips, sharp bangs, magenta glow",
-    "black and violet ombre hair, long flowing hair, neon smoke highlights",
-    "short black bob with red streaks, dangerous clean silhouette",
-    "turquoise and purple split-dye hair, cyberpunk streetwear mood",
-    "dark red hair with black roots, wet shine, crimson backlight",
-    "lavender hair with black horns, violet eye glow",
+    "black hair with subtle neon purple highlights, clean strands",
+    "dark hair with pink neon reflections, glossy shine",
+    "black and violet gradient hair, detailed shading",
+    "dark hair softly lit by neon magenta light",
+    "long black hair with red neon streaks, wet bangs",
+    "electric blue-black hair with twin tails, cyan rim accent",
     "black hair under oversized hood, colored strands visible",
+    "dark red and black ombre hair, wet shine, crimson backlight",
+    "short black bob with deep violet tones, clean silhouette",
+    "white silver hair with black tips, sharp bangs, magenta glow",
 ]
 
 EYE_VARIATIONS = [
-    "glowing red eyes, angry hypnotic stare",
-    "glowing violet eyes, cold dominant stare",
-    "bright magenta eyes, crazy beautiful expression",
-    "cyan and pink heterochromia, intense cyberpunk stare",
-    "toxic green glowing eyes, dangerous smile",
-    "orange red glowing eyes matching hard trap energy",
-    "electric blue glowing eyes with purple reflections",
+    "bright glowing magenta eyes with strong reflections",
+    "deep violet eyes, glossy and detailed",
+    "soft glowing pink eyes with light sparkle",
+    "intense purple eyes with cinematic rim reflection",
+    "glowing red eyes, cold hypnotic stare",
+    "cyan and pink heterochromia, electric gaze",
+    "toxic green glowing eyes, dangerous smirk",
 ]
 
 EXPRESSION_VARIATIONS = [
-    "furious beautiful face, controlled rage, sharp stare",
-    "crazy gorgeous smile, unhinged but stylish, glowing eyes",
-    "cold dominant expression, boss energy, looking down at viewer",
-    "evil confident smirk, trap queen attitude",
-    "serious angry stare, no smile, intimidating beauty",
-    "playful dangerous fang smile, pretty but threatening",
-    "calm psycho stare, elegant and scary",
-    "brave rebellious expression, lip slightly parted, intense",
-]
-
-PIERCING_TATTOO_VARIATIONS = [
-    "subtle forehead tattoo, small cheek tattoo, nose ring, ear piercings",
-    "neck tattoo, eyebrow piercing, lip ring, silver earrings",
-    "hand tattoos, arm sleeve tattoos, nose piercing, chain earrings",
-    "small face tattoos near the eye, septum piercing, black choker",
-    "cyber rune tattoos on neck and collarbone, multiple ear piercings",
-    "minimal black ink tattoos on cheek and fingers, glossy lip piercing",
-    "red glowing tattoo lines on arms, eyebrow piercing, silver rings",
-    "gothic floral tattoos on arms, small cross tattoo under eye, nose stud",
-]
-
-OUTFIT_VARIATIONS = [
-    "black techwear jacket, cargo pants with chains, chunky platform boots",
-    "glossy black cropped jacket over dark top, chained skirt, thigh-high boots, platform-safe",
-    "oversized black hoodie, tactical belt, dark shorts over leggings, chunky boots",
-    "gothic streetwear dress with silver chains, leather gloves, platform boots",
-    "black cyberpunk vest, cargo pants, fingerless gloves, heavy boots",
-    "dark leather jacket, choker, chain belt, black pants, streetwear silhouette",
-    "black and purple trap outfit, layered belts, arm sleeves, boots",
-    "hooded black coat, neon seams, chains around waist, boots visible",
+    "slightly crazy beautiful smile, hypnotic glowing eyes",
+    "seductive smirk, confident and calm, direct gaze",
+    "cold dominant stare, emotionless but powerful",
+    "intense mysterious stare, slightly parted lips",
+    "playful psycho smile, charming but dangerous",
+    "soft emotional look, deep connection with viewer",
+    "furious controlled rage, sharp stare",
+    "evil confident smirk, trap queen energy",
 ]
 
 POSE_VARIATIONS = [
-    "standing confidently, one hand near face, full outfit visible",
-    "walking toward viewer, chains swinging, dominant pose",
-    "arms crossed, chin down, angry glowing stare, body centered",
-    "one hand in pocket, other hand holding glowing energy, full body pose",
-    "leaning against neon wall, legs visible, cold stare",
-    "low angle full body pose, looking down at viewer like a boss",
-    "sitting on a low speaker, legs visible, leaning forward, crazy smile",
-    "standing in rain, hair blowing, hand raised with neon smoke",
-    "turning over shoulder, tattoos visible, dangerous expression",
-    "dynamic full body stance, boots on wet reflective ground",
+    "leaning slightly forward toward viewer, intense direct eye contact",
+    "hand near lips, teasing expression, eyes locked on viewer",
+    "head tilted slightly, eyes glowing, soft smile",
+    "looking over shoulder, direct eye contact, tattoos visible",
+    "arms crossed, chin down, dominant boss pose",
+    "one hand touching hair, relaxed but confident",
+    "standing confidently, full outfit visible, strong silhouette",
+    "low angle full body, looking down at viewer",
+    "walking toward viewer, chains swinging",
+    "close framing, face dominant, soft body angle",
+]
+
+OUTFIT_VARIATIONS = [
+    "black oversized hoodie, chains, choker, minimal streetwear",
+    "dark techwear outfit, straps, belts, chains, stylish",
+    "black cropped jacket, gothic streetwear, choker",
+    "dark leather jacket, choker, chain belt, black pants",
+    "black cyberpunk vest, cargo pants, fingerless gloves",
+    "hooded black coat, neon seams, chains around waist",
+    "black and violet trap outfit, layered belts, arm sleeves",
+    "oversized black hoodie, tactical belt, chunky boots",
 ]
 
 SCENE_VARIATIONS = [
-    "rainy neon alley, wet ground reflections, purple smoke",
-    "dark underground club entrance, magenta and red neon lights",
-    "cyberpunk city rooftop at midnight, electric aura behind",
-    "graffiti wall without readable words, black smoke and neon bokeh",
+    "dark neon alley, wet ground reflections, violet smoke, blurred bokeh",
+    "cyberpunk city rooftop at midnight, soft electric aura behind",
+    "underground club entrance, magenta and red neon lights",
+    "dark background with controlled neon glow — clean and minimal",
     "abandoned subway tunnel, violet lights, bass shockwave rings",
-    "night drive street, red taillight streaks, wet asphalt",
-    "dark studio with laser lights, smoky trap music atmosphere",
-    "phonk drift garage, neon reflections, black car silhouette blurred in background",
-    "futuristic nightclub, cyan magenta lighting, heavy shadows",
-    "dark alley with broken neon signs but no readable text",
+    "night drive street, red taillight streaks, wet asphalt reflection",
+    "dark studio with laser lights, smoky trap atmosphere",
+    "futuristic nightclub, cyan magenta rim, heavy shadows",
 ]
 
 AURA_VARIATIONS = [
-    "purple lightning aura around her silhouette",
-    "red neon smoke wrapping around her arms",
-    "hot pink glitch particles exploding behind her",
+    "subtle purple lightning aura around her silhouette",
+    "soft red neon smoke wrapping around her arms",
+    "hot pink glitch particles behind her",
     "cyan and violet electric mist rising from the floor",
-    "toxic green eye glow reflected in smoke",
-    "black ink shadows with magenta sparks",
-    "bass shockwave rings expanding from her boots",
-    "crimson flame-like neon aura behind her",
+    "bass shockwave rings expanding around her",
+    "crimson flame-like neon aura, subtle",
+    "dark ink shadows with magenta sparks",
 ]
 
 ART_STYLE_VARIATIONS = [
-    "premium anime key visual, sharp line art, glossy cel shading",
-    "dark manga cover energy, halftone shadows, neon glow",
-    "viral anime music cover art, polished lighting, dramatic pose",
+    "premium anime key visual, sharp lineart, glossy cel shading",
+    "viral anime music cover art, polished cinematic lighting",
     "cyberpunk anime poster, clean silhouette, high contrast",
     "phonk anime edit style, beautiful face, detailed streetwear",
+    "dark manga cover energy, neon glow, strong composition",
 ]
 
 
+# ══════════════════════════════════════════════════════════════════════
+# MAPEAMENTO DE GÊNERO
+# ══════════════════════════════════════════════════════════════════════
+
 GENRE_MAP = {
-    "phonk": "phonk",
-    "trap": "trap",
-    "dark": "dark",
+    "phonk":      "phonk",
+    "trap":       "trap",
+    "dark":       "dark",
+    "darkpop":    "dark",
+    "dark pop":   "dark",
     "electronic": "electronic",
-    "edm": "electronic",
-    "dubstep": "electronic",
-    "funk": "trap",
-    "rock": "dark",
-    "metal": "dark",
-    "cinematic": "dark",
-    "lofi": "dark",
-    "indie": "dark",
-    "pop": "default",
+    "edm":        "electronic",
+    "dubstep":    "electronic",
+    "funk":       "trap",
+    "rock":       "dark",
+    "metal":      "dark",
+    "cinematic":  "dark",
+    "lofi":       "dark",
+    "indie":      "dark",
+    "pop":        "default",
 }
 
 GENRE_PALETTES = {
     "phonk": [
-        "black, red, hot magenta, violet glow",
-        "black, toxic green, violet shadows",
-        "black, crimson, purple lightning",
+        "black, hot magenta dominant, deep violet shadows",
+        "black, crimson, purple lightning aura",
+        "black, magenta neon, dark red smoke",
     ],
     "trap": [
-        "black, pink neon, icy blue rim light",
-        "black, red neon, gold jewelry highlights",
-        "black, cyan, violet, magenta street glow",
+        "black, pink neon dominant, icy violet rim light",
+        "black, red neon, magenta glow, gold jewelry accent",
+        "black, violet, magenta street glow, clean palette",
     ],
     "electronic": [
-        "black, cyan laser light, magenta glow",
-        "deep blue, neon pink, violet digital particles",
-        "black, teal, electric purple, club lights",
+        "black, magenta laser light, violet digital particles",
+        "deep blue-black, neon pink dominant, violet glow",
+        "black, teal accent, electric purple, clean club lighting",
     ],
     "dark": [
-        "near black, red eyes, violet aura",
-        "black, gray shadows, blood red neon glow",
-        "black, purple smoke, white hair highlights",
+        "near black, red eyes, violet aura, minimal glow",
+        "black, gray deep shadows, blood red neon accent",
+        "black, purple smoke, white hair highlights, cold tone",
     ],
     "default": [
-        "black, violet, magenta, cyan, red glow",
+        "black, violet and magenta dominant, warm red secondary",
     ],
 }
 
@@ -281,7 +309,7 @@ GENRE_PALETTES = {
 # HELPERS
 # ══════════════════════════════════════════════════════════════════════
 
-def _compact(text: str, max_len: int = 3900) -> str:
+def _compact(text: str, max_len: int = 3800) -> str:
     text = re.sub(r"\s+", " ", text).strip()
     text = text.replace(" ,", ",").replace(",,", ",")
     return text[:max_len].rstrip(" ,")
@@ -295,7 +323,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v18_trapstar_beauty_lock"
+    key = f"{style}|{filename}|{short_num}|darkmark_v25_ultra_viral"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -307,64 +335,97 @@ def _song_detail(song_name: str) -> str:
     clean = song_name.lower()
     if any(w in clean for w in ["bass", "808", "drop"]):
         return "visible bass shockwave rings on the wet floor"
-    if any(w in clean for w in ["dark", "shadow", "ghost", "madrugada", "night"]):
-        return "midnight shadow aura and red neon smoke"
+    if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada"]):
+        return "midnight shadow aura, subtle red neon smoke"
     if any(w in clean for w in ["rage", "fire", "burn"]):
-        return "crimson neon flame aura and aggressive energy"
-    if any(w in clean for w in ["drive", "drift", "car"]):
-        return "night drive reflections and blurred car lights"
-    if any(w in clean for w in ["blue", "cyber", "electric"]):
-        return "cyan electronic glow and digital particles"
-    return "music energy visualized as neon aura around the character"
+        return "crimson neon flame aura, aggressive energy"
+    if any(w in clean for w in ["drive", "drift", "car", "speed"]):
+        return "night drive reflections, blurred car lights in background"
+    if any(w in clean for w in ["blue", "cyber", "electric", "digital"]):
+        return "cyan electronic glow, digital particles subtle"
+    return "music energy as subtle neon aura around character"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — COMPATÍVEL COM SEU BOT
+# PROMPT PRINCIPAL
 # ══════════════════════════════════════════════════════════════════════
 
-def build_ai_prompt(style: str, filename: str, styles: list | None = None, short_num: int = 1) -> str:
+def build_ai_prompt(
+    style: str,
+    filename: str,
+    styles: list | None = None,
+    short_num: int = 1,
+) -> str:
     styles = styles or []
     mapped = GENRE_MAP.get((style or "default").lower().strip(), "default")
-    rng = _rng(mapped, filename, short_num)
+    rng    = _rng(mapped, filename, short_num)
     song_name = _clean_song_name(filename)
 
-    hair = rng.choice(HAIR_VARIATIONS)
-    eyes = rng.choice(EYE_VARIATIONS)
-    expression = rng.choice(EXPRESSION_VARIATIONS)
-    piercing_tattoo = rng.choice(PIERCING_TATTOO_VARIATIONS)
-    outfit = rng.choice(OUTFIT_VARIATIONS)
-    pose = rng.choice(POSE_VARIATIONS)
-    scene = rng.choice(SCENE_VARIATIONS)
-    aura = rng.choice(AURA_VARIATIONS)
-    art = rng.choice(ART_STYLE_VARIATIONS)
-    palette = rng.choice(GENRE_PALETTES.get(mapped, GENRE_PALETTES["default"]))
-    detail = _song_detail(song_name)
+    hair        = rng.choice(HAIR_VARIATIONS)
+    eyes        = rng.choice(EYE_VARIATIONS)
+    expression  = rng.choice(EXPRESSION_VARIATIONS)
+    pose        = rng.choice(POSE_VARIATIONS)
+    outfit      = rng.choice(OUTFIT_VARIATIONS)
+    scene       = rng.choice(SCENE_VARIATIONS)
+    aura        = rng.choice(AURA_VARIATIONS)
+    art         = rng.choice(ART_STYLE_VARIATIONS)
+    palette     = rng.choice(GENRE_PALETTES.get(mapped, GENRE_PALETTES["default"]))
+    detail      = _song_detail(song_name)
 
     genre_text = ", ".join([style] + [s for s in styles if s and s != style])
 
     prompt = (
-        f"{TRAPSTAR_DNA}, {BODY_LOCK}, {STYLE_LOCK}, {RETENTION_LOCK}, {SKIN_LOCK}, {QUALITY_TAGS}, "
-        f"{hair}, {eyes}, {expression}, {piercing_tattoo}, {outfit}, {pose}, "
-        f"scene: {scene}, aura: {aura}, {detail}, "
-        f"palette: {palette}, genre mood: {genre_text}, song mood: {song_name}, "
+        f"{TRAPSTAR_DNA}, "
+        f"{BODY_LOCK}, "
+        f"{STYLE_LOCK}, "
+        f"{RETENTION_LOCK}, "
+        f"{LIGHTING_LOCK}, "
+        f"{COLOR_LOCK}, "
+        f"{SKIN_LOCK}, "
+        f"{QUALITY_LOCK}, "
+
+        # variações dinâmicas
+        f"{hair}, "
+        f"{eyes}, "
+        f"expression: {expression}, "
+        f"pose: {pose}, "
+        f"outfit: {outfit}, "
+        f"scene: {scene}, "
+        f"aura: {aura}, "
+        f"{detail}, "
+
+        # contexto musical
+        f"palette: {palette}, "
+        f"genre mood: {genre_text}, "
+        f"song mood: {song_name}, "
         f"{art}, "
-        "CRITICAL: no written text anywhere in the image, no readable words on hat or wall or clothes, "
-        "no logo, no watermark, no letters, no numbers, "
-        "must look expensive, professional, high-retention YouTube Shorts visual, "
-        "not generic, not boring, not realistic, not 3D"
+
+        # regras críticas finais
+        "CRITICAL: must be extremely attractive, scroll-stopping, visually clean, "
+        "must look like viral anime thumbnail with high click-through rate, "
+        "face must be the main focus and beautiful instantly, "
+        "no text anywhere, no watermark, no logo, no letters, "
+        "no messy glow, no color pollution, no overexposure, "
+        "must look professional and viral, must create emotional reaction in first second"
     )
 
     return _compact(prompt, max_len=3600)
 
 
 def build_prompt(style: str = "default", seed_variant: int = 0) -> tuple[str, str]:
+    """Atalho para gerar prompt sem arquivo real."""
     fake_filename = f"{style}_variant_{seed_variant}.mp3"
-    prompt = build_ai_prompt(style=style, filename=fake_filename, styles=[style], short_num=seed_variant + 1)
+    prompt = build_ai_prompt(
+        style=style,
+        filename=fake_filename,
+        styles=[style],
+        short_num=seed_variant + 1,
+    )
     return prompt, NEGATIVE_PROMPT
 
 
 # ══════════════════════════════════════════════════════════════════════
-# GERAÇÃO DE IMAGEM
+# GERAÇÃO DE IMAGEM (REPLICATE)
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_image(prompt: str, output_path: str | None = None) -> str | None:
@@ -375,12 +436,12 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
     output_path = output_path or "temp/generated_background.png"
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
+    # reforça o estilo na hora da geração
     full_prompt = _compact(
         prompt
-        + ", 2D anime only, professional dark trapstar anime girl, full body or medium full body, "
-        + "beautiful face, tattoos, piercings, colorful hair, glowing eyes, dark cyberpunk streetwear, "
-        + "premium anime illustration, viral phonk trap electronic cover art, sharp lineart, clean anatomy, "
-        + "natural anime skin tone, neon only as rim light and eye glow, no text, no logo, no watermark"
+        + ", 2D anime only, premium dark trapstar anime girl, beautiful face, "
+        + "clean anatomy, natural anime skin tone, neon only as rim light and eye glow, "
+        + "no text, no logo, no watermark, viral YouTube Shorts thumbnail"
     )
 
     headers = {
@@ -398,9 +459,9 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
                 payload = {
                     "input": {
                         **FLUX_PARAMS,
-                        "prompt": full_prompt,
+                        "prompt":          full_prompt,
                         "negative_prompt": NEGATIVE_PROMPT,
-                        "seed": random.randint(1000, 999999),
+                        "seed":            random.randint(1000, 999_999),
                     }
                 }
 
@@ -409,17 +470,20 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
                 resp.raise_for_status()
                 pred = resp.json()
 
-                poll_url = pred.get("urls", {}).get("get") or f"https://api.replicate.com/v1/predictions/{pred['id']}"
+                poll_url = (
+                    pred.get("urls", {}).get("get")
+                    or f"https://api.replicate.com/v1/predictions/{pred['id']}"
+                )
 
                 for _ in range(120):
                     time.sleep(2)
-                    status_resp = requests.get(poll_url, headers=headers, timeout=30)
-                    status_resp.raise_for_status()
-                    data = status_resp.json()
+                    sr = requests.get(poll_url, headers=headers, timeout=30)
+                    sr.raise_for_status()
+                    data   = sr.json()
                     status = data.get("status")
 
                     if status == "succeeded":
-                        output = data.get("output")
+                        output    = data.get("output")
                         image_url = output[0] if isinstance(output, list) else output
                         if not image_url:
                             raise RuntimeError("Replicate retornou output vazio.")
@@ -427,14 +491,13 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
                         img = requests.get(image_url, timeout=90)
                         img.raise_for_status()
                         Path(output_path).write_bytes(img.content)
-
                         logger.info(f"[Replicate] Salvo: {output_path}")
                         return output_path
 
                     if status == "failed":
                         raise RuntimeError(data.get("error") or "Replicate falhou.")
 
-                raise TimeoutError("Replicate demorou demais para gerar imagem.")
+                raise TimeoutError("Replicate demorou demais.")
 
             except Exception as e:
                 last_error = e
@@ -446,7 +509,7 @@ def generate_image(prompt: str, output_path: str | None = None) -> str | None:
 
 
 # ══════════════════════════════════════════════════════════════════════
-# FUNÇÕES EXTRAS — compatibilidade com partes antigas do bot
+# FUNÇÕES DE CONVENIÊNCIA
 # ══════════════════════════════════════════════════════════════════════
 
 def generate_background_image(
@@ -455,7 +518,7 @@ def generate_background_image(
     seed_variant: int = 0,
     max_retries: int = 3,
 ) -> Optional[str]:
-    prompt, _negative = build_prompt(style=style, seed_variant=seed_variant)
+    prompt, _ = build_prompt(style=style, seed_variant=seed_variant)
     for attempt in range(1, max_retries + 1):
         result = generate_image(prompt, output_path)
         if result:
@@ -478,7 +541,7 @@ def get_or_generate_background(
         logger.info(f"Background reutilizado: {chosen}")
         return str(chosen)
 
-    variant = random.randint(0, 99)
+    variant     = random.randint(0, 99)
     output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
     return generate_background_image(style=style, output_path=output_path, seed_variant=variant)
 
@@ -498,7 +561,6 @@ def generate_background_batch(
             if os.path.exists(output_path):
                 results[style].append(output_path)
                 continue
-
             path = generate_background_image(style=style, output_path=output_path, seed_variant=v)
             if path:
                 results[style].append(path)
@@ -515,12 +577,18 @@ if __name__ == "__main__":
 
     logging.basicConfig(level=logging.INFO)
 
-    parser = argparse.ArgumentParser(description="AI Image Generator — DJ DARK MARK v18 Trapstar Beauty Lock")
-    parser.add_argument("--style", default="phonk")
-    parser.add_argument("--filename", default="dark phonk.mp3")
-    parser.add_argument("--short-num", type=int, default=1)
-    parser.add_argument("--output", default="assets/background.png")
-    parser.add_argument("--prompt-only", action="store_true")
+    parser = argparse.ArgumentParser(
+        description="AI Image Generator — DJ DARK MARK v25 Ultra Viral Engine"
+    )
+    parser.add_argument("--style",       default="phonk",
+                        help="Gênero musical (phonk, trap, electronic, dark, etc.)")
+    parser.add_argument("--filename",    default="dark phonk.mp3",
+                        help="Nome da música (usado para variar o prompt)")
+    parser.add_argument("--short-num",   type=int, default=1,
+                        help="Número do short (varia seed)")
+    parser.add_argument("--output",      default="assets/background.png")
+    parser.add_argument("--prompt-only", action="store_true",
+                        help="Só imprime o prompt, não gera imagem")
     args = parser.parse_args()
 
     prompt = build_ai_prompt(
@@ -531,10 +599,10 @@ if __name__ == "__main__":
     )
 
     if args.prompt_only:
+        print("=== PROMPT ===")
         print(prompt)
+        print("\n=== NEGATIVE PROMPT ===")
+        print(NEGATIVE_PROMPT)
     else:
         path = generate_image(prompt, args.output)
-        if path:
-            print(f"✅ Salvo: {path}")
-        else:
-            print("✗ Falha na geração.")
+        print(f"✅ Salvo: {path}" if path else "✗ Falha na geração.")
