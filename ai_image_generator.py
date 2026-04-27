@@ -1,7 +1,8 @@
 """
-ai_image_generator.py — DJ DARK MARK v41.0 CYBERPUNK WAIFU EDITION
+ai_image_generator.py — DJ DARK MARK v42.0 CYBERPUNK WAIFU EDITION
 ====================================================================
 100 waifus nomeadas em tema cyberpunk com iluminação cinematográfica
+Composições variadas: corpo inteiro, 3/4, poses dinâmicas, vista de costas
 Estilos: fofas, vilãs, trapstar, tatuadas, dark queens
 """
 
@@ -40,194 +41,267 @@ FLUX_PARAMS = {
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# 100 CYBERPUNK WAIFUS — v41.0 (personagens nomeadas, tema cyberpunk,
-# iluminação cinematográfica, estilo variado: fofa / vilã / trapstar / tatuada)
+# 100 CYBERPUNK WAIFUS — v42.0
+# Personagens fiéis ao design original + upgrade cyberpunk
+# Descrições detalhadas de roupa, cabelo, traços característicos
 # ══════════════════════════════════════════════════════════════════════
 TREND_WAIFUS = [
-    # 1-10 Sword Art Online / Naruto
-    "Asuna Yuuki SAO-inspired, long chestnut hair with neon blue highlights, cyberpunk knight armor with glowing orange circuitry, warm golden rim light, elegant but dangerous",
-    "Hinata Hyuga Naruto-inspired, lavender hair in loose waves, shy cute energy turned cyberpunk street medic, soft violet bioluminescent eyes, gentle neon lilac glow",
-    "Rem ReZero-inspired, short sky blue hair, cyberpunk maid bodyguard, electric blue neon under-eyes, emotional intense gaze, teal rim light on face",
-    "Emilia ReZero-inspired, long silver hair with icy blue streaks, cyberpunk ice sorceress, crystalline neon aura, arctic blue holographic dress, cold but warm eyes",
-    "Mikasa Ackerman AOT-inspired, black hair with neon red streaks, cyberpunk soldier elite, intense focused gaze, crimson light on sharp jawline, combat-ready beauty",
-    "Zero Two DITF-inspired, long pink hair with black horns glowing neon red, cyberpunk pilot queen, hot pink neon visor marks under eyes, wild confident grin",
-    "Rias Gremory DxD-inspired, crimson long hair cascading, cyberpunk demon noble, deep red neon halo, regal dangerous beauty, violet and crimson lighting drama",
-    "Akeno Himejima DxD-inspired, long black hair in ponytail with purple neon clips, cyberpunk thunder witch, electric violet aura crackling, seductive controlled expression",
-    "Esdeath Akame-inspired, long blue-white hair, ice cold cyberpunk general, arctic neon blue military coat, commanding gaze, frost particles floating around her",
-    "Akame Akame-inspired, long straight black hair, crimson eyes glowing neon, cyberpunk assassin, dark bodysuit with red circuit lines, katana silhouette behind her",
+    # 1-10 Sword Art Online / Naruto / ReZero
+    "Asuna Yuuki SAO, iconic chestnut waist-length hair, white-and-red KoB armor redesigned as cyberpunk plate with glowing orange circuitry seams, rapier sheathed glowing electric blue, tall elegant female warrior stance, graceful and lethal",
+    "Hinata Hyuga Naruto, trademark lavender-white eyes with no pupils glowing faint violet, dark blue hair framing soft face, cyberpunk kunoichi bodysuit with byakugan neon scan lines, shy power held back, gentle but devastating",
+    "Rem ReZero, iconic short blue hair with hair clip, maid uniform reimagined as armored cyberpunk bodyguard suit with teal neon trim, morning star weapon crackling electricity, intense tear-filled determination, devotion and power",
+    "Emilia ReZero, long silver hair half-tied with white flowers, pointed ears, cyberpunk ice sorceress coat with crystalline blue circuits, ice shards floating around hands, serene face hiding tremendous power, ethereal cold beauty",
+    "Mikasa Ackerman AOT, trademark black hair and red scarf now glowing crimson neon, Survey Corps jacket redesigned with ODM gear as cyberpunk harness, blades replaced by energy katanas, sharp jawline, absolute focused determination",
+    "Zero Two DITF, long pink hair with iconic black horns now glowing red neon, pilot suit redesigned as skintight cyberpunk jumpsuit with candy-pink circuits, horns real and radiant, wild confident grin, chaotic beautiful energy",
+    "Rias Gremory DxD, floor-length crimson hair cascading dramatically, cyberpunk demon noble coat with deep red power aura venting from hands, confident imperious posture, violet eyes gleaming, aristocratic beauty commanding space",
+    "Akeno Himejima DxD, very long black hair in iconic high ponytail, shrine maiden robe redesigned as cyberpunk thunder witch outfit with violet lightning arcing between fingers, soft smile hiding ruthless power",
+    "Esdeath Akame-inspired, waist-length silver-blue hair, military peaked cap with neon blue insignia, tight general uniform with ice crystal epaulettes, glowing blue tattoo on chest, frost breath visible, absolute commanding presence",
+    "Akame Akame ga Kill, iconic waist-length straight black hair, crimson eyes glowing, black tight combat suit with glowing red circuit veins, Murasame katana crackling dark neon energy, silent assassin coiled to strike",
 
     # 11-20 Date A Live / Bunny Girl / Kaguya
-    "Kurumi Tokisaki DateALive-inspired, split black-white hair, heterochromic eye one clock-gold one crimson neon, cyberpunk time spirit, gothic dark energy, clock gears floating",
-    "Tohka Yatogami DateALive-inspired, long purple hair, cyberpunk spirit queen, violet neon blade energy, innocent but powerful expression, deep purple cinematic light",
-    "Mai Sakurajima BunnySenpai-inspired, short dark purple hair, cyberpunk actress bunny, neon purple spotlight, elegant mysterious gaze, subtle rose holographic dress",
-    "Kaguya Shinomiya-inspired, long black hair with red flower pins glowing neon, cyberpunk noble strategist, red and gold neon palace lighting, sharp intelligent eyes",
-    "Chika Fujiwara-inspired, pink hair with white ribbon glowing, bubbly cyberpunk trickster, pink neon confetti aura, mischievous bright smile, soft pink bokeh",
-    "Nezuko Kamado-inspired, long black hair with pink ombre neon tips, cyberpunk demon beauty, bamboo muzzle replaced by glowing pink filter mask, ember eyes glowing",
-    "Shinobu Kocho-inspired, long yellow-to-lavender gradient hair, cyberpunk insect wisteria doctor, purple flower neon aura, soft deadly smile, teal butterfly particles",
-    "Makima ChainsawMan-inspired, auburn hair in neat braid, cyberpunk control authority, rings of golden neon eyes floating behind her, eerie calm gaze, deep red lighting",
-    "Power ChainsawMan-inspired, blonde hair with neon pink horns, chaotic cyberpunk devil, blood-red neon streaks, wild grin, high-energy messy beautiful look",
-    "Himeno ChainsawMan-inspired, short white hair with eyepatch glowing neon green, cyberpunk devil hunter, cool casual confidence, teal green neon bar lighting",
+    "Kurumi Tokisaki DateALive, iconic half black half white long hair, one clockwork golden eye and one crimson eye, gothic lolita dress redesigned as cyberpunk time spirit armor with clock gear motifs glowing, twin flintlocks dripping shadow",
+    "Tohka Yatogami DateALive, long dark purple hair, Spirit dress reimagined as flowing cyberpunk armor with violet neon energy wings, Sandalphon sword crackling purple lightning, innocent expression contrasting godlike power",
+    "Mai Sakurajima BunnySenpai, signature short dark hair, iconic bunny outfit redesigned in cyberpunk leather and neon pink accents, mysterious actress aura, purple spotlight on her, elegant crossed arms, sharp knowing gaze",
+    "Kaguya Shinomiya, impossibly long black hair with ornate kanzashi pins glowing red neon, cyberpunk noble strategist in dark kimono with gold circuit obi, fan held open with holographic data, sharp manipulative intelligence",
+    "Chika Fujiwara, bright pink hair with iconic white bow now glowing, cyberpunk idol trickster in pastel-dark outfit with surprise neon confetti explosions, mischievous wide grin, chaotic cute energy, dance pose mid-step",
+    "Nezuko Kamado, long black hair with pink ombre neon glow at tips, bamboo muzzle replaced by glowing pink filter mask, pink haori with hemp leaf pattern illuminated, demon form with cracked pink neon skin marks glowing, fierce and haunting",
+    "Shinobu Kocho, long hair shifting from yellow to lavender, iconic butterfly haori with wings as real cyberpunk light constructs, doctor bag glowing with vials, needle-thin sword crackling insect venom neon, soft deadly smile",
+    "Makima ChainsawMan, neat auburn hair in iconic low braid, white dress shirt and tie as cyberpunk control authority uniform, rings of concentric glowing eyes floating behind her like halos, leash chain glowing gold, eerie perfect calm",
+    "Power ChainsawMan, wild blonde hair with iconic neon pink curved horns, casual streetwear soaked in neon blood-red energy, huge chainsaw arm deployed crackling, feral gap-tooth grin, chaotic devil energy barely contained",
+    "Himeno ChainsawMan, short white hair with eyepatch now a glowing green neon device, casual cyberpunk devil hunter jacket, ghost hand jutting beside her translucent, calm cool cigarette between lips, effortless dangerous confidence",
 
     # 21-30 One Piece / Spy x Family
-    "Nami OnePiece-inspired, orange wavy hair with neon gold highlights, cyberpunk navigator thief, warm amber neon light, confident sexy navigator look, holographic weather staff",
-    "Nico Robin OnePiece-inspired, long black hair, cool cyberpunk archaeologist, purple neon cloak, mysterious half-smile, ancient holographic runes floating around her",
-    "Boa Hancock OnePiece-inspired, long black hair with serpent neon clips, cyberpunk empress, deep magenta neon throne light, proud breathtaking beauty, snakes glowing neon",
-    "Yor Forger SpyFamily-inspired, black hair with rose pin glowing red neon, cyberpunk assassin mother, elegant black bodysuit with red circuit lines, dual neon daggers",
-    "Anya Forger SpyFamily-inspired, pink hair with dark tips, adorably cute cyberpunk little spy, green mind-scan neon halo, wide curious eyes, small and charming",
+    "Nami OnePiece, shoulder-length orange hair, iconic Clima-Tact upgraded as cyberpunk weather staff with lightning orbs, bikini top and jeans redesigned as navigator's cyberpunk gear with neon amber accents, confident hand on hip, navigator queen",
+    "Nico Robin OnePiece, long straight black hair, cyberpunk archaeologist in dark trench coat, hundred stone hands emerging from shadows in bloom, mysterious half-smile, Ohara holographic ruins behind her, cool intellectual power",
+    "Boa Hancock OnePiece, floor-length black hair with iconic Kuja crown now neon, snake earrings glowing, revealing empress dress as cyberpunk authority gown, Love-Love beam hand pose, breathtaking arrogant beauty, snakes coiling around legs glowing",
+    "Yor Forger SpyFamily, black hair with rose hairpin glowing blood-red, thorn-covered crimson dress redesigned as cyberpunk assassin armor, twin needles crackling with red neon energy, gentle smile hiding terrifying speed and strength",
+    "Anya Forger SpyFamily, signature pink hair with dark tips, wide curious mind-reading green halo flickering, spy outfit way too big for tiny frame, iconic excited face with mouth agape, adorably small amid big neon spy world",
 
     # 26-30 Cyberpunk Edgerunners / Fate
-    "Lucy Edgerunners-inspired, teal-white hair floating in zero-g, cyberpunk netrunner drifting in data space, electric teal aura, haunted beautiful expression, holographic data streams",
-    "Rebecca Edgerunners-inspired, short two-tone blue pink hair, tiny fierce cyberpunk gunner, huge neon pink gun, explosive energy, punk attitude, neon graffiti background",
-    "Saber FateSeries-inspired, gold blonde hair in braid, cyberpunk magic swordsman, emerald neon Excalibur energy, noble fierce expression, golden armor with light circuits",
-    "Rin Tohsaka Fate-inspired, twin black-tied tails with red ribbon glowing, cyberpunk mage, deep crimson neon gem aura, confident tsundere energy, elegant dark look",
-    "Jeanne d'Arc Fate-inspired, long silver white hair, cyberpunk holy knight, golden divine neon standard, serene powerful expression, warm holy light with cool cyber edge",
+    "Lucy Edgerunners, teal-white hair floating weightless in cyberspace, pale skin with glowing neural ports, arms outstretched in data ocean, expression between bliss and breakdown, electric teal data streams curling around body like wings",
+    "Rebecca Edgerunners, tiny frame with big attitude, two-tone blue-pink pigtails, oversized cyberpunk jacket sliding off shoulder, enormous Guts shotgun dragging on ground, standing wide-legged grinning wildly, punk energy in every pixel",
+    "Saber Artoria FateSeries, iconic golden hair in tight braid, emerald green eyes, blue and gold plate armor crackling with Excalibur wind aura, sword raised with divine golden wind, noble resolute expression, heroic king energy",
+    "Rin Tohsaka Fate, twin black pigtails with signature red ribbon bows glowing, black turtleneck and red skirt as cyberpunk mage combat outfit, twin glowing jewel gems charged with massive mana, tsundere determined fierce expression",
+    "Jeanne d'Arc Fate, very long silver-white hair streaming behind, holy armor with divine neon gold circuits, standard banner crackling with sacred flame, serene determined expression of absolute faith, light and shadow split dramatically",
 
     # 31-40 Konosuba / Shield Hero / Fairy Tail
-    "Megumin Konosuba-inspired, short black hair under wizard hat with neon stars, cyberpunk explosion mage, crimson eye neon, chuunibyou dramatic pose, dark energy crackling",
-    "Aqua Konosuba-inspired, long blue hair with neon water droplets, cyberpunk goddess (broke one), electric blue aura, beautiful but exasperated expression, water particles",
-    "Darkness Konosuba-inspired, long blonde hair, cyberpunk crusader masochist knight, blue-silver armor with neon runes, noble expression hiding wild inner energy",
-    "Raphtalia ShieldHero-inspired, brown raccoon ears and long hair, cyberpunk demi-human swordmaster, warm neon amber light, determined loyal expression, fluffy tail glow",
-    "Filo ShieldHero-inspired, white fluffy wings with neon tips, tiny blonde cyberpunk filolial queen, bright sky energy, cute powerful smile, white neon feather particles",
-    "Erza Scarlet FairyTail-inspired, long scarlet red hair, cyberpunk requip armor knight, multiple neon armors switching, fierce battle-ready expression, red neon sparks",
-    "Lucy Heartfilia FairyTail-inspired, long blonde hair with keys glowing, cyberpunk celestial spirit mage, golden star neon portal energy, cheerful brave expression",
-    "Juvia Lockser FairyTail-inspired, blue hair in drills, cyberpunk water mage, deep blue neon water veil around her, intense loving expression, rain neon droplets",
-    "Bulma DragonBall-inspired, short blue hair, cyberpunk genius scientist, teal holographic blueprints floating, confident brilliant expression, lab coat with neon accents",
-    "Android 18 DragonBall-inspired, blonde hair tucked back, cyberpunk android warrior, cool blue neon power rings, emotionless beautiful efficiency, sleek metallic light",
+    "Megumin Konosuba, iconic short black hair under oversized wizard hat with neon star, red eyes glowing, tattered black cape, staff raised toward sky, single eye closed in EXPLOSION chant, dark energy erupting beneath her tiny dramatic frame",
+    "Aqua Konosuba, very long blue hair in iconic high ponytail with bead ornaments, blue and white shrine outfit as cyberpunk water goddess robe, divine neon water halo above head, crying beautiful face mid-wail, surrounded by water orbs",
+    "Darkness Lalatina Konosuba, long wavy blonde hair, crusader plate armor with neon blue runes, broadsword dragged along ground, flushing noble expression hiding her secret, tall powerful frame, absurdly tanky beautiful warrior",
+    "Raphtalia ShieldHero, brown tanuki ears and long brown wavy hair, tail glowing amber, katana drawn crackling, demi-human swordmaster in elegant dark samurai cyberpunk armor, warm loyalty in eyes, hero's trusted companion energy",
+    "Filo ShieldHero, tiny blonde girl with huge white angel wings tipped neon, Filolial Queen crown, cheerful unstoppable energy, foot mid-kick crackling with divine power, small and mighty, overwhelming speed aura",
+    "Erza Scarlet FairyTail, long scarlet red hair, Requip magic mid-switch showing multiple neon armors layering, fierce battle cry expression, swords orbiting her like satellites, Titania queen of fairies absolutely dominant",
+    "Lucy Heartfilia FairyTail, long blonde hair in ponytail, celestial gate keys glowing gold floating in circle, Aquarius and Leo spirit silhouettes behind her, warm smile turning fierce, whip extended crackling starlight",
+    "Juvia Lockser FairyTail, blue hair in elaborate drills, rain always falling around her, water body half-dissolved and swirling dramatically, deep devoted eyes, water wings extending behind her, beautiful obsessive devotion",
+    "Bulma DragonBall, short bright blue hair, orange capsule corp jumpsuit with cyberpunk tech vest, Dragon Radar holographic scan open, brilliant engineer surrounded by floating holographic blueprints, confident genius expression",
+    "Android 18 DragonBall, blonde hair tucked behind ear, denim jacket cyberpunk modified with blue energy circuits, arms crossed with invisible ki aura making air ripple, cold beautiful efficiency, infinite power with zero expression",
 
     # 41-50 Dragon Ball / Naruto continued
-    "Videl DragonBall-inspired, short black pigtails, cyberpunk street fighter champion, warm neon orange fight energy, determined fierce expression, black gi with circuit lines",
-    "Tsunade Naruto-inspired, blonde long hair with diamond mark glowing neon, cyberpunk legendary medic, pink healing neon chakra aura, powerful commanding beauty",
-    "Sakura Haruno Naruto-inspired, short pink hair, cyberpunk medic fighter, pink and green dual neon, focused intense expression, fist charged with glowing energy",
-    "Ino Yamanaka Naruto-inspired, long platinum blonde hair, cyberpunk mind transfer specialist, mind-violet neon wave aura, confident fashionable street look",
-    "Temari Naruto-inspired, four blonde pigtails, cyberpunk wind kunoichi, teal wind neon slashes, serious powerful expression, giant holographic fan behind her",
-    "Yoruichi Shihouin Bleach-inspired, dark skin short purple hair, cyberpunk flash goddess, golden speed neon trails, playful grin hiding terrifying power, cat ears optional",
-    "Rukia Kuchiki Bleach-inspired, short black hair, cyberpunk soul reaper artist, white and violet neon zanpakuto energy, calm cute but deadly expression, ice flowers",
-    "Orihime Inoue Bleach-inspired, long auburn hair with hairpins glowing orange, cyberpunk barrier healer, warm orange neon shields floating, gentle kind beautiful face",
-    "Rangiku Matsumoto Bleach-inspired, long wavy strawberry blonde hair, cyberpunk soul reaper vice captain, sakura petal neon storm, laid-back but fierce expression",
-    "Nelliel Bleach-inspired, green hair with horned helmet glowing neon, cyberpunk espada, teal green powerful neon energy, mature elegant warrior expression",
+    "Videl DragonBall, signature black short pigtails, Great Saiyaman helmet tucked under arm, gi upgraded with neon orange ki aura, learning-to-fly hover stance with confident fists, street fighter champion energy, determined girl",
+    "Tsunade Naruto, long blonde hair in iconic twin pigtails, diamond Yin Seal on forehead glowing pink neon, Sannin robes as cyberpunk medic commander coat, fist ready to shatter ground, overwhelming presence, legendary beauty and strength",
+    "Sakura Haruno Naruto, short pink hair, Shannaro energy fist crackling green and pink dual neon charging ground-shattering punch, Cha determination face, medic pouch and fighting stance, strength built from nothing",
+    "Ino Yamanaka Naruto, long platinum blonde hair in ponytail, mind transfer violet neon wave leaving body, two poses of her simultaneously one real one spirit, fashionable kunoichi in cyberpunk floral bodysuit, clan jutsu beauty",
+    "Temari Naruto, four spiky blonde ponytails, enormous iron fan fully extended crackling teal wind neon blades, wide fan swing mid-arc creating pressure wave, powerful confident shinobi expression, wind kunoichi dominance",
+    "Yoruichi Shihouin Bleach, dark skin short purple hair, goddess of flash identity, golden speed neon afterimages trailing behind kick motion, casual sleeveless top, playful grin showing she barely tried, supreme mastery of speed",
+    "Rukia Kuchiki Bleach, short black hair, Sode no Shirayuki ice zanpakuto raised, white rose petal ice scatter, shinigami uniform with noble white scarf, calm focused expression, kido blue glow from other hand, dual-threat beauty",
+    "Orihime Inoue Bleach, very long auburn hair with flower hairpins glowing warm orange, Santen Kesshun shield dome crackling around her, gentle caring face with iron resolve protecting someone, healer turned warrior beauty",
+    "Rangiku Matsumoto Bleach, wavy long strawberry-blonde hair cascading, Haineko zanpakuto dissolving into ash swarm, vice-captain badge catching neon light, lazy confident smile masking incredible power, feminine and fierce equally",
+    "Nelliel Tu Bleach, green hair with helmet cracked showing horn, adult form with powerful mature figure, lance crackling green cero energy, gentle warrior expression, fraccion loyalty, espada power reawakening dramatically",
 
     # 51-60 My Hero Academia
-    "Momo Yaoyorozu MHA-inspired, long black hair tied high, cyberpunk creation hero, neon white material manifesting from skin, intelligent elegant serious expression",
-    "Ochaco Uraraka MHA-inspired, short brown hair, cute cyberpunk gravity hero, pink anti-gravity neon orbs floating around her, cheerful determined round eyes",
-    "Himiko Toga MHA-inspired, blonde twin buns, cyberpunk blood copy villain, yellow-gold feral neon eyes, psycho cute smile, syringes glowing neon, pink blood splash art",
-    "Midnight MHA-inspired, long black with white streak hair, cyberpunk sleep hero, purple dream neon mist curling from wrists, confident sultry heroic expression",
-    "Mirko MHA-inspired, white rabbit ears and hair, cyberpunk rabbit hero, powerful athletic body, moon silver neon light, fierce battle grin, kick energy trails",
+    "Momo Yaoyorozu MHA, long black hair in iconic high ponytail, creation quirk manifesting white molten material emerging from skin creating cannon, intelligent tactical expression, elegant heroic costume with cyberpunk analysis visor",
+    "Ochaco Uraraka MHA, short brown hair, Zero Gravity quirk making rubble and opponent float with pink anti-grav neon orbs, cheerful face turned serious mid-battle, meteor shower of rocks floating above her, agile hero stance",
+    "Himiko Toga MHA, twin blonde bun with strands loose, blood-drain gauntlets glowing neon yellow, transform quirk cycling through faces with golden eyes, unhinged joyful dangerous smile, knife in hand dripping neon, yandere villain beauty",
+    "Midnight MHA, long black and white hair wild, sleep quirk neon purple somnambulant mist pouring from wrists in curtains, whip raised, confident mature heroine posture, teaching and fighting simultaneously, mist swallowing background",
+    "Mirko MHA, white hair and rabbit ears, powerful athletic body mid flying kick delivering enormous impact wave, scars on arm telling stories, fierce grin showing teeth, moon behind her, rabbit hero at absolute full power output",
 
     # 56-60 Jujutsu Kaisen
-    "Nobara Kugisaki JJK-inspired, orange-brown bob hair, cyberpunk straw doll shaman, dark neon ritual energy, fierce blunt attitude expression, glowing hammer and nails",
-    "Maki Zenin JJK-inspired, short dark hair with glasses glowing neon green, cyberpunk sorcery weapon master, jade neon weapon aura, sharp intense warrior gaze",
-    "Mei Mei JJK-inspired, long blonde twin-braid, cyberpunk mercenary shaman, gold neon aura of greed and power, cool calculated expression, crows with neon eyes",
-    "Utahime Iori JJK-inspired, long dark hair with scar glowing faint, cyberpunk chant barrier sorcerer, warm violet neon song wave aura, composed strong expression",
-    "Shoko Ieiri JJK-inspired, short dark hair, cyberpunk reverse curse doctor, green healing neon hands, calm unfazed expression, medical holographic displays",
+    "Nobara Kugisaki JJK, orange-brown bob hair, straw doll in one hand and nails glowing black cursed neon in other, hammer raised mid-resonance, fierce blunt no-nonsense expression, black flash cursed energy crackling on fist",
+    "Maki Zenin JJK, short dark hair with tape on nose, glasses with neon green special grade sight, panda staff or naginata extended, cursed tool spirit manifesting, zero cursed energy making her invisible to curses, pure physical dominance",
+    "Mei Mei JJK, long blonde twin braids, black suit with cyberpunk mercenary armor plates, twin ravens with neon eyes circling, confident calculating money-motivated expression, bird strike technique mid-deployment, cool and deadly",
+    "Utahime Iori JJK, long dark hair, scar through face glowing faint purple, chant-type technique creating barrier song waves visible as neon musical notation in air, composed supervisor expression, strong quiet authority",
+    "Shoko Ieiri JJK, short messy dark hair, reverse cursed technique green healing neon flowing from hands repairing catastrophic wounds, calm medical professional in crisis, cigarette balancing in corner of mouth, genius doctor energy",
 
     # 61-70 Slice of life / Steins Gate
-    "Marin Kitagawa-inspired, long wavy blonde hair with pink highlights, cyberpunk cosplay idol, vibrant neon fabric aura, enthusiastic passionate expression, shimmer particles",
-    "Shizuku Kuroe-inspired, short black bob hair, quiet cyberpunk doll artist, dark indigo neon, calm mysterious expression, small glowing doll figures around her",
-    "Nagatoro-inspired, tanned skin long black hair, cyberpunk teaser gremlin, sharp neon green eyes grinning, playful aggressive beautiful energy, urban street setting",
-    "Uzaki Hana-inspired, short silver-white hair, energetic cyberpunk loud friend, bright neon yellow energy, wide grin, bubbly overwhelming cute presence",
-    "Komi Shouko-inspired, long black hair with violet sheen, cyberpunk silent communication goddess, soft violet neon letter particles floating, shy stunning beauty",
-    "Najimi Osana-inspired, short orange wavy hair, chaotic neutral cyberpunk social butterfly, rainbow neon aura, unpredictable cheerful expression, everyone's friend energy",
-    "Yuno Gasai FutureDiary-inspired, long pink hair, yandere cyberpunk time survival queen, pink-red cracked neon eyes, loving and terrifying duality expression, diary glowing",
-    "Kurisu Makise SteinsGate-inspired, long reddish-brown hair, cyberpunk time machine scientist, teal data neon streams, intelligent sarcastic brilliant expression",
-    "Mayuri Shiina SteinsGate-inspired, short black hair, sweetest cyberpunk lab member, warm amber neon, soft innocent smile that hides cosmic importance, stars around her",
-    "Suzuha Amane SteinsGate-inspired, brown hair under military cap, cyberpunk time soldier from future, cool determined expression, green neon timeline energy",
+    "Marin Kitagawa, very long wavy blonde hair with pink highlights, elaborate cosplay costume crackling with neon fabric magic, passionate open-mouth excited expression, surrounded by floating costume materials, gyaru beauty meets craft obsession",
+    "Shizuku Kuroe, short black bob, dark indigo neon aura, small glowing doll figures dancing around hands, quiet mysterious artist expression, black dress simple and elegant, dark art magic barely visible at fingertips",
+    "Nagatoro, long sleek black hair, dark tanned skin, sharp neon green teasing eyes mid-laugh, casual uniform unbuttoned slightly, leaning forward in bullying pose that hides deep affection, summer energy and predatory cute grin",
+    "Uzaki Hana, short silver-white hair, Sugoi Dekai energy in every pose, loud expressive face mid-exclamation, bright yellow neon enthusiasm energy bursting out, energetic leaning forward invasion of personal space, overwhelming presence",
+    "Komi Shouko, extraordinarily long straight black hair with violet sheen, neon letter particles floating as failed speech attempts, shy stunning beauty holding notepad, perfect elegant face flushed with communication anxiety, quiet goddess energy",
+    "Najimi Osana, short wavy orange hair, chameleon friend energy with rainbow neon aura adapting to everyone, hands out in greeting, unpredictable cheerful expression, social butterfly hovering between genders, everyone's friend nobody's",
+    "Yuno Gasai FutureDiary, long pink hair half-neat half-wild, diary phone glowing ominous pink-red, yandere smile beautiful and cracked, one eye loving one eye hunting, blood neon tear on cheek, love and murder indistinguishable",
+    "Kurisu Makise SteinsGate, long reddish-brown hair, white lab coat with cyberpunk time research gear, teal time machine data streams swirling from open laptop, brilliant sarcastic tsundere expression, genius who changed the world",
+    "Mayuri Shiina SteinsGate, short black hair with large hair clip, gentle round eyes, cosplay outfit mid-construction, Tutturu warm amber neon, innocent cosmic fate she carries without knowing, stars rotating slowly behind her smile",
+    "Suzuha Amane SteinsGate, brown hair under army cap, future soldier fatigues with green timeline neon energy, bicycle leaning beside her, determined expression of someone who has seen terrible futures, time warrior at rest",
 
     # 71-80 Violet Evergarden / Fate / Code Geass
-    "Violet Evergarden-inspired, long golden blonde hair, cyberpunk auto memory doll with prosthetic neon arms, violet letter neon paper floating, melancholic beautiful expression",
-    "Saber Alter Fate-inspired, dark grey armored Artoria, dark energy Excalibur glowing black-violet neon, intimidating dark beauty, corrupted but powerful expression",
-    "Astolfo Fate-inspired, long pink hair and cute face, cyberpunk paladin trap, pink-gold neon lance, bright cheerful beautiful expression, flamboyant heroic aura",
-    "Illyasviel Fate-inspired, long white hair with ruby eyes, cyberpunk magical girl dark, crimson neon magic circle, cute child face hiding immense power, snow flakes neon",
-    "Kallen Kozuki CodeGeass-inspired, red hair in wild cyberpunk resistance queen look, Knightmare neon red cockpit light, fierce passionate rebel expression, red neon streaks",
-    "CC CodeGeass-inspired, long green hair, mysterious cyberpunk witch immortal, jade green neon code mark on forehead, eternal bored beautiful expression, gold markings glow",
-    "Shirley Fenette CodeGeass-inspired, long orange hair, sweet cyberpunk student caught in war, warm sunset neon, emotional loving expression, innocence in dark world",
-    "Milly Ashford CodeGeass-inspired, short blonde hair, cyberpunk student council president, gold neon festive energy, bright organizing chaos energy, cheerful commanding look",
-    "Winry Rockbell FMA-inspired, long blonde hair in ponytail with wrench glowing, cyberpunk automail engineer, warm amber neon sparks, passionate loving expression",
-    "Riza Hawkeye FMA-inspired, pulled back blonde hair, cyberpunk military sharpshooter, golden scope neon sight, cool composed absolute loyalty expression, guns gleaming",
+    "Violet Evergarden, long golden blonde hair, auto memory doll uniform with prosthetic silver arms now glowing neon blue at joints, typewriter keys floating around her like magic, violet letter neon paper dissolving into butterflies, deep lonely beautiful eyes",
+    "Saber Alter, dark grey corrupted Artoria, black armor with corrupted Excalibur shooting black-violet neon beam upward, cold dark eyes with faint green glow, holy beauty swallowed by shadow, fallen king still standing proud",
+    "Astolfo Fate, very long pink hair with braids, colorful knight armor redesigned as cyberpunk paladin, Hippogriff mount silhouette behind in neon, bright irresistible cheerful smile, flamboyant confident beautiful presence, pink neon lance",
+    "Illyasviel von Einzbern Fate, waist-length white hair with curl, crimson eyes, magical girl outfit with giant magic kaleidoscope shield activating, cute face hiding Einzbern homunculus power, snowflake neon particles falling",
+    "Kallen Kozuki CodeGeass, wild short red hair in cockpit glow, Knightmare Frame Guren cockpit cracked open with pilot half-emerged, resistance arm band, fierce passionate rebel expression, blood-red energy palm deployed",
+    "CC CodeGeass, very long green hair past floor, Code geass mark on forehead glowing gold, white straightjacket opened to dress in flashback layers, eternal bored immortal expression, gold markings crawling skin, pizza box floating comedically",
+    "Shirley Fenette CodeGeass, long orange hair, Ashford Academy uniform, love letter in hands glowing warm sunset neon, emotional loving expression caught between worlds, innocence in a world of war and code, tragic beautiful warmth",
+    "Winry Rockbell FMA, long blonde hair in ponytail, mechanic overalls with automail arm blueprint holographic open, wrench tool glowing amber sparks, passionate determined expression, automail engineering genius hands already working",
+    "Riza Hawkeye FMA, pulled-back blonde hair sharp and neat, military uniform, Black Hayate at heel, twin pistols raised with perfect posture and golden scope neon sight, Hawkeye sniper eye unnervingly calm, Roy's shield and weapon",
+    "Lust FMA, impossibly long black hair dramatically falling, Ouroboros mark on chest glowing crimson, fingernails extending into Ultimate Lance blades neon-edged, deadly seductive expression, homunculus power barely leashed, femme fatale supreme",
 
     # 81-90 FMA / Spice Wolf / Toradora / Oregairu
-    "Lust FMA-inspired, long black hair, ultimate cyberpunk homunculus femme fatale, dark crimson neon Ouroboros mark, fingernails extending glowing, deadly seductive expression",
-    "Olivier Armstrong FMA-inspired, blonde hair in military braid, cyberpunk northern wall general, ice blue neon blade, fearless absolute commander expression, frost aura",
-    "Holo SpiceWolf-inspired, long brown hair with wolf ears and tail glowing neon amber, cyberpunk ancient wolf goddess, warm harvest neon, wise playful beautiful expression",
-    "Taiga Aisaka Toradora-inspired, long brown hair, tiny cyberpunk palm-top tiger, fierce neon orange energy, tsundere fierce cute expression, wooden sword glowing",
-    "Minori Kushieda Toradora-inspired, short orange hair, energetic cyberpunk softball girl, bright warm neon sun energy, enthusiastic honest beautiful smile",
-    "Ami Kawashima Toradora-inspired, long blonde wavy hair, cyberpunk model manipulator, cool icy blue neon, dual face sweet-then-sharp, elegant calculating gaze",
-    "Yukino Yukinoshita Oregairu-inspired, long black hair with blue sheen, cyberpunk service club perfectionist, cool silver-blue neon, elegant cold intellectual expression",
-    "Yui Yuigahama Oregairu-inspired, pink dip-dyed short hair, cyberpunk cheerful social butterfly, warm coral neon, kind expressive emotional face, ribbon glowing",
-    "Iroha Isshiki Oregairu-inspired, brown hair in side ponytail glowing, cyberpunk cunning student president, soft pink neon, sly cute devious smile hiding sharp mind",
-    "Ichika Nakano Quint-inspired, long blonde hair with star clips glowing neon, cyberpunk big sister, soft gold neon, gentle responsible beautiful expression",
+    "Olivier Armstrong FMA, severe blonde hair in military braid under northern uniform, breath visibly cold, blue-neon ice blade Briggs sword drawn, fearless absolute zero expression, northern wall herself, rank intimidates god",
+    "Holo SpiceWolf, long brown hair with wolf ears perked and fluffy tail raised high, harvest goddess ancient eyes, apple in hand, merchant travel cloak as cyberpunk trader coat, warm amber neon, wise playful smile hiding centuries",
+    "Taiga Aisaka Toradora, long straight brown hair, tiny fierce frame in school uniform mid wooden-sword-swing, tiger palm strike releasing orange neon energy, tsundere attack face, palm-top tiger refusing to look small despite size",
+    "Minori Kushieda Toradora, short orange hair, athletic uniform, softball bat swing mid-arc releasing warm sun neon energy wave, bright honest gorgeous smile, effortless athletic grace, summer best friend energy, warm and genuine",
+    "Ami Kawashima Toradora, long blonde wavy hair, model pose with sharp eyes that shift from sweet to cold in same frame, dual face effect visible, elegant fashion forward, icy blue neon cold calculation beneath perfect performance",
+    "Yukino Yukinoshita Oregairu, very long black hair with blue sheen, Sobu High uniform, book open with silver-blue neon analysis text projecting, cold perfectionist expression, legs crossed while standing somehow, elegant ice queen",
+    "Yui Yuigahama Oregairu, short hair with pink dip-dye ends, warm coral neon, cheerful expressive face caught between smile and care, reaching hand toward viewer, social butterfly who learned real kindness, ribbon glowing soft",
+    "Iroha Isshiki Oregairu, brown hair in cute side ponytail, student council badge glowing, sly perfect smile with eyes doing something different, manipulation wrapped in doe eyes, dangerous cute competence hiding real growth",
+    "Ichika Nakano Quint, long blonde hair with five-star hairpin glowing gold, big sister composure mid-cooking scene, warm responsible expression, apron over elegant outfit, feeding everyone first, calm center of five chaos sisters",
+    "Nino Nakano Quint, long blonde twin pigtails fierce and bouncy, tsundere chef with kitchen knife crackling rose neon, protective sister rage face turned shy love face in same frame, cooking for the person who broke her defenses",
 
     # 91-100 Quintuplets / Re:Zero
-    "Nino Nakano Quint-inspired, long blonde twin pigtails, tsundere cyberpunk cook, warm rose neon, fierce protective sister expression, kitchen holographic tools glowing",
-    "Miku Nakano Quint-inspired, long blonde hair with headphones glowing neon deep blue, cyberpunk history music lover, indigo neon, shy reserved beautiful intensity",
-    "Yotsuba Nakano Quint-inspired, short blonde hair with bow glowing neon green, most cheerful cyberpunk sister, bright lime neon energy, pure bright energetic smile",
-    "Itsuki Nakano Quint-inspired, long blonde hair with star clips, serious cyberpunk teacher sister, gold neon warm lighting, composed studious beautiful expression",
-    "Echidna ReZero-inspired, long white hair with black streaks, cyberpunk witch of greed, dark void neon tea party aesthetic, eerily beautiful smile hiding evil, bone china glow",
-    "Satella ReZero-inspired, silver half-shadow half-radiant hair, cyberpunk witch of envy, black and violet neon shadow hands, deeply emotional tragic expression, stars crying",
-    "Frederica Baumann ReZero-inspired, long golden hair with beast eyes neon slit, cyberpunk half-beast gate guardian, warm neon amber, elegant composed dangerous grin",
-    "Elsa Granhiert ReZero-inspired, dark hair with red neon streaks, cyberpunk bowel hunter assassin, crimson neon blades, sadistic beautiful smile, blood-art aesthetic clean",
-    "Ram ReZero-inspired, short pink hair with demon horn glowing bright neon pink, cyberpunk elite maid demon, sharp condescending beauty, pink energy cracking around her",
-    "Priscilla Barielle ReZero-inspired, long scarlet red hair, cyberpunk solar empress, golden solar neon crown aura, absolute arrogant gorgeous expression, sun deity energy",
+    "Miku Nakano Quint, long blonde hair with iconic deep blue headphones glowing neon, withdrawn but intense music lover, indigo sound wave neon emanating, fingers pressed to headphone cup listening to something only she hears, shy intense beauty",
+    "Yotsuba Nakano Quint, short blonde hair with bright neon green bow, most cheerful sister at full sprint mid-jump, pure lime neon energy explosion, genuine bright smile with nothing hidden, athletic carefree sunlight made girl",
+    "Itsuki Nakano Quint, long blonde hair with star hairpin, serious studious expression, teacher materials holographic in air, composed dignified sister, warm gold neon, most responsible and most underestimated, quiet power",
+    "Echidna ReZero, long white hair with black roots, gothic witch of greed tea party dress redesigned as dark cosmic armor, tea cup floating with bone-white glow, eerily beautiful perfect smile hiding absolute evil, void portal behind her",
+    "Satella ReZero, silver hair half-radiant half-consumed by shadow, witch of envy shadow hands reaching from dress hem like living darkness, violet crying eyes of genuine love and destruction, tragic goddess beauty consuming herself",
+    "Frederica Baumann ReZero, long golden hair, beast transformation half-triggered showing slit eyes and neon amber glow, gate guardian uniform, elegant composed dangerous grin, half-beast half-noble, beautiful and feral simultaneously",
+    "Elsa Granhiert ReZero, dark hair with red neon streak, black opera dress with curved blade hidden, bowel hunter grin of pure aesthetic sadism, blood neon art splatter as beautiful abstract pattern, deadly graceful movement frozen",
+    "Ram ReZero, short pink hair with demon horn glowing bright hot pink, elite maid uniform with cyberpunk combat apron, Clairvoyance neon eye scan activating, condescending sharp beauty staring down at viewer, single horn radiating power",
+    "Priscilla Barielle ReZero, very long scarlet red hair with elaborate crown, solar empress battle fan extended crackling golden sun neon, absolute arrogant gorgeous expression of someone who believes the world orbits them, divine right beauty",
+    "Beatrice ReZero, very long drill blonde twintails, spirit arts magic circle glowing, library of Roswaal barrier crackling, loli witch irritated expression hiding fierce loyalty, I suppose energy, ancient spirit in small frame",
 ]
 
 # ══════════════════════════════════════════════════════════════════════
-# LOCKS DE QUALIDADE / COMPOSIÇÃO / ESTILO — CYBERPUNK EDITION
+# COMPOSIÇÕES — VARIEDADE MÁXIMA (sem travamento em close de rosto)
+# ══════════════════════════════════════════════════════════════════════
+COMPOSITION_STYLES = [
+    # Corpo inteiro / full body
+    {
+        "name": "full_body_power",
+        "prompt": (
+            "FULL BODY vertical shot, character from head to toe filling 9:16 frame, "
+            "powerful dynamic stance, feet planted or mid-motion, "
+            "complete outfit and weapon visible, "
+            "character takes up 85% of frame height, "
+            "strong silhouette against cyberpunk background, "
+            "dramatic low-angle perspective enhancing scale"
+        ),
+        "weight": 25,
+    },
+    {
+        "name": "full_body_dynamic",
+        "prompt": (
+            "FULL BODY action composition, character mid-attack or power stance, "
+            "energy effects emanating from hands or weapon, "
+            "hair and clothes caught in motion, "
+            "entire body visible in frame, "
+            "Dutch angle adding drama, cyberpunk city below, "
+            "vertical mobile-first framing"
+        ),
+        "weight": 20,
+    },
+    # 3/4 body — mostra rosto E corpo
+    {
+        "name": "three_quarter_cinematic",
+        "prompt": (
+            "3/4 BODY SHOT from mid-thigh up, face and full upper body and legs visible, "
+            "face in upper portion, outfit fully readable, "
+            "one hand extended toward viewer or weapon drawn, "
+            "cinematic vertical composition, "
+            "background out of focus, character sharp, "
+            "natural attractive proportions fully visible"
+        ),
+        "weight": 25,
+    },
+    {
+        "name": "three_quarter_portrait",
+        "prompt": (
+            "3/4 BODY elegant portrait, waist-to-top composition showing full face and torso, "
+            "slight side angle showing depth and figure, "
+            "face upper third, detailed outfit middle, "
+            "one arm at side one extended or weapon resting, "
+            "dramatic side lighting, vertical format"
+        ),
+        "weight": 20,
+    },
+    # Vista de costas com rosto visível
+    {
+        "name": "back_view_dramatic",
+        "prompt": (
+            "DRAMATIC BACK VIEW full body, character facing cyberpunk city below, "
+            "hair flowing wild in neon wind, "
+            "face turned 3/4 showing profile or slight side view, "
+            "outfit and silhouette breathtaking from behind, "
+            "weapon or energy held aloft, "
+            "neon city sprawl far below, viewer perspective from behind"
+        ),
+        "weight": 10,
+    },
+]
+
+# ══════════════════════════════════════════════════════════════════════
+# CHANNEL IDENTITY & LOCKS
 # ══════════════════════════════════════════════════════════════════════
 CHANNEL_IDENTITY = (
     "DJ Dark Mark viral trap phonk anime visual, premium cyberpunk anime key visual, "
-    "adult extremely beautiful woman, 20+, scroll-stopping YouTube Shorts first frame, "
-    "cyberpunk neon world aesthetic"
+    "scroll-stopping YouTube Shorts thumbnail, cyberpunk neon world aesthetic, "
+    "professional music channel art"
 )
 
 CORE_CHARACTER = (
-    "one adult anime woman, clearly adult, mature proportions, "
-    "beautiful waifu character, expressive face, hypnotic eyes, "
-    "magnetic emotional presence, strong visual identity, "
-    "alone, single character, no other people, no text"
-)
-
-COMPOSITION_LOCK = (
-    "vertical 9:16 mobile-first composition, "
-    "face and upper body dominant, eyes in upper third, "
-    "character large in frame, readable at tiny phone size, "
-    "clean cyberpunk background, strong silhouette, clear focal point, "
-    "opening frame for YouTube Shorts, designed to stop scrolling immediately"
+    "one adult anime woman, clearly adult mature female proportions, "
+    "beautiful detailed anime character, expressive detailed face, "
+    "hypnotic eyes with neon catchlights, "
+    "detailed hair with individual strand rendering, "
+    "well-proportioned body with detailed costume, "
+    "alone in frame, single character, no other people"
 )
 
 STYLE_LOCK = (
-    "premium cyberpunk anime key visual, clean sharp lineart, "
-    "high-end 2D anime illustration, polished cel shading, "
-    "cinematic neon lighting, glossy detailed eyes, detailed hair, "
-    "rich neon colors, high contrast, professional music cover art quality, "
-    "not photorealistic, not 3d render, anime art style"
+    "premium cyberpunk anime key visual art, "
+    "clean sharp detailed lineart, "
+    "high-end 2D anime illustration style, "
+    "polished cel shading with rim lighting, "
+    "cinematic neon lighting setup, "
+    "glossy detailed eyes with multiple catchlights, "
+    "rich saturated neon colors, high contrast shadows, "
+    "professional music cover art quality finish, "
+    "NOT photorealistic, NOT 3d render, anime illustration art style"
 )
 
 CYBERPUNK_LIGHTING = (
-    "cinematic cyberpunk lighting setup: strong colored rim light from behind, "
-    "contrasting fill light from front, neon reflections on skin, "
-    "volumetric light rays, neon-lit atmosphere, "
-    "beautiful dramatic face illumination, eyes catching neon glow, "
-    "professional key visual lighting quality"
+    "cinematic cyberpunk lighting: strong colored rim light splitting from behind, "
+    "contrasting neon fill light on face and body, "
+    "neon color reflections on skin and costume, "
+    "volumetric light rays through atmosphere, "
+    "beautiful dramatic body illumination from multiple neon sources, "
+    "eyes catching and reflecting colored neon glow"
 )
 
 MOTION_LOCK = (
-    "alive frame, subtle sense of motion, hair moving in wind, "
-    "floating neon particles and light specks, cinematic depth of field, "
-    "glowing energy in the air, dynamic but not cluttered, "
-    "neon bokeh in background"
+    "sense of movement and life: hair caught mid-motion in wind, "
+    "floating neon particles and energy light specks, "
+    "cinematic depth of field, foreground blur, "
+    "glowing energy rippling in air around character, "
+    "dynamic but not cluttered composition, "
+    "neon bokeh spheres softly glowing in background"
 )
 
 VIRAL_HOOK_LOCK = (
-    "one strong visual hook: glowing neon tear OR intense neon eye reflection OR "
-    "dramatic face neon light split OR hair blown by cyber wind OR "
-    "small power aura around character, "
-    "instantly recognizable visual moment, memorable cyberpunk frame"
+    "one memorable visual hook: glowing energy weapon OR "
+    "dramatic power aura surrounding body OR "
+    "beautiful emotional expression with neon glow OR "
+    "hair and outfit blown dramatically in cyber wind OR "
+    "intense power charging with light effects, "
+    "instantly memorable cyberpunk anime frame"
 )
 
 QUALITY_LOCK = (
-    "masterpiece, best quality, ultra detailed, crisp lineart, "
-    "beautiful face, detailed shining neon-lit eyes, clean anatomy, "
-    "professional channel branding, high resolution, premium finish, "
-    "beautiful illumination, stunning visual quality"
+    "masterpiece quality, best possible quality, ultra detailed rendering, "
+    "crisp beautiful lineart, detailed shining neon-lit eyes, "
+    "clean correct anatomy and proportions, "
+    "professional channel branding quality, high resolution detail, "
+    "premium polished finish, beautiful neon illumination on skin and clothes"
 )
 
 # ══════════════════════════════════════════════════════════════════════
@@ -235,28 +309,28 @@ QUALITY_LOCK = (
 # ══════════════════════════════════════════════════════════════════════
 PALETTE_TEAL_PINK = (
     "dominant teal and hot pink cyberpunk palette, deep navy shadows, "
-    "teal and magenta neon split lighting, cool-warm contrast, "
+    "teal and magenta neon split lighting on body, cool-warm contrast, "
     "classic cyberpunk color duality, electric atmosphere"
 )
 PALETTE_PURPLE_GOLD = (
     "dominant deep purple and gold cyberpunk palette, "
-    "violet shadows with golden neon highlights, "
+    "violet shadows with golden neon highlights on costume, "
     "luxurious dark cyberpunk royalty mood, rich high contrast"
 )
 PALETTE_CRIMSON_BLUE = (
     "dominant crimson and electric blue cyberpunk palette, "
-    "dark dramatic shadows, blood-red and sapphire neon contrast, "
+    "dark dramatic shadows, blood-red and sapphire neon contrast across body, "
     "intense phonk cyberpunk energy, dangerous beautiful mood"
 )
 PALETTE_GREEN_ORANGE = (
     "dominant toxic green and amber cyberpunk palette, "
-    "dark background, bio-neon green accents, warm orange rim light, "
+    "dark background, bio-neon green accents on outfit, warm orange rim light, "
     "edgy hacker aesthetic, high contrast neon pop"
 )
 PALETTE_WHITE_BLUE = (
     "dominant ice white and electric blue cyberpunk palette, "
-    "cold clean atmosphere, frost and neon blue contrast, "
-    "elegant cyberpunk winter aesthetic, crisp and cinematic"
+    "cold clean atmosphere, frost and neon blue contrast across full frame, "
+    "elegant cyberpunk winter aesthetic, crisp cinematic"
 )
 
 PALETTES = [
@@ -289,52 +363,53 @@ GENRE_MAP = {
 }
 
 GENRE_BOOSTS = {
-    "phonk":      "phonk cyberpunk atmosphere, heavy 808 bass visual energy, dark neon street feeling, aggressive clean cyberpunk aesthetic",
-    "trap":       "trap cyberpunk atmosphere, urban night neon energy, stylish confidence, warm neon street premium aesthetic",
-    "electronic": "electronic cyberpunk atmosphere, futuristic digital energy, teal data streams, clean cyber rhythm visual",
-    "darkpop":    "dark pop cyberpunk emotional atmosphere, romantic sadness in neon city, cinematic beauty, warm-cold color story",
-    "dark":       "dark cyberpunk atmosphere, dramatic neon shadows, intense emotional presence, single accent neon color in darkness",
-    "rock":       "rock cyberpunk energy, electric concert neon, raw emotional power, dramatic rim neon lighting, stage energy",
-    "default":    "dark cyberpunk atmosphere, emotional anime beauty, cinematic neon contrast, premium viral Shorts visual",
+    "phonk":      "phonk cyberpunk atmosphere, heavy bass visual energy in pose, aggressive confident street aesthetic, dark neon underground feeling",
+    "trap":       "trap cyberpunk atmosphere, urban night neon energy in stance, stylish supreme confidence, warm neon street premium look",
+    "electronic": "electronic cyberpunk atmosphere, futuristic digital energy surrounding body, teal data streams, clean cyber rhythm visual pulse",
+    "darkpop":    "dark pop cyberpunk emotional atmosphere, romantic sadness in neon city, cinematic emotional beauty, warm-cold color story on face",
+    "dark":       "dark cyberpunk atmosphere, dramatic neon shadow play on body, intense emotional presence, single accent neon in near-darkness",
+    "rock":       "rock cyberpunk energy, electric concert neon on stage, raw emotional power in body language, dramatic rim neon, performance energy",
+    "default":    "dark cyberpunk atmosphere, emotional anime beauty, cinematic neon contrast on full body, premium viral Shorts visual quality",
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# FACE HOOKS e BACKGROUNDS CYBERPUNK
+# POSES DINÂMICAS por composição
 # ══════════════════════════════════════════════════════════════════════
-FACE_HOOKS = [
-    "hypnotic direct eye contact, neon reflected in pupils, viewer feels watched",
-    "one glowing neon tear trailing down cheek catching colored light",
-    "eyes reflecting cyberpunk city skyline and holographic displays",
-    "slight dangerous confident smile with deep emotional neon-lit eyes",
-    "wide luminous eyes with neon catchlights, lips slightly parted",
-    "half-lidded powerful gaze, magnetic cyberpunk calm",
-    "vulnerable melancholic stare bathed in cold neon, beautiful sadness",
-    "subtle intensity in expression, beautiful and controlled power",
-    "dreamy upward gaze as neon lights drift past her face",
-    "sharp cyberpunk queen stare, absolute confidence, commanding presence",
+POWER_POSES = [
+    "standing with weapon raised overhead crackling energy, dominance pose",
+    "mid-leap attack pose with energy trailing behind body",
+    "arms spread wide with power aura expanding from chest outward",
+    "one hand extended toward viewer with energy charging in palm",
+    "crouching ready-stance with eyes locked forward, coiled power",
+    "back slightly turned looking over shoulder with intensity, dangerous elegance",
+    "walking toward camera slowly with absolute confidence, neon behind",
+    "sitting on edge of rooftop legs dangling, relaxed supreme confidence",
+    "spinning attack captured mid-rotation, hair and energy in spiral",
+    "dual weapons crossed in guard stance, eyes challenging viewer",
 ]
 
 BACKGROUND_VARIATIONS = [
-    "rainy cyberpunk neon city street, wet neon reflections, teal and pink bokeh",
-    "cyberpunk rooftop at golden hour with neon city sprawl far below",
-    "dark holographic data center with glowing server rows behind her",
-    "cyberpunk alley with blurred neon kanji signs, rain mist, depth",
-    "night cyberpunk skyline with flying vehicles and neon advertisements",
-    "underground neon club with laser beams and smoke, dark and vibrant",
-    "cyberpunk laboratory with holographic screens and blue light",
-    "dark concert stage with neon light beams, smoke machine, music energy",
-    "void black with single strong neon rim light and floating data particles",
-    "cyberpunk market street, neon vendor signs, warm amber and teal mix",
+    "rainy cyberpunk neon city street level, wet pavement reflecting neon towers, teal and pink bokeh depth",
+    "cyberpunk rooftop edge at night, sprawling neon city far below, wind and height",
+    "dark holographic data server hall, glowing blue server stacks receding into darkness",
+    "cyberpunk rain-soaked alley with blurred neon kanji signs overhead, steam vents",
+    "night cyberpunk skyline from above with flying vehicles and massive neon ad screens",
+    "underground neon fight club, crowd blur and laser beams and smoke atmosphere",
+    "cyberpunk research lab with holographic screens surrounding character position",
+    "dark concert main stage with neon light beams and smoke machine, thousands blurred below",
+    "pure void black with single strong neon rim split and floating data particle field",
+    "cyberpunk night market, warm amber vendor neon and teal night sky, motion blur crowd",
+    "abandoned cyberpunk shrine with broken torii glowing neon, rain and moss and tech",
+    "floating cyberpunk highway overpass, cars blurred below, wind and neon and speed",
 ]
 
 MUSIC_ELEMENTS = [
-    "sleek cyberpunk headphones around neck glowing neon",
-    "one wireless neon earbud, immersed in the music",
-    "small holographic music waveform behind character, subtle",
-    "cyberpunk microphone silhouette blurred in background neon",
-    "neon music visualizer particles around her, tasteful amount",
-    "no music prop, emotion carries the music energy",
-    "no music prop, pure cinematic cyberpunk anime portrait",
+    "cyberpunk headphones around neck glowing neon accent color, immersed",
+    "wireless neon earbud, music flowing through her changing the world color",
+    "subtle holographic music waveform visible behind character, tasteful",
+    "emotion IS the music element, pure cinematic cyberpunk anime body language",
+    "neon music visualizer particles orbiting body softly, energetic",
+    "microphone silhouette blurred in background neon depth",
 ]
 
 # ══════════════════════════════════════════════════════════════════════
@@ -342,28 +417,30 @@ MUSIC_ELEMENTS = [
 # ══════════════════════════════════════════════════════════════════════
 NEGATIVE_PROMPT = (
     "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
-    "bad hands, extra fingers, missing fingers, fused limbs, broken body, "
-    "long neck, disfigured, mutated, melted face, uncanny valley, "
+    "bad hands, extra fingers, missing fingers, fused limbs, broken limbs, "
+    "floating limbs, disconnected body parts, long neck, disfigured, mutated, "
+    "melted face, uncanny valley, bad proportions, deformed body, "
     "blurry, low quality, jpeg artifacts, heavy noise, flat boring image, "
-    "photorealistic, real person, 3d render, CGI, doll, plastic skin, "
-    "western cartoon, simple cartoon, childish style, "
-    "child, underage, loli, young girl, schoolgirl, baby face, "
-    "nude, explicit nudity, nipples, genitalia, sexual act, pornographic, "
-    "multiple people, crowd, two girls, duplicate character, "
-    "text, words, logo, watermark, signature, letters, numbers, "
-    "too dark to see face, face too small, full body tiny, "
-    "cluttered background, excessive neon overload, "
-    "overexposed bloom, muddy colors, washed out, desaturated, "
-    "messy composition, no focal point, bad eyes, dead eyes, "
-    "low contrast, boring lighting, flat lighting, no neon, dull colors"
+    "photorealistic, real photograph, real person, 3d render, CGI, doll, plastic skin, "
+    "western cartoon style, simple cartoon, childish art style, "
+    "child, underage appearance, loli, petite childlike body, baby face, school uniform only, "
+    "nude, explicit nudity, nipples, genitalia, sexual act, pornographic content, "
+    "multiple characters, crowd, two girls in frame, duplicate of character, "
+    "text overlay, words in image, logo watermark, signature, letters, numbers in image, "
+    "face too small to see, character too tiny in frame, lost in background, "
+    "cluttered background overwhelming character, excessive busy neon overload, "
+    "overexposed bloom washing out detail, muddy colors, washed out, desaturated, "
+    "messy composition, no clear focal point, bad eyes, dead fish eyes, empty eyes, "
+    "low contrast, boring flat lighting, no neon presence, dull lifeless colors, "
+    "cropped body weirdly, floating head, missing lower body, cut off limbs"
 )
 
 GENERATION_SUFFIX = (
-    ", beautiful expressive adult anime face, eyes readable at small size, "
-    "first frame optimized for Shorts feed, high contrast neon lighting, "
-    "clear silhouette, alive cinematic cyberpunk frame, motion feeling, "
-    "polished anime art, gorgeous illumination, "
-    "no text, no logo, no watermark, no extra people"
+    ", beautiful expressive adult anime character, full body or 3/4 body visible, "
+    "detailed costume and face, high contrast neon lighting on complete figure, "
+    "clear powerful silhouette, dynamic alive cyberpunk frame, "
+    "polished professional anime art, gorgeous full-body neon illumination, "
+    "no text, no logo, no watermark, no extra people, vertical 9:16 mobile format"
 )
 
 # ══════════════════════════════════════════════════════════════════════
@@ -382,7 +459,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v41.0_cyberpunk"
+    key = f"{style}|{filename}|{short_num}|darkmark_v42.0_cyberpunk"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -401,27 +478,38 @@ def _weighted_palette(rng: random.Random) -> tuple[str, str]:
     return PALETTES[0][0], PALETTES[0][1]
 
 
+def _weighted_composition(rng: random.Random) -> dict:
+    total = sum(c["weight"] for c in COMPOSITION_STYLES)
+    r = rng.random() * total
+    acc = 0
+    for comp in COMPOSITION_STYLES:
+        acc += comp["weight"]
+        if r <= acc:
+            return comp
+    return COMPOSITION_STYLES[0]
+
+
 def _song_mood_boost(song_name: str) -> str:
     clean = song_name.lower()
     if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite"]):
-        return "haunted neon night emotion, lonely but powerful, neon eyes carrying darkness"
+        return "haunted neon night emotion, lonely but powerful, eyes carrying darkness visible in full body language"
     if any(w in clean for w in ["fire", "burn", "rage", "fury", "angry"]):
-        return "intense cyberpunk fire emotion, contained rage, electric passionate stare"
+        return "intense cyberpunk fire emotion, contained rage expressed through full body stance, electric passionate power"
     if any(w in clean for w in ["love", "heart", "amor", "coracao", "rose", "cherry"]):
-        return "dark cyberpunk romantic emotion, longing neon eyes, beautiful bittersweet mood"
+        return "dark cyberpunk romantic emotion, longing in full pose and expression, beautiful bittersweet full-body mood"
     if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido"]):
-        return "deep lonely cyberpunk emotion, quiet neon sadness, isolated cinematic feeling"
+        return "deep lonely cyberpunk emotion, isolated figure in neon city, cinematic solitude in body language"
     if any(w in clean for w in ["drive", "speed", "run", "race", "corrida"]):
-        return "cyberpunk speed motion energy, focused eyes, wind and neon blur feeling"
+        return "cyberpunk speed motion energy, body mid-movement with speed blur, wind and neon trailing the figure"
     if any(w in clean for w in ["queen", "king", "boss", "power", "rule"]):
-        return "dominant cyberpunk queen aura, neon crown energy, commanding powerful stare"
+        return "dominant cyberpunk queen aura, full body commanding presence, neon crown energy, power pose"
     if any(w in clean for w in ["dream", "sonho", "sleep", "cloud"]):
-        return "dreamy floating cyberpunk emotion, soft holographic atmosphere, ethereal neon eyes"
-    return "emotion matching the music, cyberpunk magnetic presence, cinematic neon feeling"
+        return "dreamy floating cyberpunk emotion, body slightly levitating, ethereal neon particles around full figure"
+    return "emotion matching the music carried in full body pose and expression, cyberpunk magnetic presence"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — v41.0 CYBERPUNK WAIFU EDITION
+# PROMPT PRINCIPAL — v42.0 CYBERPUNK WAIFU EDITION
 # ══════════════════════════════════════════════════════════════════════
 def build_ai_prompt(
     style: str = "phonk",
@@ -432,6 +520,7 @@ def build_ai_prompt(
     force_purple_gold: bool = False,
     force_crimson_blue: bool = False,
     force_back: bool = False,
+    force_full_body: bool = False,
 ) -> str:
     styles = styles or []
     mapped = GENRE_MAP.get((style or "default").lower().strip(), "default")
@@ -441,15 +530,18 @@ def build_ai_prompt(
     # Seleciona waifu aleatória das 100 personagens
     char = rng.choice(TREND_WAIFUS)
 
-    # Vista de costas
-    back_view = (
-        "dramatic back view with strong neon rim light splitting colors, "
-        "long flowing hair glowing with neon, mysterious cyberpunk silhouette, side profile slightly visible, "
-        if force_back else ""
-    )
+    # Composição
+    if force_back:
+        composition = next(c for c in COMPOSITION_STYLES if c["name"] == "back_view_dramatic")
+    elif force_full_body:
+        composition = next(c for c in COMPOSITION_STYLES if c["name"] == "full_body_power")
+    else:
+        composition = _weighted_composition(rng)
 
-    # Face hook e elementos visuais
-    face_hook = rng.choice(FACE_HOOKS)
+    # Pose dinâmica
+    pose = rng.choice(POWER_POSES)
+
+    # Elementos visuais
     background = rng.choice(BACKGROUND_VARIATIONS)
     music_element = rng.choice(MUSIC_ELEMENTS)
     song_mood = _song_mood_boost(song_name)
@@ -470,12 +562,11 @@ def build_ai_prompt(
     prompt = (
         f"{CHANNEL_IDENTITY}, "
         f"{CORE_CHARACTER}, "
-        f"character inspiration: {char}, "
-        f"{back_view}"
-        f"face hook: {face_hook}, "
+        f"character design: {char}, "
+        f"composition: {composition['prompt']}, "
+        f"dynamic pose: {pose}, "
         f"{VIRAL_HOOK_LOCK}, "
         f"music element: {music_element}, "
-        f"{COMPOSITION_LOCK}, "
         f"{CYBERPUNK_LIGHTING}, "
         f"{MOTION_LOCK}, "
         f"background: {background}, "
@@ -487,8 +578,8 @@ def build_ai_prompt(
         f"{STYLE_LOCK}, "
         f"{QUALITY_LOCK}, "
         "opening frame for viral music Short, "
-        "beautiful adult cyberpunk anime waifu, emotional, trendy, memorable, "
-        "stunning neon illumination, gorgeous cinematic quality, "
+        "beautiful adult cyberpunk anime character, emotional body language, trendy, memorable, "
+        "stunning neon illumination across entire figure, gorgeous cinematic full-body quality, "
         "no text, no watermark, no logo"
     )
 
@@ -605,6 +696,7 @@ def generate_background_image(
     force_purple_gold: bool = False,
     force_crimson_blue: bool = False,
     force_back: bool = False,
+    force_full_body: bool = False,
 ) -> Optional[str]:
     prompt = build_ai_prompt(
         style=style,
@@ -615,6 +707,7 @@ def generate_background_image(
         force_purple_gold=force_purple_gold,
         force_crimson_blue=force_crimson_blue,
         force_back=force_back,
+        force_full_body=force_full_body,
     )
     for attempt in range(1, max_retries + 1):
         result = generate_image(prompt, output_path)
@@ -667,24 +760,26 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v41.0 Cyberpunk Waifu Edition"
+        description="AI Image Generator — DJ DARK MARK v42.0 Cyberpunk Waifu Edition"
     )
-    parser.add_argument("--style",            default="phonk",
+    parser.add_argument("--style",             default="phonk",
                         help="Gênero: phonk, trap, electronic, dark, darkpop, rock")
-    parser.add_argument("--filename",         default="dark phonk.mp3",
+    parser.add_argument("--filename",          default="dark phonk.mp3",
                         help="Nome da música (muda o mood do prompt)")
-    parser.add_argument("--short-num",        type=int, default=1,
+    parser.add_argument("--short-num",         type=int, default=1,
                         help="Número do short (varia seed e waifu)")
-    parser.add_argument("--output",           default="assets/background.png")
-    parser.add_argument("--force-teal-pink",  action="store_true",
+    parser.add_argument("--output",            default="assets/background.png")
+    parser.add_argument("--force-teal-pink",   action="store_true",
                         help="Força paleta teal + pink")
-    parser.add_argument("--force-purple-gold",action="store_true",
+    parser.add_argument("--force-purple-gold", action="store_true",
                         help="Força paleta purple + gold")
     parser.add_argument("--force-crimson-blue",action="store_true",
                         help="Força paleta crimson + blue")
-    parser.add_argument("--back",             action="store_true",
-                        help="Força vista de costas neon")
-    parser.add_argument("--prompt-only",      action="store_true",
+    parser.add_argument("--back",              action="store_true",
+                        help="Força vista de costas dramática")
+    parser.add_argument("--full-body",         action="store_true",
+                        help="Força composição de corpo inteiro")
+    parser.add_argument("--prompt-only",       action="store_true",
                         help="Só imprime o prompt, não gera imagem")
     args = parser.parse_args()
 
@@ -697,10 +792,11 @@ if __name__ == "__main__":
         force_purple_gold=args.force_purple_gold,
         force_crimson_blue=args.force_crimson_blue,
         force_back=args.back,
+        force_full_body=getattr(args, "full_body", False),
     )
 
     if args.prompt_only:
-        print("=== PROMPT v41.0 CYBERPUNK ===")
+        print("=== PROMPT v42.0 CYBERPUNK ===")
         print(prompt)
         print("\n=== NEGATIVE PROMPT ===")
         print(NEGATIVE_PROMPT)
