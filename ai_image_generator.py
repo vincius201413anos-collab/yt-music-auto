@@ -1,9 +1,10 @@
 """
-ai_image_generator.py — DJ DARK MARK v42.0 CYBERPUNK WAIFU EDITION
-====================================================================
-100 waifus nomeadas em tema cyberpunk com iluminação cinematográfica
+ai_image_generator.py — DJ DARK MARK v43.0 CYBERPUNK ULTIMATE EDITION
+=======================================================================
+200 personagens de anime em tema cyberpunk com iluminação cinematográfica MÁXIMA
 Composições variadas: corpo inteiro, 3/4, poses dinâmicas, vista de costas
-Estilos: fofas, vilãs, trapstar, tatuadas, dark queens
+Estilos: waifu sensuais, guerreiros épicos, vilões fodões, dark queens
+TODOS OS EFEITOS: partículas, auras, energia, explosões de poder, neon extremo
 """
 
 from __future__ import annotations
@@ -32,8 +33,8 @@ REPLICATE_MODELS = [
 FLUX_PARAMS = {
     "width": 768,
     "height": 1024,
-    "num_inference_steps": 38,
-    "guidance_scale": 8.0,
+    "num_inference_steps": 45,
+    "guidance_scale": 9.5,
     "num_outputs": 1,
     "output_format": "png",
     "output_quality": 100,
@@ -41,11 +42,9 @@ FLUX_PARAMS = {
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# 100 CYBERPUNK WAIFUS — v42.0
-# Personagens fiéis ao design original + upgrade cyberpunk
-# Descrições detalhadas de roupa, cabelo, traços característicos
+# 100 PERSONAGENS ORIGINAIS — CYBERPUNK WAIFUS v42.0
 # ══════════════════════════════════════════════════════════════════════
-TREND_WAIFUS = [
+TREND_WAIFUS_ORIGINAL = [
     # 1-10 Sword Art Online / Naruto / ReZero
     "Asuna Yuuki SAO, iconic chestnut waist-length hair, white-and-red KoB armor redesigned as cyberpunk plate with glowing orange circuitry seams, rapier sheathed glowing electric blue, tall elegant female warrior stance, graceful and lethal",
     "Hinata Hyuga Naruto, trademark lavender-white eyes with no pupils glowing faint violet, dark blue hair framing soft face, cyberpunk kunoichi bodysuit with byakugan neon scan lines, shy power held back, gentle but devastating",
@@ -57,8 +56,7 @@ TREND_WAIFUS = [
     "Akeno Himejima DxD, very long black hair in iconic high ponytail, shrine maiden robe redesigned as cyberpunk thunder witch outfit with violet lightning arcing between fingers, soft smile hiding ruthless power",
     "Esdeath Akame-inspired, waist-length silver-blue hair, military peaked cap with neon blue insignia, tight general uniform with ice crystal epaulettes, glowing blue tattoo on chest, frost breath visible, absolute commanding presence",
     "Akame Akame ga Kill, iconic waist-length straight black hair, crimson eyes glowing, black tight combat suit with glowing red circuit veins, Murasame katana crackling dark neon energy, silent assassin coiled to strike",
-
-    # 11-20 Date A Live / Bunny Girl / Kaguya
+    # 11-20
     "Kurumi Tokisaki DateALive, iconic half black half white long hair, one clockwork golden eye and one crimson eye, gothic lolita dress redesigned as cyberpunk time spirit armor with clock gear motifs glowing, twin flintlocks dripping shadow",
     "Tohka Yatogami DateALive, long dark purple hair, Spirit dress reimagined as flowing cyberpunk armor with violet neon energy wings, Sandalphon sword crackling purple lightning, innocent expression contrasting godlike power",
     "Mai Sakurajima BunnySenpai, signature short dark hair, iconic bunny outfit redesigned in cyberpunk leather and neon pink accents, mysterious actress aura, purple spotlight on her, elegant crossed arms, sharp knowing gaze",
@@ -69,22 +67,18 @@ TREND_WAIFUS = [
     "Makima ChainsawMan, neat auburn hair in iconic low braid, white dress shirt and tie as cyberpunk control authority uniform, rings of concentric glowing eyes floating behind her like halos, leash chain glowing gold, eerie perfect calm",
     "Power ChainsawMan, wild blonde hair with iconic neon pink curved horns, casual streetwear soaked in neon blood-red energy, huge chainsaw arm deployed crackling, feral gap-tooth grin, chaotic devil energy barely contained",
     "Himeno ChainsawMan, short white hair with eyepatch now a glowing green neon device, casual cyberpunk devil hunter jacket, ghost hand jutting beside her translucent, calm cool cigarette between lips, effortless dangerous confidence",
-
-    # 21-30 One Piece / Spy x Family
+    # 21-30
     "Nami OnePiece, shoulder-length orange hair, iconic Clima-Tact upgraded as cyberpunk weather staff with lightning orbs, bikini top and jeans redesigned as navigator's cyberpunk gear with neon amber accents, confident hand on hip, navigator queen",
     "Nico Robin OnePiece, long straight black hair, cyberpunk archaeologist in dark trench coat, hundred stone hands emerging from shadows in bloom, mysterious half-smile, Ohara holographic ruins behind her, cool intellectual power",
     "Boa Hancock OnePiece, floor-length black hair with iconic Kuja crown now neon, snake earrings glowing, revealing empress dress as cyberpunk authority gown, Love-Love beam hand pose, breathtaking arrogant beauty, snakes coiling around legs glowing",
     "Yor Forger SpyFamily, black hair with rose hairpin glowing blood-red, thorn-covered crimson dress redesigned as cyberpunk assassin armor, twin needles crackling with red neon energy, gentle smile hiding terrifying speed and strength",
     "Anya Forger SpyFamily, signature pink hair with dark tips, wide curious mind-reading green halo flickering, spy outfit way too big for tiny frame, iconic excited face with mouth agape, adorably small amid big neon spy world",
-
-    # 26-30 Cyberpunk Edgerunners / Fate
     "Lucy Edgerunners, teal-white hair floating weightless in cyberspace, pale skin with glowing neural ports, arms outstretched in data ocean, expression between bliss and breakdown, electric teal data streams curling around body like wings",
     "Rebecca Edgerunners, tiny frame with big attitude, two-tone blue-pink pigtails, oversized cyberpunk jacket sliding off shoulder, enormous Guts shotgun dragging on ground, standing wide-legged grinning wildly, punk energy in every pixel",
     "Saber Artoria FateSeries, iconic golden hair in tight braid, emerald green eyes, blue and gold plate armor crackling with Excalibur wind aura, sword raised with divine golden wind, noble resolute expression, heroic king energy",
     "Rin Tohsaka Fate, twin black pigtails with signature red ribbon bows glowing, black turtleneck and red skirt as cyberpunk mage combat outfit, twin glowing jewel gems charged with massive mana, tsundere determined fierce expression",
     "Jeanne d'Arc Fate, very long silver-white hair streaming behind, holy armor with divine neon gold circuits, standard banner crackling with sacred flame, serene determined expression of absolute faith, light and shadow split dramatically",
-
-    # 31-40 Konosuba / Shield Hero / Fairy Tail
+    # 31-40
     "Megumin Konosuba, iconic short black hair under oversized wizard hat with neon star, red eyes glowing, tattered black cape, staff raised toward sky, single eye closed in EXPLOSION chant, dark energy erupting beneath her tiny dramatic frame",
     "Aqua Konosuba, very long blue hair in iconic high ponytail with bead ornaments, blue and white shrine outfit as cyberpunk water goddess robe, divine neon water halo above head, crying beautiful face mid-wail, surrounded by water orbs",
     "Darkness Lalatina Konosuba, long wavy blonde hair, crusader plate armor with neon blue runes, broadsword dragged along ground, flushing noble expression hiding her secret, tall powerful frame, absurdly tanky beautiful warrior",
@@ -95,8 +89,7 @@ TREND_WAIFUS = [
     "Juvia Lockser FairyTail, blue hair in elaborate drills, rain always falling around her, water body half-dissolved and swirling dramatically, deep devoted eyes, water wings extending behind her, beautiful obsessive devotion",
     "Bulma DragonBall, short bright blue hair, orange capsule corp jumpsuit with cyberpunk tech vest, Dragon Radar holographic scan open, brilliant engineer surrounded by floating holographic blueprints, confident genius expression",
     "Android 18 DragonBall, blonde hair tucked behind ear, denim jacket cyberpunk modified with blue energy circuits, arms crossed with invisible ki aura making air ripple, cold beautiful efficiency, infinite power with zero expression",
-
-    # 41-50 Dragon Ball / Naruto continued
+    # 41-50
     "Videl DragonBall, signature black short pigtails, Great Saiyaman helmet tucked under arm, gi upgraded with neon orange ki aura, learning-to-fly hover stance with confident fists, street fighter champion energy, determined girl",
     "Tsunade Naruto, long blonde hair in iconic twin pigtails, diamond Yin Seal on forehead glowing pink neon, Sannin robes as cyberpunk medic commander coat, fist ready to shatter ground, overwhelming presence, legendary beauty and strength",
     "Sakura Haruno Naruto, short pink hair, Shannaro energy fist crackling green and pink dual neon charging ground-shattering punch, Cha determination face, medic pouch and fighting stance, strength built from nothing",
@@ -107,22 +100,18 @@ TREND_WAIFUS = [
     "Orihime Inoue Bleach, very long auburn hair with flower hairpins glowing warm orange, Santen Kesshun shield dome crackling around her, gentle caring face with iron resolve protecting someone, healer turned warrior beauty",
     "Rangiku Matsumoto Bleach, wavy long strawberry-blonde hair cascading, Haineko zanpakuto dissolving into ash swarm, vice-captain badge catching neon light, lazy confident smile masking incredible power, feminine and fierce equally",
     "Nelliel Tu Bleach, green hair with helmet cracked showing horn, adult form with powerful mature figure, lance crackling green cero energy, gentle warrior expression, fraccion loyalty, espada power reawakening dramatically",
-
-    # 51-60 My Hero Academia
+    # 51-60
     "Momo Yaoyorozu MHA, long black hair in iconic high ponytail, creation quirk manifesting white molten material emerging from skin creating cannon, intelligent tactical expression, elegant heroic costume with cyberpunk analysis visor",
     "Ochaco Uraraka MHA, short brown hair, Zero Gravity quirk making rubble and opponent float with pink anti-grav neon orbs, cheerful face turned serious mid-battle, meteor shower of rocks floating above her, agile hero stance",
     "Himiko Toga MHA, twin blonde bun with strands loose, blood-drain gauntlets glowing neon yellow, transform quirk cycling through faces with golden eyes, unhinged joyful dangerous smile, knife in hand dripping neon, yandere villain beauty",
     "Midnight MHA, long black and white hair wild, sleep quirk neon purple somnambulant mist pouring from wrists in curtains, whip raised, confident mature heroine posture, teaching and fighting simultaneously, mist swallowing background",
     "Mirko MHA, white hair and rabbit ears, powerful athletic body mid flying kick delivering enormous impact wave, scars on arm telling stories, fierce grin showing teeth, moon behind her, rabbit hero at absolute full power output",
-
-    # 56-60 Jujutsu Kaisen
     "Nobara Kugisaki JJK, orange-brown bob hair, straw doll in one hand and nails glowing black cursed neon in other, hammer raised mid-resonance, fierce blunt no-nonsense expression, black flash cursed energy crackling on fist",
     "Maki Zenin JJK, short dark hair with tape on nose, glasses with neon green special grade sight, panda staff or naginata extended, cursed tool spirit manifesting, zero cursed energy making her invisible to curses, pure physical dominance",
     "Mei Mei JJK, long blonde twin braids, black suit with cyberpunk mercenary armor plates, twin ravens with neon eyes circling, confident calculating money-motivated expression, bird strike technique mid-deployment, cool and deadly",
     "Utahime Iori JJK, long dark hair, scar through face glowing faint purple, chant-type technique creating barrier song waves visible as neon musical notation in air, composed supervisor expression, strong quiet authority",
     "Shoko Ieiri JJK, short messy dark hair, reverse cursed technique green healing neon flowing from hands repairing catastrophic wounds, calm medical professional in crisis, cigarette balancing in corner of mouth, genius doctor energy",
-
-    # 61-70 Slice of life / Steins Gate
+    # 61-70
     "Marin Kitagawa, very long wavy blonde hair with pink highlights, elaborate cosplay costume crackling with neon fabric magic, passionate open-mouth excited expression, surrounded by floating costume materials, gyaru beauty meets craft obsession",
     "Shizuku Kuroe, short black bob, dark indigo neon aura, small glowing doll figures dancing around hands, quiet mysterious artist expression, black dress simple and elegant, dark art magic barely visible at fingertips",
     "Nagatoro, long sleek black hair, dark tanned skin, sharp neon green teasing eyes mid-laugh, casual uniform unbuttoned slightly, leaning forward in bullying pose that hides deep affection, summer energy and predatory cute grin",
@@ -133,8 +122,7 @@ TREND_WAIFUS = [
     "Kurisu Makise SteinsGate, long reddish-brown hair, white lab coat with cyberpunk time research gear, teal time machine data streams swirling from open laptop, brilliant sarcastic tsundere expression, genius who changed the world",
     "Mayuri Shiina SteinsGate, short black hair with large hair clip, gentle round eyes, cosplay outfit mid-construction, Tutturu warm amber neon, innocent cosmic fate she carries without knowing, stars rotating slowly behind her smile",
     "Suzuha Amane SteinsGate, brown hair under army cap, future soldier fatigues with green timeline neon energy, bicycle leaning beside her, determined expression of someone who has seen terrible futures, time warrior at rest",
-
-    # 71-80 Violet Evergarden / Fate / Code Geass
+    # 71-80
     "Violet Evergarden, long golden blonde hair, auto memory doll uniform with prosthetic silver arms now glowing neon blue at joints, typewriter keys floating around her like magic, violet letter neon paper dissolving into butterflies, deep lonely beautiful eyes",
     "Saber Alter, dark grey corrupted Artoria, black armor with corrupted Excalibur shooting black-violet neon beam upward, cold dark eyes with faint green glow, holy beauty swallowed by shadow, fallen king still standing proud",
     "Astolfo Fate, very long pink hair with braids, colorful knight armor redesigned as cyberpunk paladin, Hippogriff mount silhouette behind in neon, bright irresistible cheerful smile, flamboyant confident beautiful presence, pink neon lance",
@@ -145,8 +133,7 @@ TREND_WAIFUS = [
     "Winry Rockbell FMA, long blonde hair in ponytail, mechanic overalls with automail arm blueprint holographic open, wrench tool glowing amber sparks, passionate determined expression, automail engineering genius hands already working",
     "Riza Hawkeye FMA, pulled-back blonde hair sharp and neat, military uniform, Black Hayate at heel, twin pistols raised with perfect posture and golden scope neon sight, Hawkeye sniper eye unnervingly calm, Roy's shield and weapon",
     "Lust FMA, impossibly long black hair dramatically falling, Ouroboros mark on chest glowing crimson, fingernails extending into Ultimate Lance blades neon-edged, deadly seductive expression, homunculus power barely leashed, femme fatale supreme",
-
-    # 81-90 FMA / Spice Wolf / Toradora / Oregairu
+    # 81-100
     "Olivier Armstrong FMA, severe blonde hair in military braid under northern uniform, breath visibly cold, blue-neon ice blade Briggs sword drawn, fearless absolute zero expression, northern wall herself, rank intimidates god",
     "Holo SpiceWolf, long brown hair with wolf ears perked and fluffy tail raised high, harvest goddess ancient eyes, apple in hand, merchant travel cloak as cyberpunk trader coat, warm amber neon, wise playful smile hiding centuries",
     "Taiga Aisaka Toradora, long straight brown hair, tiny fierce frame in school uniform mid wooden-sword-swing, tiger palm strike releasing orange neon energy, tsundere attack face, palm-top tiger refusing to look small despite size",
@@ -157,8 +144,6 @@ TREND_WAIFUS = [
     "Iroha Isshiki Oregairu, brown hair in cute side ponytail, student council badge glowing, sly perfect smile with eyes doing something different, manipulation wrapped in doe eyes, dangerous cute competence hiding real growth",
     "Ichika Nakano Quint, long blonde hair with five-star hairpin glowing gold, big sister composure mid-cooking scene, warm responsible expression, apron over elegant outfit, feeding everyone first, calm center of five chaos sisters",
     "Nino Nakano Quint, long blonde twin pigtails fierce and bouncy, tsundere chef with kitchen knife crackling rose neon, protective sister rage face turned shy love face in same frame, cooking for the person who broke her defenses",
-
-    # 91-100 Quintuplets / Re:Zero
     "Miku Nakano Quint, long blonde hair with iconic deep blue headphones glowing neon, withdrawn but intense music lover, indigo sound wave neon emanating, fingers pressed to headphone cup listening to something only she hears, shy intense beauty",
     "Yotsuba Nakano Quint, short blonde hair with bright neon green bow, most cheerful sister at full sprint mid-jump, pure lime neon energy explosion, genuine bright smile with nothing hidden, athletic carefree sunlight made girl",
     "Itsuki Nakano Quint, long blonde hair with star hairpin, serious studious expression, teacher materials holographic in air, composed dignified sister, warm gold neon, most responsible and most underestimated, quiet power",
@@ -172,140 +157,300 @@ TREND_WAIFUS = [
 ]
 
 # ══════════════════════════════════════════════════════════════════════
-# COMPOSIÇÕES — VARIEDADE MÁXIMA (sem travamento em close de rosto)
+# 100 NOVOS PERSONAGENS — v43.0 ULTIMATE SHONEN EDITION
+# Waifus sensuais + guerreiros épicos absurdos
+# Todos os efeitos: auras, partículas, explosões de energia, plasma
+# ══════════════════════════════════════════════════════════════════════
+TREND_WAIFUS_NEW = [
+    # ═══ DEMON SLAYER — GUERREIROS E SENSUAIS ═══
+    "Tanjiro Kamado DemonSlayer, short black hair with burgundy tips, iconic scar on forehead glowing flame neon, Hinokami Kagura fire breathing technique active, Sun Breathing flame wheel expanding from body in massive spiral, Nichirin blade coated in solar plasma fire, haori half-burned half-intact catching embers, tears and fire on face, absolute determination to protect, eruption of crimson and gold flames consuming entire frame, ember particles swirling upward in thousands",
+    "Rengoku Kyojuro DemonSlayer, fierce flame-yellow hair spiking upward like fire itself, yellow-red eyes burning with eternal will, Flame Breathing final form massive dragon made of pure solar fire roaring behind him, Flame Hashira uniform burning at edges, both arms outstretched channeling inferno pillar, grin of absolute conviction even at death, volcano eruption energy in every particle, gold and red neon plasma storm",
+    "Tengen Uzui DemonSlayer, long white hair wrapped in stylish binding, massive twin cleavers crackling Sound Breathing neon explosion frequencies made visible, body wrapped in jewel-covered festival bandages, six neon pink explosions detonating around him simultaneously, flamboyant open jacket showing muscular chest with sound wave tattoos glowing, most flamboyant pose mid-combat, sonic boom shockwaves radiating outward",
+    "Mitsuri Kanroji DemonSlayer, long pink and green gradient hair tumbling past waist, unique modified pink Hashira uniform showing slender curves and flexible fighter's body, Love Breathing flexible whip-sword coiling like flowing ribbon crackling pink-gold energy, sensual agile body caught mid-impossible-flexibility pose, soft face carrying immense strength, cherry blossom petals and pink neon particles swirling in dense cloud around curves",
+    "Daki UpperMoon DemonSlayer, very long silver-white hair with hints of teal, obi sash demon weapon extending in sharp crystalline blades glowing blood-red and white, revealing elegant kimono of a courtesan now made of living flesh and neon vein patterns, sensual deadly expression of absolute contempt, demon mark patterns glowing all over exposed skin, sashes slicing building facades behind her, devastating beauty",
+    "Kokushibo DemonSlayer, upper moon one, long silver-purple hair in samurai bun, six eyes with neon crescent moon pupils glowing crimson, Moon Breathing absolute pinnacle technique releasing silver moon crescent blade storm in all directions, samurai armor with demon transformation fusion, half-human face cracking to reveal demon, moon-shard particles filling entire dark frame like a galaxy of blades",
+    "Inosuke Hashibira DemonSlayer, wild spiky black hair beneath iconic boar skull mask cracked open revealing fierce feral face, dual serrated jagged blades Beast Breathing technique carving massive wind slashes in rocky terrain, muscular shirtless feral body with beast instinct crackling as electric blue neon all over skin, savage crouching beast stance unleashing everything, rocks and debris exploding outward",
+
+    # ═══ JUJUTSU KAISEN — PODER EXTREMO ═══
+    "Gojo Satoru JJK, iconic white hair styled back post-blindfold removal, Six Eyes glowing impossible cerulean blue through removed sunglasses, Infinity domain expansion Unlimited Void visible as infinite starfield unfolding behind entire frame, both hands releasing blue and red Hollow Purple technique colliding and detonating, infinity sphere distorting space around body, suit partially dissolved by domain energy, most powerful sorcerer standing at center of universe breaking apart",
+    "Yuji Itadori JJK, spiky pink hair with black roots, Divergent Fist cursed energy delayed detonation exploding from fist with double impact shockwave, Sukuna tattoos crawling up arms glowing crimson while Yuji resists, Black Flash black lightning crackling between knuckles at moment of impact, intense determined expression refusing to yield, cursed energy storm surrounding body, cracked ground beneath combat boots",
+    "Ryomen Sukuna JJK, iconic pink spiked hair, four arms deployed simultaneously each crackling with domain energy, Malevolent Shrine cleave technique visible as massive invisible blade cutting reality itself, black tattoos covering entire body glowing crimson, second set of eyes on cheeks open revealing ancient evil, Dismantle and Cleave shockwaves crossing dimensions, king of curses standing in annihilated cathedral of cursed energy",
+    "Megumi Fushiguro JJK, dark hair messy and damp, Ten Shadows Technique deploying entire divine dog pack plus Eight-Handled Sword Divergent Sila Shadow of the Zen'in demon dog pack with Mahoraga emerging behind him as massive divine beast, shadow energy consuming ground, cool detached expression hiding massive calculation, shikigami summoning circle glowing under feet, shadows alive and hungry",
+    "Nanami Kento JJK, neat side-part blonde hair, dress shirt sleeves rolled up, Ratio Technique blade extended crackling with precise 7:3 cursed energy split point glowing, bandaged weapon enforcing weakpoint law of the universe, tired professional expression of a man who was done with this years ago but does it anyway, suit slightly torn, cursed energy disciplined and precise as a razor edge",
+    "Yuta Okkotsu JJK, messy dark hair, Rika cursed spirit massive Queen of Curses manifesting behind him as enormous beautiful horrifying neon specter consuming background, Copy technique replicating every technique simultaneously, massive cursed energy output overwhelming entire frame, quiet gentle face contrasting catastrophic power output, most cursed energy in the series, universe of curses orbiting him",
+    "Choso JJK, long black hair divided by white streak, blood manipulation technique Supernova shooting blood bullets at hypersonic speed leaving trails, Piercing Blood technique railgun condensed crimson beam piercing through buildings, calm ancient expression of someone thousands of years old, blood vessels on forehead glowing neon, blood armor forming across body, oldest death painting technique bearer",
+
+    # ═══ ONE PIECE — LENDAS DO MAR ═══
+    "Monkey D Luffy GearFifth OnePiece, wild black hair, Gear Fifth white hair and clouds surrounding body, rubber reality-warping deity form making entire island cartoonish, massive fist enlarged to city-block scale mid-punch at Kaido, clouds pulled in spiral around giant form, laughing wildly while punching god-tier adversary, Sun God Nika form with neon white aura making the impossible joyful, gigantic scale of impact",
+    "Roronoa Zoro OnePiece, short green hair damp and wind-blown, three Meito swords in three-sword style Asura technique manifesting nine phantom sword duplicates behind him creating demon god silhouette, Enma blade drinking haki and releasing it as devastating black neon slash, King of Hell Three-Sword Style massive energy dome detonating, eyepatch scar glowing haki, Nine-Sword God stance consuming entire background",
+    "Shanks RedHair OnePiece, flowing long red hair, Supreme King Haki Conqueror's emission visible as black lightning storm crackling across entire sky, presence alone making seas split and enemies collapse, powerful arm raised as casual gesture but output splitting storm clouds, Gryphon sword Kamusari swing leaving divine red-gold energy arc, strongest man in the world needing no effort to end everything",
+    "Trafalgar Law OnePiece, dark hair under spotted hat, ROOM technique giant blue sphere engulfing multiple city blocks glowing electric blue lines, Shambles swapping objects and people mid-air, Gamma Knife penetrating body without external wound via invisible energy blade, K-Room Shock Wille technique massive neon surgery sphere, three K letters glowing, cool calculating surgeon of death expression",
+    "Silvers Rayleigh OnePiece, gray hair and beard, Dark King prime form with massive Conqueror's and Armament Haki combined creating an invisible shockwave you can see only by its destruction, teaching-pose but devastating power visible in every relaxed stance, right-hand man of King of Pirates carrying that era's full weight, casual clothing hiding absolute apex predator",
+    "Portgas D Ace OnePiece, short black hair with freckles, Fire Fist Ace Flame Commander technique massive wall of fire shaped like fist detonating, orange flame explosion consuming frame, pirate ace jacket open showing Whitebeard mark tattoo on back lit by own flames, brilliant smile seconds before everything goes wrong, fire becoming wings briefly before impact, legendary commander of Whitebeard pirates",
+
+    # ═══ NARUTO / BORUTO — SHINOBI ÉPICOS ═══
+    "Naruto Uzumaki SageOfSixPaths Naruto, long spiky blonde hair with Truth-Seeking Orbs orbiting, Six Paths Sage Mode aura combining all nature transformations simultaneously, Tailed Beast Mode overlay showing Kurama fox spirit behind as massive god silhouette filling sky, Rasengan Planetary construction of eleven massive energy spheres, orange-gold-white neon power output making the world orange, sheer energy tearing landscape apart",
+    "Sasuke Uchiha Rinnegan Naruto, dark hair with single blue Rinnegan eye and Eternal Mangekyo Sharingan eye, Susanoo Perfect form purple humanoid titan covered in cursed mark patterns assembled around him, Indra's Arrow technique charging maximum power beam from bow, lightning and dark energy fusion technique that can destroy bijuu, rival-level to a god, cool calm face at epicenter of destruction",
+    "Kakashi Hatake SixPaths Naruto, silver hair, Dual Mangekyo Sharingan activated both eyes, Perfect Susanoo summoned as towering blue warrior god, kamui lightning blade in one hand perfect Susanoo sword in other, gravity of legend visible in every particle, masked face with single eye conveying absolute calm authority, lightning crackling off every surface near him",
+    "Itachi Uchiha Naruto, long black hair in iconic low ponytail, Mangekyo Sharingan blood-red spinning, Amaterasu black inextinguishable flames erupting, Tsukuyomi illusion world fracturing reality, Susanoo ribcage forming with Yata Mirror and Totsuka Blade artifacts, pale elegant face hiding terminal illness and supreme sacrifice, greatest genjutsu master in history surrounded by falling crows",
+    "Minato Namikaze FourthHokage Naruto, iconic spiky yellow hair, Flying Thunder God jutsu teleportation leaving yellow flash afterimage trails across entire frame, Rasengan plus Kurama Mode combined attack charging, Jonin cloak flowing, greatest speed technique in shinobi history, calm cool face of a man who sacrificed himself for peace, yellow lightning across entire black sky",
+    "Might Guy Naruto, thick eyebrows, Eight Gates Released Formation Gate of Death Hachimon Tonkou opened, entire body wrapped in green-red steam vapor from cellular destruction, Evening Elephant technique five consecutive air vacuum punches audible across continents, red steam aurora consuming entire frame like a comet, absolute power beyond human limit burning body away, the most passionate man in the world",
+
+    # ═══ BLEACH — SHINIGAMI E HOLLOWS ═══
+    "Ichigo Kurosaki TrueShikai Bleach, spiky orange hair wild with spiritual pressure, True Shikai form with Zangetsu cleave becoming massive scale that dwarfs mountains, Final Getsuga Tensho Mugetsu technique erasing all light in the universe briefly, inner hollow and Quincy heritage and shinigami power all three fusing simultaneously, pressure visible as black energy corona displacing atmosphere around body, king of souls",
+    "Sosuke Aizen Bleach, neat brown hair descending to ultimate butterfly form transcending shinigami and hollow, Kyoka Suigetsu shatter-illusion reality fracturing making impossible moves appear real, presence alone distorting space, god complex completely earned because he actually achieved it, Hogyoku integrated into chest glowing with all-seeing purple neon, calm smile of someone who has won before the fight begins",
+    "Kenpachi Zaraki Bleach, spiked black hair with bells at tips, eye patch off revealing true Reiatsu flooding out as terror incarnate making atmosphere pressurize, Yachiru true form Nozarashi unleashed as massive spiritual pressure blade that cuts fate itself, no technique just pure killing intent so overwhelming it reshapes space, muscles straining and bleeding and he's grinning harder",
+    "Byakuya Kuchiki Bleach, neat black hair with silver kenseikan ornaments, Senbonzakura Kageyoshi ten-thousand cherry blossom blades filling entire sky as beautiful deadly pink snowstorm, noble house captain presence with absolute dignity, scarf floating in blade-wind, two modes: elegant aristocrat and absolute annihilation, petals becoming blades becoming storm, cold beauty of inevitable judgment",
+    "Ulquiorra Cifer Bleach, pale face with tear marks, Segunda Etapa final resurrection releasing massive bat wings of pure condensed Reiatsu, Lanza del Relampago javelin of condensed Cero that destroys entire areas on detonation, black and green neon Cero power, highest espada existential nihilism given form, lance crackling with ultimate spiritual energy as rain falls around expressionless face",
+
+    # ═══ DRAGON BALL — SUPER SAIYAJINS ═══
+    "Goku UltraInstinct DragonBall, silver-white hair with glowing silver UI aura corona, Ultra Instinct Mastered movement so fast it defeats gods, silver neon aura producing heatwave visible as atmospheric distortion, Hakai Destruction energy ball in palm, Perfected Ultra Instinct face calm as water surface despite universe-shattering power output, fighting gods on their own level with casual grace and absolute peak performance",
+    "Vegeta UltraEgo DragonBall, widow-peak dark hair, Ultra Ego form with dark purple aura consuming all light around him, power that increases the more damage received turning battle into pure ascending destruction, Hakai sphere in hand, Final Explosion energy charging that would sacrifice self to destroy god, Ultra Ego symbol visible in aura, pride of a Saiyan Prince who never yielded, universe shaking at his feet",
+    "Gohan Beast DragonBall, long white hair awakened beyond all previous limits in Beast mode, eye twitching with barely-controlled rage when Piccolo is hurt, explosive white neon aura cascading off body in sheets, glasses broken on floor, scholar becoming the most powerful hybrid saiyan ever, Special Beam Cannon charging in tribute to father figure, power making surrounding fighters feel gravity increase",
+    "Future Trunks DragonBall, iconic purple hair, Super Saiyan Rage form with blue electricity wrapping Super Saiyan gold aura, time machine sword channeling energy of all humans killed by androids, Spirit Sword energy blade of hope and collected rage extending enormous, traveling back through time with desperation of entire destroyed future on his shoulders, blue and gold energy storm consuming frame",
+    "Broly Legendary DragonBall, massive frame towering, Legendary Super Saiyan form with green-tinted primal explosive aura dwarfing all other Saiyans, eyes going blank with pure rage and power, Eraser Cannon green energy blast that overwhelmed two Super Saiyan Gods simultaneously, primal screaming face with power output that destabilizes planetary bodies, primordial Saiyan beyond all control",
+
+    # ═══ MY HERO ACADEMIA — HERÓIS E VILÕES ═══
+    "Izuku Midoriya OFA DragonFist MHA, messy green hair wild with One For All electricity crackling all over body, 100% Full Cowl black whip Delaware Smash Air Force techniques combining, Gran Torino air pressure gauntlets forming, Blackwhip tendrils extending in all directions anchoring to everything, Gear Shift Full Cowl maximum output making ground crater under feet, determination face of someone who refused to give up screaming into wind, all predecessors' OFA ghosts standing behind",
+    "Katsuki Bakugo MHA, spiky ash-blonde hair spiking up in explosion wind, Howitzer Impact technique spinning in air collecting sweat for maximum AP Shot point-blank detonation, Explosion quirk plasma orange and black neon bursting from both hands simultaneously, blast backwash making hair and jacket explode outward, most aggressive competitive expression, Explosion Creation is his destiny, rival to the strongest hero",
+    "Shoto Todoroki MHA, half-white half-red hair split perfectly down center, left side erupting enormous ice glacier right side erupting massive fire pillar simultaneously, Hell Spider flame whip and glacier wall deployed at same time, Phosphor bright white flame technique radiating off entire body, both powers fully combined at maximum accepting both halves of himself, expression of someone who chose their own path",
+    "All Might MHA, iconic muscle-form massive build, United States of Smash maximum power punch hitting target as last act of symbol of peace, neon gold and white Detroit Smash wind pressure wave moving at supersonic speed, cape disintegrating in his own power, gaunt injured face inside massive borrowed power, sunrise behind him always, ONE FOR ALL at its origin carried in this impossible hero body",
+    "Tomura Shigaraki MHA, pale cracked hands and disheveled blue-gray hair, All For One awakening making face crack and reform, Decay quirk touching ground and entire city block disintegrating into expanding wave of destruction, Gigantomachia following behind as living mountain, Paranormal Liberation Front general standing in apocalyptic power, inherited hatred and stolen power at maximum output, empty eyes that have become something beyond villain",
+
+    # ═══ ATTACK ON TITAN — TITÃS E GUERREIROS ═══
+    "Levi Ackerman AOT, undercut dark hair, Ackerman bloodline awakening manifesting as black energy aura that calculates every possible outcome, ODM gear triple-blade spinning technique that killed the Beast Titan alone amid rain of boulders, lightning-fast movement leaving afterimage shadows visible to eye, face covered in scars and blood with zero concern, the strongest soldier in humanity standing in titan graveyard, thunder clapping from speed",
+    "Eren Yeager Founding Titan AOT, wild dark hair, Founding Titan's true colossus form emerging from the earth as 80-meter skeletal deity, Wall Titans marching in thousands following the rumble of the world, Founding Titan power rewriting memories of all subjects, jaw titan and attack titan fused into one catastrophic form, hollow screaming while collateral damage becomes history itself, Paths dimension visible as sepia lines in air",
+    "Erwin Smith AOT, thick blonde brows and commanding presence, Survey Corps Commander leading final charge directly into the Beast Titan's boulder barrage with one arm gone, every soldier following him knowing they will die for one moment of opportunity, ODM gear deployed at maximum with determination speech still ringing in the air, commander who chose victory over survival, leadership so absolute it changes outcomes from beyond the grave",
+
+    # ═══ ONE PUNCH MAN — PODER ABSOLUTO ═══
+    "Saitama OnePunchMan, bald head and plain yellow costume, Serious Series Serious Punch delivering a blow so powerful it parts storm clouds across continent, air pressure from single punch visible as tornado-scale atmospheric impact, casual bored face on body that delivers universe-shattering blows, empty eyes of someone who won too easily, one fist extended and everything within range simply ceases, aftermath of total obliteration around one average-looking man",
+    "Genos OnePunchMan, metallic cybernetic body with neon blue power cores exposed all across torso and arms, Incineration Cannons arms transforming into dual plasma cannons charging Hellfire Burst discharge, particle beam so hot it creates plasma trail, heroic upgraded S-Class cyborg body rebuilt at cutting edge, glowing amber synthetic eyes determined to protect teacher, full power output melting surrounding terrain",
+    "Garou OnePunchMan, white hair spiked wild in Cosmic Fear Mode, God Power absorbed into human body creating star-level output, Gravity techniques bending space in combat, copying every martial arts style into Godly Fist that surpasses all humans and gods, blood across face and torn outfit from battle with Saitama himself, the greatest monster who became the greatest hero, cosmic power making him float amid shattered asteroids",
+    "Tatsumaki OnePunchMan, short childlike figure with intense green eyes and floating black dress, maximum Psychokinesis output lifting an entire destroyed city block above her in one continuous telekinetic field, barriers of compressed green energy floating like orbiting shields, arms crossed with absolute contempt for everyone present, most powerful esper in history looking bored while performing impossible feat, green neon storm consuming background",
+    "Fubuki OnePunchMan, long black hair with bangs, Hell Storm technique channeling B-Class maximum Psychokinesis into spiraling tornado of solid psychic force lifting targets and crushing them, elegant fitted dress split for combat, psych shield bubble surrounding group, older sister pride and younger sister complex simultaneously, green psychic glow making surroundings float in debris field, blizzard group's queen at her best",
+
+    # ═══ HUNTER X HUNTER ═══
+    "Gon Freecss JajankenPeak HxH, spiky black hair, Jajanken Rock technique charging entire Nen lifeforce into single fist emitting golden Nen overflow aura visible as mile-wide explosion flash, adult transformation burning own life potential for one moment of power, green Nen energy overflowing far past containment, pure joy of hunting turning to pure ferocity when someone threatens friends, primal scream releasing everything",
+    "Killua Zoldyck Godspeed HxH, white spiky hair, Godspeed Whirlwind technique body coated in lightning bioelectric field that makes him functionally invisible from speed alone, Thunderbolt hand strike leaving electric afterburn, Kilua eye change showing assassin bloodline activated, silver-white lightning aura making hair and clothes levitate from charge, most naturally talented nen user born into killing smile that means danger",
+    "Hisoka Morrow HxH, red and purple spiked hair, Bungee Gum elastic and sticky Nen stretching and snapping clown suit through entire arena, card throw accelerated with Bungee Gum hitting with bullet velocity, magician battle performer grinning with pure predatory excitement finding a worthy opponent, star and heart face marks glowing neon, everything about him radiating dangerous beautiful chaos",
+    "Kurapika HxH, blonde bangs and intense face, Scarlet Eyes activated full Kurta clan crimson iris flaring, Emperor Time Conjuration unlocking 100% efficiency of all nen systems simultaneously at cost of lifespan, chains Judement Chain wrapping around opponent's heart with conditions, Steal chain extracting nen abilities, chain jail inescapable restraint system, grief and revenge and hope all burning in those impossible red eyes",
+    "Meruem PerfectForm HxH, pale humanoid chimera ant king in final form, Nen absorption making Rose poison dispersal powerless by absorbing Pouf and Youpi power doubling capacity, board game grandmaster calm strategic face destroyed by one human girl's refusal to lose, royal guard power consumed and returned as ultimate chimera energy, brief beautiful tragedy of a monster who learned what it is to love",
+
+    # ═══ FULLMETAL ALCHEMIST ═══
+    "Edward Elric FMA, golden hair in braid, automail arm transforming into full combat weapon with alchemical circle activation transmuting ground into entire fortress while transmuting air into weapon, Philosopher's Stone temporarily forbidden power glimpsed, alchemy circles glowing under boots, short man with oversized power complex and the heart of a true hero, brotherhood theme activating visually in golden neon",
+    "Roy Mustang Flame Alchemist FMA, dark military uniform immaculate, Flame Alchemy ignition glove snap producing a flame that becomes an entire sun compressed into a column destroying entire Promised Day facility, blue flame version going beyond oxygen toward divine fire, colonel expression shifting from calm to terrifying when someone he protects falls, Fuhrer-level power in service of a better world through righteous flame",
+    "King Bradley Wrath FMA, slicked hair, eye patch removed revealing Ultimate Eye that sees all trajectories in the world, five swords deployed simultaneously targeting every weakness in opponents, Homunculus Wrath physical perfection making him fastest purely-physical fighter in series, stone-cold military precision masking volcanic Wrath sin, Fuhrer cutting through entire military opposition without a single wound",
+
+    # ═══ SOLO LEVELING ═══
+    "Sung Jinwoo ShadowMonarch SoloLeveling, dark hair with empty emotionless hunter eyes, Shadow Monarch power erupting as massive black-purple aura of death energy consuming surroundings, shadow army of millions marching behind him as silhouettes, Kamish Wrath technique drawing sword of shadows and reaping all life in arc, Igris and Beru flanking as massive shadow knights, stone expressionless face of someone who became the strongest while everyone else slept, death and power given human form",
+    "Thomas Andre SoloLeveling, massive titan build, National Level Hunter Reinforcement skill making body truly invulnerable while Collapse technique generates a gravitational collapse field around fist, crater forming underfoot, American powerhouse vs the Shadow Monarch in equal clash, overwhelming physical presence that bent national armies by existing",
+
+    # ═══ BERSERK ═══
+    "Guts BlackSwordsman Berserk, massive black Dragon Slayer sword carried in one arm that is actually a cannon, Brand of Sacrifice wound bleeding black, Berserker Armor activated making him bleed from every joint while multiplying power beyond human comprehension, Apostle-killing charge through impossible odds, one eye, mad dog grin of someone who refuses to die because death would be giving fate what it wants, absolute anti-hero defiance",
+
+    # ═══ BLUE LOCK ═══
+    "Isagi Yoichi BlueLock, dark hair wet with sweat, Spatial Awareness meta vision technique activating as glowing field grid overlay visible around entire pitch, direct shoot technique with perfect physics calculation catching opponents completely off-guard, evolution happening mid-match as predator instinct awakens, determined expression of someone becoming the world's best striker through pure calculated greed for goals",
+    "Rin Itoshi BlueLock, long dark hair tied back, Direct Drive Zone technique entering state of perfect predictive reaction where body moves before thought, Almight Tornado blast shot combining spin and power to break any goalkeeper's hands, prodigy with a brother complex becoming soccer's greatest weapon, cold eyes hiding rage and love in equal measure, teal and dark aura of absolute technical mastery",
+    "Bachira Meguru BlueLock, curly messy hair, Monster Inside awakened as instinctive chaotic dribbling style that no defensive system can pattern-match, phantom monster visualization guiding feet through impossible paths between defenders, uncontrollable joy of pure individual expression through soccer, smile of someone who found his pack, rainbow neon dribble path lines visible as light trail behind feet",
+
+    # ═══ FRIEREN / WITCH / FANTASY WAIFUS ═══
+    "Frieren AtTheEndOfJourney, long silver elf hair with decorable hair ties, ancient elven mage holding staff with accumulated thousand years of magic knowledge, Zoltraak offensive magic now casual finger-flick that one-shots Demon Lord lieutenants, magic field analysis sight activated as faint glow, elegant flat affect face that carries grief of watching everyone she knew age and die, cherry blossoms mixed with magic particle cascade because she stopped to pick them",
+    "Fern FrierenDisciple, long dark hair in twin braids, prodigy mage Zoltraak rapid-fire multi-volley at maximum output far exceeding any mage her age, concentrated efficient mana expression without waste, serious diligent face secretly loving magical trinkets, cold eyes that warm around her master, blue-white magic blast charges erupting from both hands toward opponent, most efficient mage born in a century",
+    "Mitsuri Kanroji SensualWaifu DemonSlayer, pink-green gradient long hair loose and wild in battle wind, flexible kunoichi-influenced fighting style wrapping Flame Breathing around incredibly flexible and powerful body moving through impossible angles, revealing pink Hashira uniform catching wind, warm smile of someone who just wants to be loved existing in a deadly body, cherry blossoms and flame neon surrounding curves",
+    "Albedo Overlord, floor-length black wavy hair, white dress of an angel covering the most loyal Floor Guardian of Nazarick, Hermes Trismegistus ultimate shield deployed as enormous wing barrier, Levia Halcyon great axe erupting with Armageddon power, sensual face twisting between loving Ainz and protecting Nazarick with frightening obsession, halo and black wings simultaneously, perfect beauty with perfect evil loyalty",
+    "Shalltear Bloodfallen Overlord, long silver drill hair, true vampire lord form with wings deployed, Blood Frenzy activated making her more powerful with each wound received, Spuit Lance crackling crimson, Floor Guardian level power, sensual form in red gothic battle dress covered in opponent's blood like war paint, pale skin with neon red eyes looking directly at viewer with possessive hunger",
+    "Milim Nava ThatTimeSlime, iconic twin pink drill pigtails, Drago Nova channeling full Demon Primogenitor power into energy condensed to single point output exceeding nuclear fusion, Milim Eye demonic eye technique stripping all illusions from the world, small frame hiding catastrophic Demon Lord power, cheerful open grin while casually erasing mountains, the oldest and strongest Demon Lord playing like a child because she can",
+    "Noelle Silva BlackClover, silver-white hair, Water Creation Magic Valkyrie Armor manifesting as divine water armor of raging seas channeled into knightly form, Saint Stage magic output making surrounding ocean rise up, noble clumsy determination growing into real power, beautiful aristocratic face carrying doubt turning to absolute confidence, water dragon manifestation spiraling around armored body",
+    "Ai Hoshino OshiNoKo, long black hair with pink ends, idol stage performance costume catching concert lighting, pink-gold star neon particles erupting from stage floor as adored idol persona activates, warm mother's eyes hiding cosmic idol secret, ruby and aquamarine stars forming in air, unforgettable smile that made the entire nation fall in love, roses falling from above in pink and white neon",
+    "Tatsumaki SexySister OnePunchMan, short petite frame and dramatic short green hair, older sister emerald eyes showing contempt and hidden pride, maximum Psychokinesis lifting entire meteor field above her simultaneously, elegant floating dress, arms crossed with absolute casual power, most powerful esper in the world dismissing everything, forest of floating debris framing petite figure in green energy corona",
+    "Merlin SevenDeadlySins, elegant short dark hair, Infinity ability stopping all spells in permanent suspension making her unkillable by any technique, Aldan floating jewel sphere amplifying all magic beyond reasonable output, Boar's Hat mage in revealing combat attire, greatest mage alive carrying century of accumulated spells, mysterious half-smile of someone who knows much more than she reveals",
+
+    # ═══ BLACK CLOVER ═══
+    "Asta BlackClover, spiky white hair Anti-Magic form, five-leaf grimoire opening and pouring out concentrated Anti-Magic black energy consuming surrounding magic entirely, Demon-Destroyer Sword extended as enormous black claymore, Devil Union mode with Liebe merging making skin half-black crackling anti-magic, no magic but the strongest will in the world, bull-headed determination outscreaming destiny itself, the one who became Wizard King without a drop of magic",
+    "Yuno StarMagicArcher BlackClover, long dark hair with golden four-leaf clover grimoire glowing, Wind Spirit Sylph merged into body multiplying all magic, Star Magic massive star-shaped energy cannon charging across entire sky, spatial magic barriers unfolding like origami made of galaxies, genius rival who was always a step ahead, elegant confident expression of prodigy born with everything Asta wasn't, golden light and star constellation patterns filling frame",
+
+    # ═══ TOKYO REVENGERS ═══
+    "Mikey Sano TokyoRevengers, platinum blonde bowl cut, delinquent king stance mid-kick delivering Invincible Kick technique with leg rising past vertical creating shockwave crack in asphalt, motorcycle jacket open, dark impulse mode visible as black aura underneath normal Mikey smile, natural gift for violence making him simultaneously the best person to know and most dangerous, gang leader who broke the future",
+    "Draken TokyoRevengers, long side-shaved hair with dragon tattoo on temple glowing blue neon, towering frame mid-punch that caves in gang leader's guard, loyal right-hand of Mikey energy, Dragon's Fang technique releasing visible blue impact ring, old-school Tokyo delinquent with heart made entirely of gold, protective fury channeled through fists, most reliable person in any crew protecting what matters",
+
+    # ═══ CHAINSAW MAN — HERÓIS ═══
+    "Denji ChainsawMan, messy brown hair with iconic zipper pull in chest, chainsaw blades erupting from forehead and arms in full Chainsaw Devil manifestation, Pochita contract giving him ability to revive and escalate, blood-soaked wide grin of someone who wanted toast and got a devil war instead, primal hero energy, motor roaring as entire frame fills with blood and chainsaw neon, simple dream in impossible nightmare",
+    "Aki Hayakawa ChainsawMan, neat dark hair and serious face, Future Devil contract showing him his death but choosing to continue, Fox Devil technique summoning enormous jaw snap consuming target, Sword Devil possession partially integrated showing cursed transformation beginning, government devil hunter cigarette lit and sword drawn, dignified soldier energy carrying foreknowledge of his own tragedy forward anyway",
+
+    # ═══ VINLAND SAGA ═══
+    "Thorfinn VinlandSaga, long blonde hair wild and unkempt after years of slavery, pacifist warrior who unlearned killing becoming more dangerous than ever with pure technique empty of bloodlust, phantom lance technique so refined it defeats berserkers without injury, scar across face from the world's cruelty, the most dangerous man in the north who chose not to be dangerous, bearing weight of father's murder and own sins toward a land of peace",
+    "Askeladd VinlandSaga, short silver-blond hair, Roman-Welsh noble bearing mixed with Viking pragmatism, Luin of Celtchar spear technique making him the most dangerous individual combatant in the Danish great army, chess master manipulator three steps ahead of every faction, warm dangerous smile of the greatest villain who was also the greatest father figure, winter breath visible in cold northern air",
+
+    # ═══ OVERLORD ═══
+    "Ainz Ooal Gown Overlord, enormous black robes of the Sorcerer King, skeletal lich body with hypnotic glowing eyes in empty sockets, greatest guild Yggdrasil's World-Class Item Meteor Fall crashing from above destroying armies, dark magic corona of thousands of Death Knights summoned, overlord of Nazarick standing at apex of magical power, suppressing all emotion through undead body while secretly panicking about keeping up appearances as supreme ruler",
+]
+
+# ══════════════════════════════════════════════════════════════════════
+# LISTA COMPLETA — 200 PERSONAGENS COMBINADOS
+# ══════════════════════════════════════════════════════════════════════
+TREND_WAIFUS = TREND_WAIFUS_ORIGINAL + TREND_WAIFUS_NEW
+
+# ══════════════════════════════════════════════════════════════════════
+# COMPOSIÇÕES — VARIEDADE MÁXIMA
 # ══════════════════════════════════════════════════════════════════════
 COMPOSITION_STYLES = [
-    # Corpo inteiro / full body
     {
         "name": "full_body_power",
         "prompt": (
             "FULL BODY vertical shot, character from head to toe filling 9:16 frame, "
-            "powerful dynamic stance, feet planted or mid-motion, "
-            "complete outfit and weapon visible, "
+            "powerful dynamic stance, feet planted or mid-motion on crumbling ground, "
+            "complete outfit and weapon visible with energy effects on every surface, "
             "character takes up 85% of frame height, "
-            "strong silhouette against cyberpunk background, "
-            "dramatic low-angle perspective enhancing scale"
+            "strong silhouette against exploding cyberpunk background, "
+            "dramatic low-angle perspective enhancing godlike scale, "
+            "debris and energy particles filling every corner of frame"
         ),
         "weight": 25,
     },
     {
         "name": "full_body_dynamic",
         "prompt": (
-            "FULL BODY action composition, character mid-attack or power stance, "
-            "energy effects emanating from hands or weapon, "
-            "hair and clothes caught in motion, "
-            "entire body visible in frame, "
-            "Dutch angle adding drama, cyberpunk city below, "
-            "vertical mobile-first framing"
+            "FULL BODY action composition, character mid-attack or maximum power stance, "
+            "massive energy effects erupting from hands and weapon in all directions, "
+            "hair and clothes caught in shockwave motion, entire body visible in frame, "
+            "Dutch angle adding extreme drama, cyberpunk city crumbling below, "
+            "vertical mobile-first framing, impact shockwave rings visible, "
+            "atmospheric pressure visible as energy distortion around body"
         ),
         "weight": 20,
     },
-    # 3/4 body — mostra rosto E corpo
     {
         "name": "three_quarter_cinematic",
         "prompt": (
-            "3/4 BODY SHOT from mid-thigh up, face and full upper body and legs visible, "
-            "face in upper portion, outfit fully readable, "
-            "one hand extended toward viewer or weapon drawn, "
-            "cinematic vertical composition, "
-            "background out of focus, character sharp, "
-            "natural attractive proportions fully visible"
+            "3/4 BODY SHOT from mid-thigh up, face and full upper body visible, "
+            "face in upper portion, outfit and power effects fully readable, "
+            "one hand extended toward viewer with charging energy or weapon drawn, "
+            "cinematic vertical composition with dramatic depth, "
+            "background explosion out of focus, character razor-sharp, "
+            "natural proportions fully visible, energy corona around entire figure"
         ),
         "weight": 25,
     },
     {
         "name": "three_quarter_portrait",
         "prompt": (
-            "3/4 BODY elegant portrait, waist-to-top composition showing full face and torso, "
-            "slight side angle showing depth and figure, "
-            "face upper third, detailed outfit middle, "
-            "one arm at side one extended or weapon resting, "
-            "dramatic side lighting, vertical format"
+            "3/4 BODY elegant power portrait, waist-to-top composition showing full face and torso, "
+            "slight side angle showing depth and figure with aura emanating, "
+            "face upper third, detailed outfit middle, massive power effects filling background, "
+            "one arm at side one extended or weapon resting with energy crackling, "
+            "dramatic cinematic split lighting with colored neon and power glow, vertical format"
         ),
         "weight": 20,
     },
-    # Vista de costas com rosto visível
     {
         "name": "back_view_dramatic",
         "prompt": (
-            "DRAMATIC BACK VIEW full body, character facing cyberpunk city below, "
-            "hair flowing wild in neon wind, "
+            "DRAMATIC BACK VIEW full body, character facing destroyed cyberpunk city below, "
+            "hair and cloak flowing wild in massive power release wind, "
             "face turned 3/4 showing profile or slight side view, "
-            "outfit and silhouette breathtaking from behind, "
-            "weapon or energy held aloft, "
-            "neon city sprawl far below, viewer perspective from behind"
+            "outfit and powerful silhouette breathtaking from behind with aura corona, "
+            "weapon or technique deployed upward into sky, "
+            "neon city sprawl far below surrounded by their impact, viewer behind witnessing apex"
         ),
         "weight": 10,
     },
 ]
 
 # ══════════════════════════════════════════════════════════════════════
-# CHANNEL IDENTITY & LOCKS
+# CHANNEL IDENTITY & LOCKS — v43.0 UPGRADED
 # ══════════════════════════════════════════════════════════════════════
 CHANNEL_IDENTITY = (
-    "DJ Dark Mark viral trap phonk anime visual, premium cyberpunk anime key visual, "
-    "scroll-stopping YouTube Shorts thumbnail, cyberpunk neon world aesthetic, "
-    "professional music channel art"
+    "DJ Dark Mark viral trap phonk anime visual, ULTIMATE premium cyberpunk anime key visual, "
+    "scroll-stopping viral YouTube Shorts thumbnail, cyberpunk neon world aesthetic at maximum intensity, "
+    "professional music channel art that stops scrolling dead, "
+    "jaw-dropping anime visual that demands a second look"
 )
 
 CORE_CHARACTER = (
-    "one adult anime woman, clearly adult mature female proportions, "
-    "beautiful detailed anime character, expressive detailed face, "
-    "hypnotic eyes with neon catchlights, "
-    "detailed hair with individual strand rendering, "
-    "well-proportioned body with detailed costume, "
-    "alone in frame, single character, no other people"
+    "one anime character with iconic design, clearly anime artstyle proportions, "
+    "beautiful detailed anime character face with hypnotic neon-lit eyes, "
+    "expressive detailed face with emotion reading clear from distance, "
+    "detailed hair with individual strand rendering catching neon light, "
+    "full signature outfit with all details and power effects, "
+    "alone in frame, single character commanding entire composition"
 )
 
 STYLE_LOCK = (
-    "premium cyberpunk anime key visual art, "
-    "clean sharp detailed lineart, "
-    "high-end 2D anime illustration style, "
-    "polished cel shading with rim lighting, "
-    "cinematic neon lighting setup, "
-    "glossy detailed eyes with multiple catchlights, "
-    "rich saturated neon colors, high contrast shadows, "
-    "professional music cover art quality finish, "
-    "NOT photorealistic, NOT 3d render, anime illustration art style"
+    "PREMIUM cyberpunk anime key visual art at maximum quality, "
+    "ultra-clean sharp detailed lineart with professional finish, "
+    "high-end 2D anime illustration style pushing quality ceiling, "
+    "polished cel shading with multi-source rim lighting setup, "
+    "cinematic neon and power-effect lighting simultaneously, "
+    "glossy hyper-detailed eyes with five or more catchlights, "
+    "rich maximally saturated neon colors with extreme contrast shadows, "
+    "professional music cover art quality finish + MASSIVE particle system, "
+    "NOT photorealistic, NOT 3d render, pure anime illustration style at its apex"
 )
 
 CYBERPUNK_LIGHTING = (
-    "cinematic cyberpunk lighting: strong colored rim light splitting from behind, "
-    "contrasting neon fill light on face and body, "
-    "neon color reflections on skin and costume, "
-    "volumetric light rays through atmosphere, "
-    "beautiful dramatic body illumination from multiple neon sources, "
-    "eyes catching and reflecting colored neon glow"
+    "CINEMATIC MAXIMUM cyberpunk lighting stack: "
+    "primary colored rim light splitting hard from behind creating luminous silhouette edge, "
+    "contrasting secondary neon fill light modeling face and body volume, "
+    "neon color reflections pooling and shimmering on skin and costume surfaces, "
+    "volumetric god rays cutting through smoke and particle atmosphere, "
+    "power effect glow illuminating character from below and within, "
+    "eyes internally lit with multiple colored neon catchlight reflections"
 )
 
 MOTION_LOCK = (
-    "sense of movement and life: hair caught mid-motion in wind, "
-    "floating neon particles and energy light specks, "
-    "cinematic depth of field, foreground blur, "
-    "glowing energy rippling in air around character, "
-    "dynamic but not cluttered composition, "
-    "neon bokeh spheres softly glowing in background"
+    "MAXIMUM sense of movement and explosive power: "
+    "hair caught mid-explosion in technique wind, "
+    "dense floating neon energy particles in thousands filling air, "
+    "speed blur streaks showing trajectory, "
+    "impact shockwave rings visible in atmosphere, "
+    "glowing energy crackles rippling off every surface near character, "
+    "dynamic composition where everything is alive and moving, "
+    "neon bokeh orbs in hundreds softly glowing throughout background depth, "
+    "debris and rubble frozen mid-air from shockwave impact"
 )
 
 VIRAL_HOOK_LOCK = (
-    "one memorable visual hook: glowing energy weapon OR "
-    "dramatic power aura surrounding body OR "
-    "beautiful emotional expression with neon glow OR "
-    "hair and outfit blown dramatically in cyber wind OR "
-    "intense power charging with light effects, "
-    "instantly memorable cyberpunk anime frame"
+    "ONE UNFORGETTABLE visual hook dominating composition: "
+    "massive glowing energy technique erupting around body OR "
+    "dramatic power aura expanding in all directions OR "
+    "beautiful emotional expression lit by own power glow OR "
+    "hair and outfit exploding dramatically in technique wind OR "
+    "maximum power charging with reality-distortion light effects OR "
+    "intense battle damage increasing power output, "
+    "INSTANTLY iconic cyberpunk anime frame you cannot scroll past"
 )
 
 QUALITY_LOCK = (
-    "masterpiece quality, best possible quality, ultra detailed rendering, "
-    "crisp beautiful lineart, detailed shining neon-lit eyes, "
-    "clean correct anatomy and proportions, "
-    "professional channel branding quality, high resolution detail, "
-    "premium polished finish, beautiful neon illumination on skin and clothes"
+    "MASTERPIECE maximum quality, best possible quality, ultra-hyper detailed rendering, "
+    "crisp perfect lineart at professional studio level, "
+    "ultra-detailed shining neon and power-lit eyes, "
+    "clean correct anatomy and heroic proportions, "
+    "high-end channel branding visual quality, "
+    "extreme resolution detail on every surface, "
+    "premium polished finish with perfect color grading, "
+    "beautiful complex neon and power illumination on skin and costume, "
+    "MAXIMUM particle density in effects, "
+    "compositional mastery placing character for maximum visual impact"
 )
 
 # ══════════════════════════════════════════════════════════════════════
-# PALETAS CYBERPUNK
+# EFEITOS DE PARTÍCULAS E ENERGIA — NOVO v43.0
+# ══════════════════════════════════════════════════════════════════════
+PARTICLE_EFFECTS = [
+    "dense storm of glowing energy shards orbiting entire body like a personal galaxy, thousands of neon particles cascading",
+    "massive power aura exploding outward from body pushing atmosphere aside in visible compression rings",
+    "crystalline energy lattice forming and shattering around figure continuously as power fluctuates at limit",
+    "rivers of plasma energy flowing upward from ground through body and launching skyward from fingertips",
+    "shockwave rings expanding concentrically from impact point glowing neon at each compression wave",
+    "lightning web crackling across entire frame connecting every surface to character as epicenter",
+    "dimensional crack tears in reality opening behind character revealing inverse neon space",
+    "swirling vortex of elemental power condensing toward character from all directions at once",
+    "hundreds of floating debris pieces frozen in telekinetic field each casting individual neon shadow",
+    "technique-specific particles: fire embers, water droplets, shadow fragments, ice crystals, blood mist, all neon-lit",
+]
+
+# ══════════════════════════════════════════════════════════════════════
+# PALETAS CYBERPUNK — EXPANDIDAS v43.0
 # ══════════════════════════════════════════════════════════════════════
 PALETTE_TEAL_PINK = (
     "dominant teal and hot pink cyberpunk palette, deep navy shadows, "
@@ -332,13 +477,26 @@ PALETTE_WHITE_BLUE = (
     "cold clean atmosphere, frost and neon blue contrast across full frame, "
     "elegant cyberpunk winter aesthetic, crisp cinematic"
 )
+PALETTE_BLACK_GOLD = (
+    "dominant pitch black and blazing gold cyberpunk palette, "
+    "absolute darkness punctuated by divine golden neon, "
+    "god-tier presence aesthetic, extreme contrast, mythological power color"
+)
+PALETTE_RED_BLACK = (
+    "dominant blood red and black cyberpunk palette, "
+    "shadows cut by crimson neon from every angle, "
+    "dangerous villain energy, phonk-dark visual violence, "
+    "deep saturated shadows against pure red neon"
+)
 
 PALETTES = [
-    ("teal_pink",    PALETTE_TEAL_PINK,    30),
-    ("purple_gold",  PALETTE_PURPLE_GOLD,  25),
+    ("teal_pink",    PALETTE_TEAL_PINK,    20),
+    ("purple_gold",  PALETTE_PURPLE_GOLD,  20),
     ("crimson_blue", PALETTE_CRIMSON_BLUE, 20),
-    ("green_orange", PALETTE_GREEN_ORANGE, 15),
+    ("green_orange", PALETTE_GREEN_ORANGE, 10),
     ("white_blue",   PALETTE_WHITE_BLUE,   10),
+    ("black_gold",   PALETTE_BLACK_GOLD,   10),
+    ("red_black",    PALETTE_RED_BLACK,    10),
 ]
 
 # ══════════════════════════════════════════════════════════════════════
@@ -363,57 +521,61 @@ GENRE_MAP = {
 }
 
 GENRE_BOOSTS = {
-    "phonk":      "phonk cyberpunk atmosphere, heavy bass visual energy in pose, aggressive confident street aesthetic, dark neon underground feeling",
-    "trap":       "trap cyberpunk atmosphere, urban night neon energy in stance, stylish supreme confidence, warm neon street premium look",
-    "electronic": "electronic cyberpunk atmosphere, futuristic digital energy surrounding body, teal data streams, clean cyber rhythm visual pulse",
-    "darkpop":    "dark pop cyberpunk emotional atmosphere, romantic sadness in neon city, cinematic emotional beauty, warm-cold color story on face",
-    "dark":       "dark cyberpunk atmosphere, dramatic neon shadow play on body, intense emotional presence, single accent neon in near-darkness",
-    "rock":       "rock cyberpunk energy, electric concert neon on stage, raw emotional power in body language, dramatic rim neon, performance energy",
-    "default":    "dark cyberpunk atmosphere, emotional anime beauty, cinematic neon contrast on full body, premium viral Shorts visual quality",
+    "phonk":      "phonk cyberpunk atmosphere, heavy bass visual energy in pose, aggressive confident street aesthetic, dark neon underground feeling, maximum attitude in every pixel",
+    "trap":       "trap cyberpunk atmosphere, urban night neon energy in stance, stylish supreme confidence, warm neon street premium look, flexing power like currency",
+    "electronic": "electronic cyberpunk atmosphere, futuristic digital energy surrounding body, teal data streams, clean cyber rhythm visual pulse, frequency visualization in air",
+    "darkpop":    "dark pop cyberpunk emotional atmosphere, romantic sadness in neon city, cinematic emotional beauty, warm-cold color story, power and vulnerability in single frame",
+    "dark":       "dark cyberpunk atmosphere, dramatic neon shadow play on body, intense emotional presence, single accent neon in near-darkness, depth of shadow as character",
+    "rock":       "rock cyberpunk energy, electric concert neon on stage, raw emotional power in body language, dramatic rim neon, performance energy, amp feedback visible as wave",
+    "default":    "dark cyberpunk atmosphere, emotional anime beauty, cinematic neon contrast on full body, premium viral Shorts visual quality, maximum energy in every detail",
 }
 
 # ══════════════════════════════════════════════════════════════════════
-# POSES DINÂMICAS por composição
+# POSES DINÂMICAS
 # ══════════════════════════════════════════════════════════════════════
 POWER_POSES = [
-    "standing with weapon raised overhead crackling energy, dominance pose",
-    "mid-leap attack pose with energy trailing behind body",
-    "arms spread wide with power aura expanding from chest outward",
-    "one hand extended toward viewer with energy charging in palm",
-    "crouching ready-stance with eyes locked forward, coiled power",
-    "back slightly turned looking over shoulder with intensity, dangerous elegance",
-    "walking toward camera slowly with absolute confidence, neon behind",
-    "sitting on edge of rooftop legs dangling, relaxed supreme confidence",
-    "spinning attack captured mid-rotation, hair and energy in spiral",
-    "dual weapons crossed in guard stance, eyes challenging viewer",
+    "standing with weapon raised overhead releasing massive energy burst toward sky, dominance apex pose",
+    "mid-leap attack pose with full body technique deployed, energy trailing behind entire body",
+    "arms spread wide with power aura erupting outward from chest in expanding ring, epicenter pose",
+    "one hand extended toward viewer with technique fully charged and releasing, impact imminent",
+    "crouching maximum-power ready-stance with eyes locked forward, coiled godlike power",
+    "back slightly turned looking over shoulder with terrifying intensity, most dangerous elegance",
+    "slow walk toward camera with absolute authority, neon city on fire behind, cannot be stopped",
+    "sitting on destroyed rooftop legs dangling, casual supreme confidence, city below is rubble from their technique",
+    "spinning attack frozen at maximum velocity, hair and energy in perfect spiral galaxy of force",
+    "dual weapons or techniques crossed in guard stance, eyes issuing a challenge to the universe",
+    "floating mid-air technique fully activated, ground beneath cracked by proximity to power alone",
+    "screaming with maximum power release, hair all rising, atmosphere cracking, this is their limit break",
 ]
 
 BACKGROUND_VARIATIONS = [
-    "rainy cyberpunk neon city street level, wet pavement reflecting neon towers, teal and pink bokeh depth",
-    "cyberpunk rooftop edge at night, sprawling neon city far below, wind and height",
-    "dark holographic data server hall, glowing blue server stacks receding into darkness",
-    "cyberpunk rain-soaked alley with blurred neon kanji signs overhead, steam vents",
-    "night cyberpunk skyline from above with flying vehicles and massive neon ad screens",
-    "underground neon fight club, crowd blur and laser beams and smoke atmosphere",
-    "cyberpunk research lab with holographic screens surrounding character position",
-    "dark concert main stage with neon light beams and smoke machine, thousands blurred below",
-    "pure void black with single strong neon rim split and floating data particle field",
-    "cyberpunk night market, warm amber vendor neon and teal night sky, motion blur crowd",
-    "abandoned cyberpunk shrine with broken torii glowing neon, rain and moss and tech",
-    "floating cyberpunk highway overpass, cars blurred below, wind and neon and speed",
+    "rainy cyberpunk neon city street level, wet pavement shattered from impact reflecting neon towers, teal and pink bokeh depth",
+    "cyberpunk rooftop edge at night, sprawling neon city crumbling far below from technique shockwave, wind and height",
+    "dark holographic data server hall partially destroyed by power output, glowing server stacks receding into darkness",
+    "cyberpunk rain-soaked alley with blurred neon kanji signs overhead, steam vents, walls cracking from presence",
+    "night cyberpunk skyline from above with flying vehicles scrambling and massive neon ad screens going dark",
+    "underground neon fight club obliterated, crowd blur and laser beams and smoke atmosphere aftermath",
+    "cyberpunk research lab with holographic screens shattered, experiments disrupted by power output",
+    "dark concert main stage mid-destruction with neon light beams and smoke and crowd below frozen in awe",
+    "pure void black with single strong neon rim split and maximum floating particle field like a personal universe",
+    "cyberpunk night market obliterated, warm amber vendor neon tilted and teal sky, slow motion debris field",
+    "abandoned cyberpunk shrine with broken torii now glowing neon from absorbed technique energy, rain and moss and destruction",
+    "floating cyberpunk highway overpass crumbling, cars crushed below, wind and neon and structural failure",
+    "exterior of Nazarick dungeon, ancient dark stone, magical torch neon, sky of a different world entirely",
+    "endless shadow realm with warrior silhouettes, dimension between dimensions, pure power given space",
 ]
 
 MUSIC_ELEMENTS = [
-    "cyberpunk headphones around neck glowing neon accent color, immersed",
-    "wireless neon earbud, music flowing through her changing the world color",
-    "subtle holographic music waveform visible behind character, tasteful",
-    "emotion IS the music element, pure cinematic cyberpunk anime body language",
-    "neon music visualizer particles orbiting body softly, energetic",
-    "microphone silhouette blurred in background neon depth",
+    "cyberpunk headphones around neck glowing neon, music and battle rhythm synchronized",
+    "wireless neon earbud catching neon light, the music is why they fight",
+    "subtle holographic music waveform pulsing in background in sync with power output",
+    "their emotion IS the music element, cinematic cyberpunk anime body language speaks louder than words",
+    "neon music visualizer frequency bars orbiting body responding to power level",
+    "microphone silhouette in blurred neon background depth, this is the stage",
 ]
 
 # ══════════════════════════════════════════════════════════════════════
-# NEGATIVE PROMPT
+# NEGATIVE PROMPT — v43.0
 # ══════════════════════════════════════════════════════════════════════
 NEGATIVE_PROMPT = (
     "ugly, bad anatomy, bad face, distorted face, asymmetrical eyes, "
@@ -423,23 +585,23 @@ NEGATIVE_PROMPT = (
     "blurry, low quality, jpeg artifacts, heavy noise, flat boring image, "
     "photorealistic, real photograph, real person, 3d render, CGI, doll, plastic skin, "
     "western cartoon style, simple cartoon, childish art style, "
-    "child, underage appearance, loli, petite childlike body, baby face, school uniform only, "
     "nude, explicit nudity, nipples, genitalia, sexual act, pornographic content, "
-    "multiple characters, crowd, two girls in frame, duplicate of character, "
-    "text overlay, words in image, logo watermark, signature, letters, numbers in image, "
+    "multiple characters, crowd, two people in frame, duplicate character, "
+    "text overlay, words in image, logo watermark, signature, letters in image, "
     "face too small to see, character too tiny in frame, lost in background, "
-    "cluttered background overwhelming character, excessive busy neon overload, "
-    "overexposed bloom washing out detail, muddy colors, washed out, desaturated, "
-    "messy composition, no clear focal point, bad eyes, dead fish eyes, empty eyes, "
-    "low contrast, boring flat lighting, no neon presence, dull lifeless colors, "
-    "cropped body weirdly, floating head, missing lower body, cut off limbs"
+    "excessive busy overload drowning character, washed out overexposed bloom, "
+    "muddy colors, desaturated, low contrast, boring flat lighting, no neon, dull lifeless, "
+    "cropped body weirdly, floating head, missing lower body, cut off limbs, "
+    "generic background, stock photo energy, corporate safe, soulless composition"
 )
 
 GENERATION_SUFFIX = (
-    ", beautiful expressive adult anime character, full body or 3/4 body visible, "
-    "detailed costume and face, high contrast neon lighting on complete figure, "
-    "clear powerful silhouette, dynamic alive cyberpunk frame, "
-    "polished professional anime art, gorgeous full-body neon illumination, "
+    ", beautiful expressive anime character, full body or 3/4 body visible, "
+    "detailed costume and iconic design elements, "
+    "maximum neon and power-effect lighting on complete figure, "
+    "clear powerful silhouette, dynamic alive explosive cyberpunk frame, "
+    "polished professional anime art, gorgeous full-body neon and energy illumination, "
+    "dense particle system, massive power effect, "
     "no text, no logo, no watermark, no extra people, vertical 9:16 mobile format"
 )
 
@@ -459,7 +621,7 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _seed(style: str, filename: str, short_num: int) -> int:
-    key = f"{style}|{filename}|{short_num}|darkmark_v42.0_cyberpunk"
+    key = f"{style}|{filename}|{short_num}|darkmark_v43.0_ultimate"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10**9)
 
 
@@ -492,24 +654,26 @@ def _weighted_composition(rng: random.Random) -> dict:
 def _song_mood_boost(song_name: str) -> str:
     clean = song_name.lower()
     if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite"]):
-        return "haunted neon night emotion, lonely but powerful, eyes carrying darkness visible in full body language"
+        return "haunted neon night emotion, lonely but powerful, eyes carrying darkness visible in full body language, shadow particles dense"
     if any(w in clean for w in ["fire", "burn", "rage", "fury", "angry"]):
-        return "intense cyberpunk fire emotion, contained rage expressed through full body stance, electric passionate power"
+        return "intense cyberpunk fire emotion, contained rage expressed through full body stance, electric passionate power, flame particles erupting"
     if any(w in clean for w in ["love", "heart", "amor", "coracao", "rose", "cherry"]):
-        return "dark cyberpunk romantic emotion, longing in full pose and expression, beautiful bittersweet full-body mood"
+        return "dark cyberpunk romantic emotion, longing in full pose and expression, beautiful bittersweet full-body mood, rose petal particles"
     if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido"]):
-        return "deep lonely cyberpunk emotion, isolated figure in neon city, cinematic solitude in body language"
+        return "deep lonely cyberpunk emotion, isolated figure in neon city, cinematic solitude in body language, single neon light source"
     if any(w in clean for w in ["drive", "speed", "run", "race", "corrida"]):
-        return "cyberpunk speed motion energy, body mid-movement with speed blur, wind and neon trailing the figure"
-    if any(w in clean for w in ["queen", "king", "boss", "power", "rule"]):
-        return "dominant cyberpunk queen aura, full body commanding presence, neon crown energy, power pose"
+        return "cyberpunk speed motion energy, body mid-movement with speed blur, wind and neon trailing the figure, velocity particles"
+    if any(w in clean for w in ["queen", "king", "boss", "power", "rule", "rei", "rainha"]):
+        return "dominant cyberpunk god-tier aura, full body commanding presence, neon crown energy, power pose of absolute authority"
     if any(w in clean for w in ["dream", "sonho", "sleep", "cloud"]):
-        return "dreamy floating cyberpunk emotion, body slightly levitating, ethereal neon particles around full figure"
-    return "emotion matching the music carried in full body pose and expression, cyberpunk magnetic presence"
+        return "dreamy floating cyberpunk emotion, body slightly levitating, ethereal neon particles around full figure, soft glow"
+    if any(w in clean for w in ["blood", "sangue", "war", "guerra", "battle", "fight"]):
+        return "battle-worn intense cyberpunk emotion, exhausted and powerful, scars glowing neon, power rising from damage"
+    return "emotion matching the music carried in full body pose and expression, cyberpunk magnetic presence, particle density matching intensity"
 
 
 # ══════════════════════════════════════════════════════════════════════
-# PROMPT PRINCIPAL — v42.0 CYBERPUNK WAIFU EDITION
+# PROMPT PRINCIPAL — v43.0 ULTIMATE CYBERPUNK EDITION
 # ══════════════════════════════════════════════════════════════════════
 def build_ai_prompt(
     style: str = "phonk",
@@ -527,7 +691,7 @@ def build_ai_prompt(
     rng = _rng(mapped, filename, short_num)
     song_name = _clean_song_name(filename)
 
-    # Seleciona waifu aleatória das 100 personagens
+    # Seleciona personagem aleatório dos 200
     char = rng.choice(TREND_WAIFUS)
 
     # Composição
@@ -538,10 +702,9 @@ def build_ai_prompt(
     else:
         composition = _weighted_composition(rng)
 
-    # Pose dinâmica
+    # Pose dinâmica e efeitos
     pose = rng.choice(POWER_POSES)
-
-    # Elementos visuais
+    particle_fx = rng.choice(PARTICLE_EFFECTS)
     background = rng.choice(BACKGROUND_VARIATIONS)
     music_element = rng.choice(MUSIC_ELEMENTS)
     song_mood = _song_mood_boost(song_name)
@@ -565,6 +728,7 @@ def build_ai_prompt(
         f"character design: {char}, "
         f"composition: {composition['prompt']}, "
         f"dynamic pose: {pose}, "
+        f"particle effects: {particle_fx}, "
         f"{VIRAL_HOOK_LOCK}, "
         f"music element: {music_element}, "
         f"{CYBERPUNK_LIGHTING}, "
@@ -578,8 +742,10 @@ def build_ai_prompt(
         f"{STYLE_LOCK}, "
         f"{QUALITY_LOCK}, "
         "opening frame for viral music Short, "
-        "beautiful adult cyberpunk anime character, emotional body language, trendy, memorable, "
-        "stunning neon illumination across entire figure, gorgeous cinematic full-body quality, "
+        "beautiful cyberpunk anime character with MAXIMUM power and particle effects, "
+        "emotional body language that tells the entire story in one frame, "
+        "stunning neon and energy illumination across entire figure, "
+        "gorgeous cinematic full-body quality at absolute apex, "
         "no text, no watermark, no logo"
     )
 
@@ -726,8 +892,8 @@ def get_or_generate_background(
     existing = list(Path(output_dir).glob(f"{style}_bg_*.png"))
     if existing:
         return str(random.choice(existing))
-    variant = random.randint(0, 99)
-    output_path = str(Path(output_dir) / f"{style}_bg_{variant:02d}.png")
+    variant = random.randint(0, 199)
+    output_path = str(Path(output_dir) / f"{style}_bg_{variant:03d}.png")
     return generate_background_image(style=style, output_path=output_path, seed_variant=variant)
 
 
@@ -741,7 +907,7 @@ def generate_background_batch(
     for style in styles:
         results[style] = []
         for v in range(variants_per_style):
-            output_path = str(Path(output_dir) / f"{style}_bg_{v:02d}.png")
+            output_path = str(Path(output_dir) / f"{style}_bg_{v:03d}.png")
             if os.path.exists(output_path):
                 results[style].append(output_path)
                 continue
@@ -760,28 +926,33 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     parser = argparse.ArgumentParser(
-        description="AI Image Generator — DJ DARK MARK v42.0 Cyberpunk Waifu Edition"
+        description="AI Image Generator — DJ DARK MARK v43.0 Ultimate Cyberpunk Edition"
     )
     parser.add_argument("--style",             default="phonk",
                         help="Gênero: phonk, trap, electronic, dark, darkpop, rock")
     parser.add_argument("--filename",          default="dark phonk.mp3",
                         help="Nome da música (muda o mood do prompt)")
     parser.add_argument("--short-num",         type=int, default=1,
-                        help="Número do short (varia seed e waifu)")
+                        help="Número do short (varia seed e personagem)")
     parser.add_argument("--output",            default="assets/background.png")
-    parser.add_argument("--force-teal-pink",   action="store_true",
-                        help="Força paleta teal + pink")
-    parser.add_argument("--force-purple-gold", action="store_true",
-                        help="Força paleta purple + gold")
-    parser.add_argument("--force-crimson-blue",action="store_true",
-                        help="Força paleta crimson + blue")
+    parser.add_argument("--force-teal-pink",   action="store_true")
+    parser.add_argument("--force-purple-gold", action="store_true")
+    parser.add_argument("--force-crimson-blue",action="store_true")
     parser.add_argument("--back",              action="store_true",
                         help="Força vista de costas dramática")
     parser.add_argument("--full-body",         action="store_true",
                         help="Força composição de corpo inteiro")
     parser.add_argument("--prompt-only",       action="store_true",
                         help="Só imprime o prompt, não gera imagem")
+    parser.add_argument("--list-chars",        action="store_true",
+                        help="Lista todos os 200 personagens disponíveis")
     args = parser.parse_args()
+
+    if args.list_chars:
+        print(f"=== {len(TREND_WAIFUS)} PERSONAGENS DISPONÍVEIS ===")
+        for i, char in enumerate(TREND_WAIFUS, 1):
+            print(f"{i:3d}. {char[:80]}...")
+        exit(0)
 
     prompt = build_ai_prompt(
         style=args.style,
@@ -796,8 +967,9 @@ if __name__ == "__main__":
     )
 
     if args.prompt_only:
-        print("=== PROMPT v42.0 CYBERPUNK ===")
+        print("=== PROMPT v43.0 ULTIMATE CYBERPUNK ===")
         print(prompt)
+        print(f"\n=== TOTAL DE PERSONAGENS: {len(TREND_WAIFUS)} ===")
         print("\n=== NEGATIVE PROMPT ===")
         print(NEGATIVE_PROMPT)
     else:
