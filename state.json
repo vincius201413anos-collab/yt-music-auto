@@ -869,9 +869,9 @@
       "name": "Ashes and Lies.mp3",
       "key": "1HGdm0S3fS54ggD79W5O3bzklvD-t4_Ni",
       "name_key": "ashes and lies",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1QNnuzd_0qxrxpXL_OMrBoesK9KJUaede",
