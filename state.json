@@ -833,9 +833,9 @@
       "name": "Nightcrawler 2.mp3",
       "key": "1UaN3HB6siMveGr3RN07pE_Y_h36FJ4pd",
       "name_key": "nightcrawler 2",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1DdB-yGVwU-Y08114ATmssP137Bd4RHop",
