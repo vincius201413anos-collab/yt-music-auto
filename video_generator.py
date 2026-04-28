@@ -1,32 +1,25 @@
 """
-video_generator.py — DJ DARK MARK v14.1 CLEAN FIXED
+video_generator.py — DJ DARK MARK v14.2 COLOR FIX
 =========================================================
-V14.1 — Versão limpa corrigida: mantém efeitos hipnóticos sincronizados, mas remove grain/noise para imagem mais nítida em telas 4K/OLED.
-Tudo testado e seguro para GitHub Actions gratuito (sem alpha dinâmico,
-sem matriz par no unsharp, sem filtros experimentais).
+V14.2 — Corrige paleta de cores: remove cast azul/rosa indesejado.
 
-FILOSOFIA V13:
-- Cada camada de efeito tem um papel: não poluem, somam.
-- Hook (0–1.5s): impacto imediato para parar o scroll.
-- Build (até drop): tensão crescente com luzes pulsando.
-- Drop: impacto cinematográfico máximo.
-- Loop (após drop): hipnose visual sustentada até o final.
-- Resultado: retenção alta de ponta a ponta.
-
-EFEITOS NOVOS V13:
-- TUNNEL LIGHT: raios de luz saindo do centro no beat.
-- CHROMATIC ABERRATION: split RGB no drop/bass pesado.
-- HEARTBEAT PULSE: toda a imagem respira junto com o kick.
-- RIM LIGHT SYNC: brilho nas bordas laterais sincronizado com snare.
-- SCANLINE BURST: scanlines explodem no drop e somem rápido.
-- VIGNETTE BEAT: vinheta abre e fecha no ritmo do beat.
-- HOOK FLASH: flash cinematográfico nos primeiros 0.5s.
-- DEPTH RAYS: raios de profundidade por trás do personagem.
-- COLOR SHIFT: suave troca de tom neon entre seções (intro/drop/outro).
-- STROBO SAFE: strobe controlado só no drop (seguro para GitHub).
-
-Todos os efeitos usam drawbox, eq, noise e vignette — sem filtros
-complexos que quebram no runner gratuito.
+FIXES v14.2 vs v14.1:
+  [FIX 1] GENRE_COLOR_GRADE "default": removido o segundo colorbalance duplicado
+           que empurrava bs/bh=+0.30 azul duas vezes.
+  [FIX 2] GENRE_COLOR_GRADE "trap": removida a curves que crushed vermelho e
+           boostava azul — causa principal do tom frio/azulado no trap.
+  [FIX 3] GENRE_COLOR_GRADE "dark": suavizado bs/bh de 0.28 → 0.15 para não
+           virar roxo excessivo.
+  [FIX 4] build_hypnotic_beat_lights: removido o drawbox permanente full-frame
+           (color=c2@0.014) que tingia TODA a imagem o tempo todo.
+  [FIX 5] build_color_shift: reduzidos alphas de 0.022/0.025/0.020 → 0.010/0.012/0.010
+           e removido o overlay de intro que adicionava tint nos primeiros 4s.
+  [FIX 6] build_eye_glow_hypnosis: alpha do glow base reduzido de 0.028/0.072 → 0.012/0.030
+           — não deve colorir o rosto do personagem permanentemente.
+  [FIX 7] build_rim_light_sync: rim base reduzido de 0.045 → 0.018 (era visível o tempo todo).
+  [FIX 8] build_depth_rays: raios fixos de 0.014 → 0.008 (quase invisíveis na base).
+  [FIX 9] GENRE_COLOR_GRADE "phonk": colorbalance rh reduzido de -0.06 → -0.02
+           para não empurrar tanto rosa nos highlights.
 """
 
 from __future__ import annotations
@@ -92,7 +85,7 @@ FONT_PATHS = [
 ]
 
 FFMPEG_VIDEO_CODEC   = "libx264"
-FFMPEG_CRF           = os.getenv("FFMPEG_CRF", "18")  # V14: mais nítido; use 20 se quiser menor
+FFMPEG_CRF           = os.getenv("FFMPEG_CRF", "18")
 FFMPEG_PRESET        = os.getenv("FFMPEG_PRESET", "veryfast")
 FFMPEG_AUDIO_CODEC   = "aac"
 FFMPEG_AUDIO_BITRATE = "192k"
@@ -108,7 +101,7 @@ MAX_FILE_SIZE_MB = 350.0
 
 FFMPEG_RENDER_TIMEOUT_S = int(os.getenv("FFMPEG_RENDER_TIMEOUT", "900"))
 FFMPEG_THUMB_TIMEOUT_S  = int(os.getenv("FFMPEG_THUMB_TIMEOUT",  "120"))
-FINAL_GRAIN_STRENGTH    = int(os.getenv("FINAL_GRAIN_STRENGTH",   "0"))  # V14: sem chuvisco por padrão
+FINAL_GRAIN_STRENGTH    = int(os.getenv("FINAL_GRAIN_STRENGTH",   "0"))
 FORCE_FPS               = int(os.getenv("FFMPEG_FPS",             "30"))
 
 # V13 — controles globais
@@ -129,7 +122,6 @@ HYPNOTIC_LIGHT_INTENSITY = float(os.getenv("HYPNOTIC_LIGHT_INTENSITY", "0.85"))
 VIRAL_SHAKE_MULT         = float(os.getenv("VIRAL_SHAKE_MULT",          "1.0"))
 VIRAL_ZOOM_MULT          = float(os.getenv("VIRAL_ZOOM_MULT",           "1.0"))
 
-# Limites de eventos por efeito (GitHub Actions gratuito tem RAM limitada)
 LIM_BEATS        = int(os.getenv("LIM_BEATS",   "64"))
 LIM_BASS         = int(os.getenv("LIM_BASS",    "52"))
 LIM_SNARES       = int(os.getenv("LIM_SNARES",  "32"))
@@ -162,49 +154,69 @@ GENRE_NEON = {
     "default":    {"c1": "0xCC44FF", "c2": "0x00FFEE", "c3": "0xFF0088", "c4": "0x8800FF"},
 }
 
+# ══════════════════════════════════════════════════════════════════════════════
+# GENRE_COLOR_GRADE — v14.2 COLOR FIX
+# Mudanças principais:
+#   - "default": removido 2º colorbalance duplicado (bs/bh=+0.30 → agora só uma vez e menor)
+#   - "trap": removida curves que crushed vermelho e boostava azul
+#   - "dark": bs/bh reduzido de 0.28 → 0.15
+#   - "phonk": rh reduzido de -0.06 → -0.02 (menos rosa nos highlights)
+# ══════════════════════════════════════════════════════════════════════════════
+
 GENRE_COLOR_GRADE = {
+    # [FIX 1, FIX 9] phonk: rh era -0.06, causava muito rosa nos highlights
     "phonk": (
         "colorbalance=rs=0.20:gs=-0.09:bs=0.12,"
-        "colorbalance=rh=-0.06:gh=0.04:bh=0.22,"
+        "colorbalance=rh=-0.02:gh=0.04:bh=0.15,"   # FIX: rh -0.06→-0.02, bh 0.22→0.15
         "eq=contrast=1.42:brightness=-0.048:saturation=1.32:gamma=0.95,"
         "curves=r='0/0 0.25/0.10 1/1':g='0/0 0.30/0.08 1/0.88':b='0/0 0.18/0.23 1/1',"
-        "unsharp=5:5:1.8:5:5:0"    ),
+        "unsharp=5:5:1.8:5:5:0"
+    ),
+    # [FIX 2] trap: removida curves que crushed vermelho (r='0/0 0.3/0.10 1/0.92')
+    #          e boostava azul (b='0/0 0.2/0.20 1/1') — principal causa do cast azul
     "trap": (
-        "colorbalance=rs=-0.08:gs=0.04:bs=0.18,"
-        "colorbalance=rh=-0.04:gh=0.08:bh=0.20,"
+        "colorbalance=rs=-0.05:gs=0.04:bs=0.10,"   # FIX: rs -0.08→-0.05, bs 0.18→0.10
+        "colorbalance=rh=-0.02:gh=0.06:bh=0.12,"   # FIX: bh 0.20→0.12
         "eq=contrast=1.38:brightness=-0.042:saturation=1.32:gamma=0.96,"
-        "curves=r='0/0 0.3/0.10 1/0.92':b='0/0 0.2/0.20 1/1',"
-        "unsharp=5:5:1.5:5:5:0"    ),
+        # FIX: curves removidas — estavam destruindo o balanço de cor
+        "unsharp=5:5:1.5:5:5:0"
+    ),
+    # [FIX 3] dark: bs/bh reduzidos de 0.28 → 0.15 para não virar roxo excessivo
     "dark": (
-        "colorbalance=rs=0.02:gs=-0.10:bs=0.28,"
-        "colorbalance=rh=0.10:gh=-0.04:bh=0.18,"
+        "colorbalance=rs=0.02:gs=-0.08:bs=0.15,"   # FIX: bs 0.28→0.15
+        "colorbalance=rh=0.08:gh=-0.04:bh=0.12,"   # FIX: bh 0.18→0.12
         "eq=contrast=1.46:brightness=-0.078:saturation=1.14:gamma=0.93,"
         "curves=all='0/0 0.16/0.03 0.55/0.42 1/1',"
-        "unsharp=5:5:1.45:5:5:0"    ),
+        "unsharp=5:5:1.45:5:5:0"
+    ),
     "dubstep": (
-        "colorbalance=rs=-0.15:gs=0.18:bs=0.35,"
-        "colorbalance=rh=0.25:gh=-0.08:bh=0.18,"
+        "colorbalance=rs=-0.10:gs=0.14:bs=0.22,"   # FIX: bs 0.35→0.22 (era muito ciano)
+        "colorbalance=rh=0.18:gh=-0.06:bh=0.12,"   # FIX: rh 0.25→0.18, bh 0.18→0.12
         "eq=contrast=1.44:brightness=-0.060:saturation=1.55:gamma=0.94,"
-        "unsharp=5:5:1.4:5:5:0"    ),
+        "unsharp=5:5:1.4:5:5:0"
+    ),
     "darkpop": (
-        "colorbalance=rs=0.16:gs=-0.06:bs=0.20,"
-        "colorbalance=rh=-0.04:gh=0.04:bh=0.24,"
+        "colorbalance=rs=0.16:gs=-0.06:bs=0.14,"   # FIX: bs 0.20→0.14
+        "colorbalance=rh=-0.04:gh=0.04:bh=0.16,"   # FIX: bh 0.24→0.16
         "eq=contrast=1.34:brightness=-0.035:saturation=1.28:gamma=0.96,"
-        "unsharp=5:5:1.35:5:5:0"    ),
+        "unsharp=5:5:1.35:5:5:0"
+    ),
     "electronic": (
-        "colorbalance=rs=-0.20:gs=0.15:bs=0.38,"
-        "colorbalance=rh=0.30:gh=-0.10:bh=0.20,"
+        "colorbalance=rs=-0.14:gs=0.12:bs=0.24,"   # FIX: bs 0.38→0.24
+        "colorbalance=rh=0.20:gh=-0.08:bh=0.14,"   # FIX: rh 0.30→0.20, bh 0.20→0.14
         "eq=contrast=1.42:brightness=-0.058:saturation=1.52:gamma=0.94,"
         "unsharp=5:5:1.2:5:5:0"
     ),
     "lofi": (
         "colorbalance=rs=0.15:gs=0.05:bs=-0.20,"
         "eq=contrast=0.90:brightness=0.020:saturation=0.75,"
-        "unsharp=3:3:0.3:3:3:0,"    ),
+        "unsharp=3:3:0.3:3:3:0,"
+    ),
     "rock": (
         "colorbalance=rs=0.20:gs=0.06:bs=-0.15,"
         "eq=contrast=1.40:brightness=0.004:saturation=1.30,"
-        "unsharp=5:5:1.5:5:5:0"    ),
+        "unsharp=5:5:1.5:5:5:0"
+    ),
     "metal": (
         "colorbalance=rs=-0.18:gs=-0.12:bs=0.15,"
         "eq=contrast=1.60:brightness=-0.10:saturation=0.70,"
@@ -228,11 +240,13 @@ GENRE_COLOR_GRADE = {
     ),
     "indie": (
         "colorbalance=rs=0.08:gs=0.05:bs=-0.10,"
-        "eq=contrast=0.95:brightness=0.018:saturation=0.85,"    ),
+        "eq=contrast=0.95:brightness=0.018:saturation=0.85,"
+    ),
+    # [FIX 1] default: REMOVIDO segundo colorbalance que duplicava bs/bh=+0.30
+    #         Agora tem apenas um colorbalance com valores moderados
     "default": (
-        "colorbalance=rs=-0.08:gs=-0.05:bs=0.30,"
-        "colorbalance=rh=-0.08:gh=-0.05:bh=0.30,"
-        "eq=contrast=1.55:brightness=-0.08:saturation=1.42:gamma=0.88,"
+        "colorbalance=rs=-0.04:gs=-0.02:bs=0.14,"   # FIX: era dois blocos bs=0.30 cada
+        "eq=contrast=1.50:brightness=-0.06:saturation=1.38:gamma=0.90,"
         "unsharp=5:5:1.2:5:5:0"
     ),
 }
@@ -335,12 +349,6 @@ def escape_text(text: str) -> str:
 
 
 def join_filters(parts: list[str]) -> str:
-    """Junta filtros FFmpeg sem deixar filtros vazios.
-
-    Corrige o bug do V14 onde uma parte terminava com vírgula e a próxima
-    também era unida por vírgula, gerando `,,` e o erro:
-    No such filter: ''.
-    """
     cleaned = []
     for p in parts:
         if not p or not str(p).strip():
@@ -380,9 +388,6 @@ def sanitize_ffmpeg_filter(vf: str) -> str:
         r"\1@0.025",
         vf,
     )
-
-    # Segurança final: remove filtros vazios causados por vírgula dupla.
-    # Exemplo que quebrava: `unsharp=5:5:1.5:5:5:0,,drawbox=...`
     vf = re.sub(r",{2,}", ",", vf).strip(",")
     return vf
 
@@ -430,13 +435,12 @@ def logo_exists() -> bool:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# ███ EFEITOS HIPNÓTICOS V13 ███
+# ███ EFEITOS HIPNÓTICOS V13 — com fixes de cor v14.2 ███
 # ══════════════════════════════════════════════════════════════════════════════
 
-# ─── 1. HOOK FLASH — impacto nos primeiros 0.5s para parar o scroll ──────────
+# ─── 1. HOOK FLASH ───────────────────────────────────────────────────────────
 
 def build_hook_flash(style: str = "default") -> str:
-    """Flash cinematográfico nos primeiros frames — garante que ninguém skipa."""
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
     c2 = neon["c2"]
@@ -447,13 +451,9 @@ def build_hook_flash(style: str = "default") -> str:
     )
 
 
-# ─── 2. HEARTBEAT PULSE — toda a imagem respira com o kick ───────────────────
+# ─── 2. HEARTBEAT PULSE ──────────────────────────────────────────────────────
 
 def build_heartbeat_pulse(analysis: dict, style: str = "default") -> str:
-    """
-    Simula batimento cardíaco: brilha rápido e some.
-    Efeito: sensação de que a música ESTÁ VIVA na imagem.
-    """
     if not HEARTBEAT_ENABLED:
         return ""
 
@@ -468,17 +468,15 @@ def build_heartbeat_pulse(analysis: dict, style: str = "default") -> str:
         if drop_time is not None and abs(bt - drop_time) < 0.35:
             continue
         t0 = max(0.0, bt - 0.005)
-        t1 = bt + 0.028   # sobe rápido
-        t2 = bt + 0.085   # cai devagar — heartbeat
+        t1 = bt + 0.028
+        t2 = bt + 0.085
         color = c1 if i % 2 == 0 else c2
         alpha1 = 0.095
         alpha2 = 0.025
-        # Batida principal
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y=0:w=iw:h=ih:color={color}@{alpha1:.3f}:t=fill"
         )
-        # Afterglow
         parts.append(
             f"drawbox=enable='between(t,{t1:.4f},{t2:.4f})'"
             f":x=0:y=0:w=iw:h=ih:color={color}@{alpha2:.3f}:t=fill"
@@ -487,14 +485,9 @@ def build_heartbeat_pulse(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 3. TUNNEL LIGHT RAYS — raios saindo do centro no beat ───────────────────
+# ─── 3. TUNNEL LIGHT RAYS ────────────────────────────────────────────────────
 
 def build_tunnel_rays(analysis: dict, style: str = "default") -> str:
-    """
-    Raios de luz saindo do centro da imagem no bass/kick.
-    Simulado com drawbox em 8 direções diagonais.
-    Efeito: sensação de profundidade e explosão de luz.
-    """
     if not TUNNEL_RAYS_ENABLED:
         return ""
 
@@ -508,16 +501,10 @@ def build_tunnel_rays(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Raios base sempre visíveis (muito sutis)
     cx, cy = "iw/2-2", "ih*0.40-2"
-    parts.append(
-        f"drawbox=x={cx}:y=0:w=4:h=ih:color={c2}@0.018:t=fill"
-    )
-    parts.append(
-        f"drawbox=x=0:y={cy}:w=iw:h=4:color={c2}@0.018:t=fill"
-    )
+    parts.append(f"drawbox=x={cx}:y=0:w=4:h=ih:color={c2}@0.018:t=fill")
+    parts.append(f"drawbox=x=0:y={cy}:w=iw:h=4:color={c2}@0.018:t=fill")
 
-    # Raios pulsando no bass
     for i, bt in enumerate(bass_hits):
         if drop_time is not None and abs(bt - drop_time) < 0.5:
             continue
@@ -526,33 +513,28 @@ def build_tunnel_rays(analysis: dict, style: str = "default") -> str:
         color = c1 if i % 3 == 0 else (c2 if i % 3 == 1 else c3)
         alpha = 0.18
 
-        # Raio vertical
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=iw/2-3:y=0:w=6:h=ih:color={color}@{alpha:.3f}:t=fill"
         )
-        # Raio horizontal
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y=ih*0.38:w=iw:h=6:color={color}@{alpha*0.8:.3f}:t=fill"
         )
-        # Raio diagonal 1
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=iw*0.48:y=0:w=4:h=ih*0.42:color={color}@{alpha*0.6:.3f}:t=fill"
         )
-        # Raio diagonal 2
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=iw*0.48:y=ih*0.38:w=4:h=ih*0.62:color={color}@{alpha*0.6:.3f}:t=fill"
         )
 
-    # Drop: raios máximos
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.010)
         t1 = drop_time + 0.200
         for offset, width, a in [
-            (0, 8, 0.55), (iw_frac := 0.02, 5, 0.35), (-0.02, 5, 0.35),
+            (0, 8, 0.55), (0.02, 5, 0.35), (-0.02, 5, 0.35),
         ]:
             x_pos = f"iw*{0.5 + offset:.3f}-{width//2}"
             parts.append(
@@ -563,13 +545,9 @@ def build_tunnel_rays(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 4. RIM LIGHT SYNC — brilho lateral sincronizado com snare ───────────────
+# ─── 4. RIM LIGHT SYNC ───────────────────────────────────────────────────────
 
 def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
-    """
-    Rim lights (luzes de contorno) nas laterais, piscando com snare/hat.
-    Efeito: personagem parece iluminado ao vivo por luzes de palco.
-    """
     if not RIM_LIGHT_ENABLED:
         return ""
 
@@ -585,30 +563,26 @@ def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Rim base permanente bem sutil
-    parts.append(f"drawbox=x=0:y=ih*0.10:w=5:h=ih*0.75:color={c1}@0.045:t=fill")
-    parts.append(f"drawbox=x=iw-5:y=ih*0.10:w=5:h=ih*0.75:color={c2}@0.045:t=fill")
+    # [FIX 7] Rim base era 0.045 — visível demais o tempo todo, agora 0.018
+    parts.append(f"drawbox=x=0:y=ih*0.10:w=5:h=ih*0.75:color={c1}@0.018:t=fill")
+    parts.append(f"drawbox=x=iw-5:y=ih*0.10:w=5:h=ih*0.75:color={c2}@0.018:t=fill")
 
-    # Pulso no snare — alternando lado e cor
     for i, st in enumerate(snares):
         if drop_time is not None and abs(st - drop_time) < 0.35:
             continue
         t0 = max(0.0, st - 0.004)
         t1 = st + 0.035
         if i % 4 == 0:
-            # esquerda c1
             parts.append(
                 f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
                 f":x=0:y=0:w=22:h=ih:color={c1}@0.28:t=fill"
             )
         elif i % 4 == 1:
-            # direita c2
             parts.append(
                 f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
                 f":x=iw-22:y=0:w=22:h=ih:color={c2}@0.28:t=fill"
             )
         elif i % 4 == 2:
-            # ambos c3
             parts.append(
                 f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
                 f":x=0:y=0:w=14:h=ih:color={c3}@0.20:t=fill"
@@ -618,7 +592,6 @@ def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
                 f":x=iw-14:y=0:w=14:h=ih:color={c3}@0.20:t=fill"
             )
         else:
-            # topo e base c4
             parts.append(
                 f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
                 f":x=0:y=0:w=iw:h=12:color={c4}@0.22:t=fill"
@@ -628,7 +601,6 @@ def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
                 f":x=0:y=ih-12:w=iw:h=12:color={c4}@0.22:t=fill"
             )
 
-    # Beat: pulsação suave das laterais
     for i, bt in enumerate(beats):
         if drop_time is not None and abs(bt - drop_time) < 0.4:
             continue
@@ -644,7 +616,6 @@ def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
             f":x=iw-8:y=ih*0.15:w=8:h=ih*0.70:color={color}@0.12:t=fill"
         )
 
-    # Drop: rim explode
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.010)
         t1 = drop_time + 0.150
@@ -660,14 +631,9 @@ def build_rim_light_sync(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 5. CHROMATIC ABERRATION — split RGB nos drops/bass pesados ──────────────
+# ─── 5. CHROMATIC ABERRATION ─────────────────────────────────────────────────
 
 def build_chromatic_aberration(analysis: dict, style: str = "default") -> str:
-    """
-    Simula distorção cromática com faixas coloridas deslocadas.
-    Seguro: usa só drawbox com alpha fixo.
-    Efeito: glitch visual bonito que remete à cultura EDM/phonk.
-    """
     if not CHROMATIC_ENABLED:
         return ""
 
@@ -680,23 +646,19 @@ def build_chromatic_aberration(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Aberração leve em alguns bass hits
     for i, bt in enumerate(bass_hits[:8]):
         t0 = max(0.0, bt - 0.004)
         t1 = bt + 0.022
         y = 300 + ((i * 233) % 1100)
-        # split vermelho esquerda
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y={y}:w=iw:h=6:color={c1}@0.22:t=fill"
         )
-        # split azul/verde direita
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y={y+8}:w=iw:h=4:color={c3}@0.18:t=fill"
         )
 
-    # Drop: aberração máxima
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.006)
         for i, (offset, w, a, c) in enumerate([
@@ -714,13 +676,9 @@ def build_chromatic_aberration(analysis: dict, style: str = "default") -> str:
     return ",".join(parts) if parts else ""
 
 
-# ─── 6. SCANLINES BURST — explosão de scanlines no drop ─────────────────────
+# ─── 6. SCANLINES BURST ──────────────────────────────────────────────────────
 
 def build_scanlines_burst(analysis: dict, style: str = "default") -> str:
-    """
-    Scanlines v13: base quase invisível + explosão no drop + pulso no bass.
-    Textura premium sem poluição.
-    """
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
     c2 = neon["c2"]
@@ -729,15 +687,9 @@ def build_scanlines_burst(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Base: movimento contínuo bem sutil
-    parts.append(
-        f"drawbox=x=0:y='mod(t*88,ih)':w=iw:h=1:color={c1}@0.014:t=fill"
-    )
-    parts.append(
-        f"drawbox=x=0:y='mod(t*88+ih*0.5,ih)':w=iw:h=1:color={c2}@0.010:t=fill"
-    )
+    parts.append(f"drawbox=x=0:y='mod(t*88,ih)':w=iw:h=1:color={c1}@0.014:t=fill")
+    parts.append(f"drawbox=x=0:y='mod(t*88+ih*0.5,ih)':w=iw:h=1:color={c2}@0.010:t=fill")
 
-    # Pulso no bass
     for bt in bass_hits:
         t0 = max(0.0, bt - 0.005)
         t1 = bt + 0.038
@@ -746,22 +698,18 @@ def build_scanlines_burst(analysis: dict, style: str = "default") -> str:
             f":x=0:y='mod(t*110,ih)':w=iw:h=2:color={c1}@0.055:t=fill"
         )
 
-    # Drop: scanlines explodem
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.006)
         t1 = drop_time + 0.080
-        # Flash branco rápido
         parts.append(
             f"drawbox=enable='between(t,{t0:.4f},{t1:.4f})'"
             f":x=0:y=0:w=iw:h=ih:color=white@0.08:t=fill"
         )
-        # Scanlines horizontais múltiplas
         for row_y in [0.10, 0.25, 0.40, 0.55, 0.70, 0.85]:
             parts.append(
                 f"drawbox=enable='between(t,{t0:.4f},{drop_time+0.060:.4f})'"
                 f":x=0:y=ih*{row_y:.2f}:w=iw:h=3:color={c1}@0.42:t=fill"
             )
-        # Blackout curto
         parts.append(
             f"drawbox=enable='between(t,{drop_time+0.080:.4f},{drop_time+0.115:.4f})'"
             f":x=0:y=0:w=iw:h=ih:color=black@0.20:t=fill"
@@ -770,13 +718,9 @@ def build_scanlines_burst(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 7. DEPTH RAYS — raios de profundidade atrás do personagem ───────────────
+# ─── 7. DEPTH RAYS ───────────────────────────────────────────────────────────
 
 def build_depth_rays(analysis: dict, style: str = "default") -> str:
-    """
-    Raios verticais/diagonais por trás do personagem.
-    Efeito: sensação de estar em palco iluminado ou clube.
-    """
     if not DEPTH_RAYS_ENABLED:
         return ""
 
@@ -790,15 +734,15 @@ def build_depth_rays(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Raios fixos bem sutis — atrás do personagem (região central)
     ray_positions = [0.15, 0.30, 0.50, 0.68, 0.82]
     colors_cycle  = [c1, c2, c3, c1, c2]
+
+    # [FIX 8] alpha base era 0.014, agora 0.008 — quase invisível fora dos pulsos
     for x_ratio, color in zip(ray_positions, colors_cycle):
         parts.append(
-            f"drawbox=x=iw*{x_ratio:.2f}:y=0:w=3:h=ih*0.45:color={color}@0.014:t=fill"
+            f"drawbox=x=iw*{x_ratio:.2f}:y=0:w=3:h=ih*0.45:color={color}@0.008:t=fill"
         )
 
-    # Bass: raios brilham
     for i, bt in enumerate(bass_hits):
         if drop_time is not None and abs(bt - drop_time) < 0.4:
             continue
@@ -812,7 +756,6 @@ def build_depth_rays(analysis: dict, style: str = "default") -> str:
             f":x=iw*{x_pos:.2f}:y=0:w=10:h=ih*0.50:color={color}@0.18:t=fill"
         )
 
-    # Drop: todos os raios explodindo
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.008)
         t1 = drop_time + 0.180
@@ -825,13 +768,9 @@ def build_depth_rays(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 8. VIGNETTE BEAT — vinheta que fecha no beat e abre no drop ─────────────
+# ─── 8. VIGNETTE BEAT ────────────────────────────────────────────────────────
 
 def build_vignette_beat(analysis: dict, strength: float, style: str = "default") -> str:
-    """
-    Vinheta + pulso de bordas black sincronizado.
-    Efeito: focagem rítmica que guia o olho para o centro.
-    """
     if not VIGNETTE_BEAT_ENABLED or strength <= 0:
         return ""
 
@@ -851,7 +790,6 @@ def build_vignette_beat(analysis: dict, strength: float, style: str = "default")
         "drawbox=x=iw-55:y=0:w=55:h=ih:color=black@0.36:t=fill",
     ]
 
-    # Pulso da borda apertando no beat
     for bt in bass_hits[:12]:
         t0 = max(0.0, bt - 0.005)
         t1 = bt + 0.050
@@ -864,7 +802,6 @@ def build_vignette_beat(analysis: dict, strength: float, style: str = "default")
             f":x=0:y=ih-12:w=iw:h=12:color=black@0.30:t=fill"
         )
 
-    # Drop: vinheta abre (flash claro nas bordas)
     if drop_time is not None:
         t0 = max(0.0, drop_time)
         t1 = drop_time + 0.140
@@ -876,14 +813,9 @@ def build_vignette_beat(analysis: dict, strength: float, style: str = "default")
     return base_vig + "," + ",".join(borders)
 
 
-# ─── 9. STROBO SAFE — strobe controlado só no drop ───────────────────────────
+# ─── 9. STROBO SAFE ──────────────────────────────────────────────────────────
 
 def build_strobo_drop(analysis: dict, style: str = "default") -> str:
-    """
-    Strobe cinematográfico apenas no momento do drop.
-    Seguro: 3 flashes rápidos com alpha fixo.
-    Efeito: impacto máximo sem overload visual.
-    """
     if not STROBO_DROP_ENABLED:
         return ""
 
@@ -897,83 +829,73 @@ def build_strobo_drop(analysis: dict, style: str = "default") -> str:
     d = float(drop_time)
 
     return ",".join([
-        # Pré-drop: escurece
         f"drawbox=enable='between(t,{max(0.0,d-0.040):.4f},{d-0.012:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color=black@0.40:t=fill",
-        # Impacto: branco total
         f"drawbox=enable='between(t,{max(0.0,d-0.010):.4f},{d+0.032:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color=white@0.68:t=fill",
-        # Flash 1
         f"drawbox=enable='between(t,{d+0.045:.4f},{d+0.065:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color={c1}@0.40:t=fill",
-        # Blackout 1
         f"drawbox=enable='between(t,{d+0.065:.4f},{d+0.095:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color=black@0.28:t=fill",
-        # Flash 2
         f"drawbox=enable='between(t,{d+0.095:.4f},{d+0.112:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color={c2}@0.32:t=fill",
-        # Afterglow
         f"drawbox=enable='between(t,{d+0.120:.4f},{d+0.260:.4f})'"
         f":x=0:y=0:w=iw:h=ih:color={c1}@0.14:t=fill",
     ])
 
 
-# ─── 10. COLOR SHIFT — troca de tonalidade entre seções ─────────────────────
+# ─── 10. COLOR SHIFT ─────────────────────────────────────────────────────────
 
 def build_color_shift(analysis: dict, duration: float, style: str = "default") -> str:
     """
-    Suave troca de tonalidade dominante entre intro / pré-drop / drop / outro.
-    Efeito: vídeo parece ter 'fases' visuais como faixas de música profissional.
+    [FIX 5] v14.2: alphas reduzidos e overlay de intro removido.
+    Os overlays de intro (c2@0.022 por 4s) e outro (c3@0.020) tinham alpha
+    suficiente para notar um cast de cor constante nos primeiros e últimos segundos.
+    Agora só os momentos de transição pré/pós-drop têm tint, e com alpha menor.
     """
     if not COLOR_SHIFT_ENABLED:
         return ""
 
     neon = GENRE_NEON.get(style, GENRE_NEON["default"])
     c1 = neon["c1"]
-    c2 = neon["c2"]
     c3 = neon["c3"]
     drop_time = analysis.get("drop_time")
 
     parts = []
 
-    # Intro (0 → 4s): tom frio/escuro
-    parts.append(
-        f"drawbox=enable='between(t,0.000,4.000)'"
-        f":x=0:y=0:w=iw:h=ih:color={c2}@0.022:t=fill"
-    )
+    # [FIX 5] Removido overlay de intro (era c2@0.022 por 4s — tintava tudo)
+    # Mantido apenas pré-drop e pós-drop com alpha menor
 
-    # Pré-drop (se existir, últimos 3s antes)
     if drop_time is not None and drop_time > 5:
         pre0 = max(0.0, drop_time - 3.0)
         pre1 = drop_time - 0.1
+        # [FIX 5] alpha 0.018 → 0.010
         parts.append(
             f"drawbox=enable='between(t,{pre0:.4f},{pre1:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color={c1}@0.018:t=fill"
+            f":x=0:y=0:w=iw:h=ih:color={c1}@0.010:t=fill"
         )
 
-    # Pós-drop (até 6s após): tom quente da cor principal
     if drop_time is not None:
         post0 = drop_time + 0.3
         post1 = min(duration, drop_time + 6.0)
+        # [FIX 5] alpha 0.025 → 0.012
         parts.append(
             f"drawbox=enable='between(t,{post0:.4f},{post1:.4f})'"
-            f":x=0:y=0:w=iw:h=ih:color={c1}@0.025:t=fill"
+            f":x=0:y=0:w=iw:h=ih:color={c1}@0.012:t=fill"
         )
 
-    # Outro (últimos 4s): volta para tom frio
-    outro_start = max(0.0, duration - 4.0)
-    parts.append(
-        f"drawbox=enable='between(t,{outro_start:.4f},{duration:.4f})'"
-        f":x=0:y=0:w=iw:h=ih:color={c3}@0.020:t=fill"
-    )
+    # [FIX 5] Removido overlay de outro (era c3@0.020 — adicionava cast rosa/colorido no final)
 
     return ",".join(parts) if parts else ""
 
 
-# ─── 11. EYE GLOW HYPNOSIS — brilho nos olhos/centro ────────────────────────
+# ─── 11. EYE GLOW HYPNOSIS ───────────────────────────────────────────────────
 
 def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
-    """Glow no centro superior (rosto/olhos do personagem)."""
+    """
+    [FIX 6] alpha do glow base reduzido: 0.028→0.012 e 0.072→0.030
+    O glow base era visível o tempo todo e tingia a região do rosto do personagem.
+    """
     if not EYE_GLOW_ENABLED:
         return ""
 
@@ -986,15 +908,14 @@ def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
 
     parts = []
 
-    # Glow base nos olhos
+    # [FIX 6] alpha base era 0.028 e 0.072 — agora 0.012 e 0.030
     parts.append(
-        f"drawbox=x=iw*0.35:y=ih*0.210:w=iw*0.30:h=ih*0.085:color={c1}@0.028:t=fill"
+        f"drawbox=x=iw*0.35:y=ih*0.210:w=iw*0.30:h=ih*0.085:color={c1}@0.012:t=fill"
     )
     parts.append(
-        f"drawbox=x=iw*0.42:y=ih*0.240:w=iw*0.16:h=ih*0.020:color={c2}@0.072:t=fill"
+        f"drawbox=x=iw*0.42:y=ih*0.240:w=iw*0.16:h=ih*0.020:color={c2}@0.030:t=fill"
     )
 
-    # Pulso no bass
     for bt in bass_hits:
         t0 = max(0.0, bt - 0.008)
         t1 = bt + 0.068
@@ -1003,7 +924,6 @@ def build_eye_glow_hypnosis(analysis: dict, style: str = "default") -> str:
             f":x=iw*0.37:y=ih*0.228:w=iw*0.26:h=ih*0.048:color={c1}@0.110:t=fill"
         )
 
-    # Drop: olhos explodem
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.010)
         t1 = drop_time + 0.180
@@ -1052,10 +972,15 @@ def build_cyberpunk_water_fx(analysis: dict, style: str = "default") -> str:
     return ",".join(parts)
 
 
-# ─── 13. HYPNOTIC BEAT LIGHTS — pulsação global no beat ─────────────────────
+# ─── 13. HYPNOTIC BEAT LIGHTS ────────────────────────────────────────────────
 
 def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
-    """Luzes de palco pulsando: beats + bass + snare + drop."""
+    """
+    [FIX 4] Removido o drawbox permanente full-frame (color=c2@0.014*intensity).
+    Esse overlay cobria 100% do frame o tempo todo com a cor neon c2,
+    causando cast de cor constante mesmo nos momentos sem batida.
+    Os flashes no beat/bass/drop continuam intactos — só o fundo permanente foi removido.
+    """
     if not HYPNOTIC_LIGHTS_ENABLED:
         return ""
 
@@ -1068,13 +993,13 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
     intensity = max(0.25, min(float(HYPNOTIC_LIGHT_INTENSITY), 1.8))
 
     parts = [
-        # Respiração base constante
-        f"drawbox=x=0:y=0:w=iw:h=ih:color={c2}@{0.014*intensity:.4f}:t=fill",
+        # [FIX 4] REMOVIDO: drawbox full-frame permanente c2@0.014
+        # Mantidos apenas os laterais fixos, que são muito estreitos (9% da largura)
+        # e não causam cast perceptível na imagem
         f"drawbox=x=0:y=0:w=iw*0.09:h=ih:color={c1}@{0.028*intensity:.4f}:t=fill",
         f"drawbox=x=iw*0.91:y=0:w=iw*0.09:h=ih:color={c2}@{0.028*intensity:.4f}:t=fill",
     ]
 
-    # Beat: flashes globais leves
     for i, bt in enumerate(beats):
         if drop_time is not None and abs(bt - drop_time) < 0.5:
             continue
@@ -1086,7 +1011,6 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
             f":x=0:y=0:w=iw:h=ih:color={color}@{0.036*intensity:.3f}:t=fill"
         )
 
-    # Bass: pulso embaixo + laterais
     for i, bt in enumerate(bass_hits):
         t0 = max(0.0, bt - 0.009)
         t1 = bt + 0.088
@@ -1104,7 +1028,6 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
             f":x=iw-11:y=0:w=11:h=ih:color={c2}@{min(alpha_full*1.5,0.32):.3f}:t=fill"
         )
 
-    # Snare: linhas horizontais rápidas
     for i, st in enumerate(snares):
         if drop_time is not None and abs(st - drop_time) < 0.40:
             continue
@@ -1116,7 +1039,6 @@ def build_hypnotic_beat_lights(analysis: dict, style: str = "default") -> str:
             f":x=0:y={y}:w=iw:h=3:color={c3}@{0.082*intensity:.3f}:t=fill"
         )
 
-    # Drop: luz máxima
     if drop_time is not None:
         t0 = max(0.0, drop_time - 0.018)
         parts.extend([
@@ -1224,7 +1146,7 @@ def build_elite_shake(analysis: dict, sx: int, sy: int, style: str = "default"):
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# FILTROS BASE (áudio, cor, fade)
+# FILTROS BASE
 # ══════════════════════════════════════════════════════════════════════════════
 
 def build_audio_filter(duration: float) -> str:
@@ -1273,12 +1195,6 @@ def build_fade_filter(duration: float) -> str:
 
 
 def build_final_texture() -> str:
-    """V14 clean: textura final sem grain/noise por padrão.
-
-    O V13 adicionava noise para vibe grunge, mas isso cria chuvisco em OLED/4K.
-    Aqui mantém só gamma/saturação leve. Se quiser grain manual, use
-    FINAL_GRAIN_STRENGTH>0 no ambiente.
-    """
     strength = max(0, min(FINAL_GRAIN_STRENGTH, 8))
     if strength <= 0:
         return "eq=gamma=1.012:saturation=1.035"
@@ -1309,7 +1225,7 @@ def build_progress_bar(duration: float, style: str = "default") -> str:
 
 
 # ══════════════════════════════════════════════════════════════════════════════
-# MONTAGEM COMPLETA DE FILTROS V13
+# MONTAGEM COMPLETA DE FILTROS
 # ══════════════════════════════════════════════════════════════════════════════
 
 def _assemble_all_fx(
@@ -1323,10 +1239,8 @@ def _assemble_all_fx(
     vig_strength    = GENRE_VIGNETTE.get(style, GENRE_VIGNETTE.get("default", 0.5))
     fade            = build_fade_filter(duration)
 
-    # ── Camadas de efeito (ordem importa: fundo → frente) ─────────────────
     parts = []
 
-    # 1. Escala + crop (com ou sem shake)
     if include_zoom:
         zoom_expr = build_elite_zoom(
             analysis, duration, fps,
@@ -1353,85 +1267,68 @@ def _assemble_all_fx(
             ),
         ]
 
-    # 2. Color grade (base do visual)
     parts.append(color_grade)
 
-    # 3. Reflexo de água (atrás, sutil)
     water = build_cyberpunk_water_fx(analysis, style)
     if water:
         parts.append(water)
 
-    # 4. Depth rays (profundidade)
     depth = build_depth_rays(analysis, style)
     if depth:
         parts.append(depth)
 
-    # 5. Color shift entre seções
     shift = build_color_shift(analysis, duration, style)
     if shift:
         parts.append(shift)
 
-    # 6. Hypnotic beat lights (base do pulso)
     hyp = build_hypnotic_beat_lights(analysis, style)
     if hyp:
         parts.append(hyp)
 
-    # 7. Heartbeat pulse (kick)
     hb = build_heartbeat_pulse(analysis, style)
     if hb:
         parts.append(hb)
 
-    # 8. Eye glow
     eye = build_eye_glow_hypnosis(analysis, style)
     if eye:
         parts.append(eye)
 
-    # 9. Tunnel rays no beat
     tunnel = build_tunnel_rays(analysis, style)
     if tunnel:
         parts.append(tunnel)
 
-    # 10. Rim lights (snare)
     rim = build_rim_light_sync(analysis, style)
     if rim:
         parts.append(rim)
 
-    # 11. Scanlines burst
     scan = build_scanlines_burst(analysis, style)
     if scan:
         parts.append(scan)
 
-    # 12. Chromatic aberration
     chroma = build_chromatic_aberration(analysis, style)
     if chroma:
         parts.append(chroma)
 
-    # 13. Strobo no drop
     strobo = build_strobo_drop(analysis, style)
     if strobo:
         parts.append(strobo)
 
-    # 14. Hook flash (primeiros frames)
     hook = build_hook_flash(style)
     if hook:
         parts.append(hook)
 
-    # 15. Logo overlay
     logo = build_logo_overlay(song_name, style)
     if logo:
         parts.append(logo)
 
-    # 16. Vignette com beat
     vig = build_vignette_beat(analysis, vig_strength, style)
     if vig:
         parts.append(vig)
 
-    # 17. Textura final (grain + gamma)
     texture = build_final_texture()
     if texture:
         parts.append(texture)
 
-    # 18. Fade out + FPS
     parts += [fade, f"fps={fps}"]
 
     bar = build_progress_bar(duration, style)
@@ -1579,10 +1476,9 @@ def create_short(
         os.makedirs(output_dir, exist_ok=True)
 
     song_name = clean_song_name(audio_path, song_name)
-    logger.info(f"▶ Gerando Short V13: '{song_name}' | estilo={style}")
+    logger.info(f"▶ Gerando Short V14.2 COLOR FIX: '{song_name}' | estilo={style}")
     logger.info(f"  ► Neon: {GENRE_NEON.get(style, GENRE_NEON['default'])}")
 
-    # ── Análise de áudio ──────────────────────────────────────────────────
     logger.info("  ► Analisando áudio…")
     analysis_full = audio_analysis if isinstance(audio_analysis, dict) else full_analysis(audio_path)
 
@@ -1596,7 +1492,6 @@ def create_short(
     bpm       = analysis_full.get("bpm")
     audio_dur = get_duration(audio_path)
 
-    # ── Janela de tempo ───────────────────────────────────────────────────
     if use_smart_window:
         if audio_dur <= MIN_DURATION:
             target_dur = float(audio_dur)
@@ -1647,7 +1542,6 @@ def create_short(
         cmd = _build_cmd(inputs, vf, audio_filter, dur, output_name, audio_input_idx=1)
 
     else:
-        # Fallback: fundo preto
         genre_g   = GENRE_COLOR_GRADE.get(style, GENRE_COLOR_GRADE["default"])
         fade      = build_fade_filter(dur)
         hyp       = build_hypnotic_beat_lights(analysis, style)
@@ -1663,11 +1557,10 @@ def create_short(
         ]
         cmd = _build_cmd(inputs, vf, audio_filter, dur, output_name, audio_input_idx=1)
 
-    # ── Render ────────────────────────────────────────────────────────────
-    logger.info("  ► Render V14.1 CLEAN FIXED…")
+    logger.info("  ► Render V14.2 COLOR FIX…")
     for attempt in range(1, MAX_RETRIES + 2):
         try:
-            run_cmd_safe(cmd, "FFmpeg V14.1", FFMPEG_RENDER_TIMEOUT_S, capture=True)
+            run_cmd_safe(cmd, "FFmpeg V14.2", FFMPEG_RENDER_TIMEOUT_S, capture=True)
             logger.info("  ► Render concluído ✓")
             break
         except subprocess.TimeoutExpired:
@@ -1756,7 +1649,7 @@ def generate_batch(
 
 if __name__ == "__main__":
     import argparse
-    parser = argparse.ArgumentParser(description="DJ DARK MARK — Video Generator V14 Clean 4K Max")
+    parser = argparse.ArgumentParser(description="DJ DARK MARK — Video Generator V14.2 Color Fix")
     parser.add_argument("audio")
     parser.add_argument("background")
     parser.add_argument("output")
