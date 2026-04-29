@@ -887,9 +887,9 @@
       "name": "Beautiful Disaster.mp3",
       "key": "140HU5jfbdug52Ze68_BEYhfeDwtsVwyO",
       "name_key": "beautiful disaster",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1B7j1CvLjUtEIgIVcxfCkVB4piPGcrgOU",
