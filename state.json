@@ -905,9 +905,9 @@
       "name": "Faded Memories.mp3",
       "key": "1o9U7g9nPS40CzjhDAZF3OfFygLCVvPBR",
       "name_key": "faded memories",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1wLLSY3oqwJOmnhfMSXQWsBIqrMCC4HqJ",
