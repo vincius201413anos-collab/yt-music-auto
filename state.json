@@ -895,9 +895,9 @@
       "id": "1B7j1CvLjUtEIgIVcxfCkVB4piPGcrgOU",
       "name": "Faded Memories (1).mp3",
       "key": "1B7j1CvLjUtEIgIVcxfCkVB4piPGcrgOU",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "faded memories"
     },
     {
