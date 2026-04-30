@@ -941,9 +941,9 @@
       "name": "Cry For Me.mp3",
       "key": "1Zx5w2VmWhDFzOpaHK8QhfweLJvFIWrZ6",
       "name_key": "cry for me",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "127WQmeozL9tFDHGe-jr4qJLBO4AWoKRN",
