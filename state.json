@@ -931,9 +931,9 @@
       "id": "1rRUJDfD8apWJRpdPyXGVBPGMPoqbaxVn",
       "name": "Cry For Me (1).mp3",
       "key": "1rRUJDfD8apWJRpdPyXGVBPGMPoqbaxVn",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "cry for me"
     },
     {
