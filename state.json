@@ -923,9 +923,9 @@
       "name": "One Shot Only.mp3",
       "key": "1ZDfIk00LxsjMM-ICl1YHNuKJFXnAqrl9",
       "name_key": "one shot only",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1rRUJDfD8apWJRpdPyXGVBPGMPoqbaxVn",
