@@ -959,9 +959,9 @@
       "name": "Poison Kisses.mp3",
       "key": "1__tGW1C0mujpXId04amvXmp4mkqCZfD8",
       "name_key": "poison kisses",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1JxT8tEuPNJFNtXh8cnw4JV_-ecHrIXk7",
