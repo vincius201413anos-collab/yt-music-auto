@@ -949,9 +949,9 @@
       "id": "127WQmeozL9tFDHGe-jr4qJLBO4AWoKRN",
       "name": "Poison Kisses (1).mp3",
       "key": "127WQmeozL9tFDHGe-jr4qJLBO4AWoKRN",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "poison kisses"
     },
     {
