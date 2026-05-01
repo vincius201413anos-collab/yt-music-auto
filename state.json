@@ -977,9 +977,9 @@
       "name": "Die With You.mp3",
       "key": "1t6Ho8EHk4ZteU7wcBudE4gIa-8a8MOlr",
       "name_key": "die with you",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1pGSwMWz3A7ZTVX3oPhn9ew4LgGttMJ6l",
