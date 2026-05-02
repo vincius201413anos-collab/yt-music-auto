@@ -1021,9 +1021,9 @@
       "id": "1UcvWMef0yIcl-722xNXtB_D-DGdoqIzq",
       "name": "Retrograde Demon (1).mp3",
       "key": "1UcvWMef0yIcl-722xNXtB_D-DGdoqIzq",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "retrograde demon"
     },
     {
