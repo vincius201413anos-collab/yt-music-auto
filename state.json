@@ -1003,9 +1003,9 @@
       "id": "1o_n4aIWdFrWh_KdzYrWAWWf1rTvRazEN",
       "name": "Black Mercury (1).mp3",
       "key": "1o_n4aIWdFrWh_KdzYrWAWWf1rTvRazEN",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "black mercury"
     },
     {
