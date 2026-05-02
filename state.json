@@ -985,9 +985,9 @@
       "id": "1pGSwMWz3A7ZTVX3oPhn9ew4LgGttMJ6l",
       "name": "Crash With Me (1).mp3",
       "key": "1pGSwMWz3A7ZTVX3oPhn9ew4LgGttMJ6l",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "crash with me"
     },
     {
