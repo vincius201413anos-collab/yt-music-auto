@@ -1085,9 +1085,9 @@
       "name": "Better Than He Does.mp3",
       "key": "1O71NfoIYWT4-ZoENrzQBKfE43Flvyopm",
       "name_key": "better than he does",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1C_PsPA8YGm22K7iJGuDwqppcqe1uW6iU",
