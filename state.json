@@ -1039,9 +1039,9 @@
       "id": "1D9segp9Vj7eySFZKM3YXV4L-wYLPKV74",
       "name": "Venom Flow (1).mp3",
       "key": "1D9segp9Vj7eySFZKM3YXV4L-wYLPKV74",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "venom flow"
     },
     {
