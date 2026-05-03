@@ -1049,9 +1049,9 @@
       "name": "Venom Flow.mp3",
       "key": "1BfPiAtcty1ptqcfLoyducBt1oYEFvDgo",
       "name_key": "venom flow",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1gHfDqYkDhRsU9wHczk4yPag_t7H8vijN",
