@@ -1075,9 +1075,9 @@
       "id": "1xaiKCL_1-3Mu_h5TkwXPO6gyhEOr-9wR",
       "name": "Better Than He Does (1).mp3",
       "key": "1xaiKCL_1-3Mu_h5TkwXPO6gyhEOr-9wR",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "better than he does"
     },
     {
