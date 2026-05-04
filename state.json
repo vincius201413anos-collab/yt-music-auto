@@ -1102,9 +1102,9 @@
       "id": "1o5geiDARtVwc8LhAEgVHcxhbdSuYTHsA",
       "name": "Horizon's Call (1).mp3",
       "key": "1o5geiDARtVwc8LhAEgVHcxhbdSuYTHsA",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "horizon's call"
     },
     {
