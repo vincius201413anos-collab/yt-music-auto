@@ -1148,9 +1148,9 @@
       "name": "Night Rider.mp3",
       "key": "16UUr429USNGIbEHT1qamyJtbeICuS5oh",
       "name_key": "night rider",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1nGIvcSpkdp0uXdpg3HrLYxp48RIX5TcZ",
