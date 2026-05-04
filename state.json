@@ -1120,9 +1120,9 @@
       "id": "1-XepG8-rWrk3UvCvUoSExDx71wigmAU3",
       "name": "Drift King (1).mp3",
       "key": "1-XepG8-rWrk3UvCvUoSExDx71wigmAU3",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk",
       "name_key": "drift king"
     },
     {
