@@ -1192,9 +1192,9 @@
       "id": "1YN5EkNy0Hq-yi-EQSvWh9MRsV3fORjJG",
       "name": "Grave Destroyer (3).mp3",
       "key": "1YN5EkNy0Hq-yi-EQSvWh9MRsV3fORjJG",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "grave destroyer"
     },
     {
