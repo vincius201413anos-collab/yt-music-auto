@@ -1,28 +1,44 @@
 """
-ai_image_generator.py — DJ DARK MARK v51.0 ██ APEX QUALITY EDITION ██
-══════════════════════════════════════════════════════════════════════════
+ai_image_generator.py — DJ DARK MARK v52.0 ██ VIRAL MILLION VIEW EDITION ██
+══════════════════════════════════════════════════════════════════════════════
 
-FIXES & UPGRADES v51 vs v50:
-  [FIX 1]  Modelo Claude corrigido: claude-opus-4-7 NÃO EXISTE → claude-opus-4-5
-           Isso fazia TODOS os prompts caírem no fallback estático sem você saber.
-  [FIX 2]  Flux-Dev agora é o modelo PRIMÁRIO (qualidade máxima).
-           Flux-Schnell é o fallback rápido.
-  [FIX 3]  Parâmetros Flux-Dev otimizados:
-             - aspect_ratio: "9:16" (nativo, sem upscale)
-             - num_inference_steps: 40 (mais detalhes vs 50 que era lento)
-             - guidance_scale: 5.0 (melhor aderência ao prompt anime)
-             - output_quality: 100
-  [FIX 4]  GENERATION_SUFFIX limpo: removidos "masterpiece" e "best quality"
-           (são tags SD 1.5/SDXL — no Flux causam imagens genéricas e sem alma)
-  [FIX 5]  Prompt Claude: limite aumentado 60-100 → 100-160 palavras.
-           Flux responde melhor a prompts descritivos longos.
-  [FIX 6]  Prompt Claude: instrução de "comma-separated only" removida.
-           Frases descritivas geram melhores resultados no Flux.
-  [FIX 7]  Seed por short_num para garantir diversidade entre shorts da mesma música.
-  [FIX 8]  API Replicate: migrado para endpoint correto com polling robusto.
-  [FIX 9]  negative_prompt agora funciona via campo dedicado (suportado no Flux-Dev).
-  [NEW 1]  Retry inteligente: muda de seed automaticamente em cada tentativa.
-  [NEW 2]  Validação de imagem mais rigorosa: mínimo 80KB (evita placeholders).
+CANAL: Trap | Phonk | Dark Pop | Eletrônica
+META: 1.000.000+ views por Short
+
+FÓRMULA VISUAL CANAL DJ DARK MARK (copie e cole isso em todo vídeo):
+════════════════════════════════════════════════════════════════════
+  FUNDO      → Preto #050508 com grain/VHS leve. NUNCA claro.
+  PERSONAGEM → Anime waifu ou shounen. 80-85% do frame. Face no 1/3 superior.
+  COR        → Phonk: roxo+preto | Trap: vermelho+ouro | Eletrônica: ciano+azul
+               Dark Pop: vinho+lilás
+  EFEITO     → Partículas reagindo ao beat + glitch/chromatic no drop
+  MOVIMENTO  → Phonk: shake no cowbell | Trap: zoom lento in | Eletrônica:
+               particle tunnel | Dark Pop: pull-back cinematográfico
+  TEXTO      → Fonte bold branca, sombra forte, terço inferior. Max 3 palavras.
+  LOGO       → DJ Dark Mark canto superior direito, pequeno, sempre presente.
+  LOOP       → Final do vídeo conecta ao primeiro frame — loops = replays = views
+════════════════════════════════════════════════════════════════════
+
+UPGRADES v52 vs v51:
+  [VIRAL 1]  Modelo atualizado: claude-sonnet-4-6 (mais rápido, melhor criatividade)
+  [VIRAL 2]  VIRAL_HOOK_MATRIX: hooks de primeiro frame por gênero (pesquisa real)
+  [VIRAL 3]  GENRE_BACKGROUND_MATRIX: fundos específicos por gênero (não por tipo)
+             Phonk: JDM drift, estacionamento japonês, cowboy deserto
+             Trap: beco urbano, skyline de baixo, rooftop com fumaça
+             Eletrônica: túnel de luz, cidade cyberpunk aérea, geometria 3D
+             Dark Pop: janela com chuva, espelho quebrado, mansão gótica
+  [VIRAL 4]  LOOP_DESIGN_HINTS: composições que loopam — replay = views exponencial
+  [VIRAL 5]  GENRE_PALETTE_LOCK: paletas por gênero validadas por padrão viral
+  [VIRAL 6]  FIRST_FRAME_OPTIMIZER por gênero — 0-3s é tudo que importa
+  [VIRAL 7]  VIRAL_CHARACTER_TIER: Gojo/Sukuna/Itachi no topo para phonk/trap
+             Personagens JDM-coded recebem mais peso no phonk
+  [VIRAL 8]  GENRE_BOOST_MATRIX completamente reescrito com dados de padrões reais
+  [VIRAL 9]  Claude system prompt reescrito com foco em retenção e primeiro frame
+  [VIRAL 10] NEGATIVE_PROMPT expandido: bloqueia elementos que derrubam retenção
+  [VIRAL 11] CHANNEL_DNA com identidade única DJ Dark Mark em todo prompt
+  [VIRAL 12] build_viral_short_prompt(): função unificada com tudo que vira 1M+
+  [VIRAL 13] COWBELL_SYNC_HINT: instrução de movimento no cowbell para phonk
+  [VIRAL 14] Waifu pesa 65% (maior apelo cross-gender no feed de Shorts musicais)
 """
 
 from __future__ import annotations
@@ -40,7 +56,7 @@ from typing import Optional
 
 import requests
 
-logger = logging.getLogger("ai_image_generator_v51")
+logger = logging.getLogger("ai_image_generator_v52")
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -52,41 +68,73 @@ logging.basicConfig(
 
 REPLICATE_API_TOKEN: str = os.getenv("REPLICATE_API_TOKEN", "")
 
-# [FIX 2] Flux-Dev como primário — qualidade máxima
 REPLICATE_MODELS = [
     "black-forest-labs/flux-dev",
     "black-forest-labs/flux-schnell",
 ]
 
-# [FIX 3] Parâmetros Flux-Dev otimizados para anime vertical
 FLUX_DEV_PARAMS: dict = {
-    "aspect_ratio": "9:16",          # vertical nativo — sem upscale artificial
-    "num_inference_steps": 40,        # [FIX 3] 40 steps = qualidade máxima sem overhead
-    "guidance": 5.0,                  # [FIX 3] 5.0 = excelente aderência ao prompt anime
+    "aspect_ratio": "9:16",
+    "num_inference_steps": 40,
+    "guidance": 5.0,
     "output_format": "png",
-    "output_quality": 100,            # PNG é lossless, 100 é o correto
+    "output_quality": 100,
     "disable_safety_checker": True,
 }
 
-# Flux-Schnell como fallback rápido
 FLUX_SCHNELL_PARAMS: dict = {
     "aspect_ratio": "9:16",
-    "num_inference_steps": 4,         # schnell: mínimo viável
+    "num_inference_steps": 4,
     "go_fast": True,
     "output_format": "png",
     "output_quality": 100,
     "disable_safety_checker": True,
 }
 
-VERSION = "v51.0-APEX-QUALITY"
+VERSION = "v52.0-VIRAL-MILLION-VIEW"
 
-# [FIX 1] Modelo Claude correto — claude-opus-4-7 NÃO EXISTE
+
 def get_anthropic_model() -> str:
-    return os.getenv("ANTHROPIC_MODEL", "claude-opus-4-5")
+    # [VIRAL 1] Atualizado para claude-sonnet-4-6
+    return os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# ENUMS — CHARACTER TYPE / ENGINE SELECT
+# CANAL DNA — identidade visual DJ Dark Mark em todo prompt
+# ═══════════════════════════════════════════════════════════════════════
+
+CHANNEL_DNA = (
+    "DJ Dark Mark viral anime phonk trap music channel visual identity, "
+    "underground dark aesthetic meets premium anime production quality, "
+    "scroll-stopping 9:16 vertical Short that makes viewers stop mid-feed, "
+    "cinematic anime frame engineered for 1 million+ YouTube Shorts views, "
+    "dark neon underground premium — the visual language of nocturnal power"
+)
+
+# Fórmula exata do canal — use em todos os vídeos
+CHANNEL_FORMULA = """
+╔══════════════════════════════════════════════════════════════╗
+║         FÓRMULA VISUAL — DJ DARK MARK — TODOS OS VÍDEOS     ║
+╠══════════════════════════════════════════════════════════════╣
+║  FUNDO     Preto #050508 + grain/VHS.  NUNCA claro.          ║
+║  CHAR      Anime (waifu 65% / shounen 35%). Face no 1/3 sup. ║
+║  FRAME     Personagem em 80-85% do frame 9:16 vertical.      ║
+║  PHONK     Roxo #7B00FF + preto. JDM drift. VHS grain.       ║
+║  TRAP      Vermelho #FF2222 + ouro #FFD700. Fumaça. Beco.    ║
+║  ELETRÔN.  Ciano #00EEFF + azul #0055FF. Túnel. Partícula.  ║
+║  DARK POP  Vinho #660033 + lilás #CCAAFF. Chuva. Espelho.   ║
+║  EFEITO    Partículas no beat + glitch/chromatic no drop.    ║
+║  MOVIMENTO Phonk: shake cowbell | Trap: zoom in lento        ║
+║            Eletr.: particle tunnel | Dark Pop: pull-back     ║
+║  TEXTO     Bold branca, sombra, terço inferior. ≤ 3 palavras.║
+║  LOGO      DJ Dark Mark canto sup. direito. Pequeno. Sempre. ║
+║  LOOP      Fim conecta ao frame 0 → replay → views           ║
+╚══════════════════════════════════════════════════════════════╝
+"""
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# ENUMS
 # ═══════════════════════════════════════════════════════════════════════
 
 class CharType(Enum):
@@ -107,6 +155,340 @@ class EmotionArchetype(Enum):
     I_AM_HIM        = "i_am_him"
     FINAL_FORM      = "final_form"
     SILENT_APEX     = "silent_apex"
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 2] PRIMEIRO FRAME — hooks por gênero (0-3s = tudo que importa)
+# Baseado em padrões observados em vídeos com 1M+ views nesses gêneros
+# ═══════════════════════════════════════════════════════════════════════
+
+VIRAL_HOOK_MATRIX: dict[str, str] = {
+    "phonk": (
+        "PHONK VIRAL FIRST FRAME — high-contrast single image: "
+        "anime character face or JDM car filling frame with PURPLE neon eye-glow, "
+        "VHS scan-line interference visible, heavy grain texture, "
+        "the very first frame must feel like 3am underground energy — "
+        "viewer must feel the cowbell before it hits, "
+        "purple violet neon is the primary stop-the-scroll color for phonk feeds"
+    ),
+    "trap": (
+        "TRAP VIRAL FIRST FRAME — power symbol immediately visible: "
+        "hooded or crowned anime figure from LOW ANGLE against neon city, "
+        "gold or crimson neon as dominant light source, smoke rising, "
+        "the first frame must radiate status and danger simultaneously, "
+        "viewer must feel urban royalty in the first 0.5 seconds, "
+        "red-gold contrast is the stop-scroll color for trap feeds"
+    ),
+    "electronic": (
+        "ELECTRONIC VIRAL FIRST FRAME — hypnotic geometry or tunnel: "
+        "cyan-blue neon particle field or infinite tunnel beginning to approach viewer, "
+        "the first frame must create immediate optical pull — eyes drawn to center vanishing point, "
+        "viewer must feel momentum and futurism before any sound, "
+        "electric cyan against deep black is the stop-scroll hook for electronic feeds"
+    ),
+    "darkpop": (
+        "DARK POP VIRAL FIRST FRAME — cinematic emotional punch: "
+        "face or silhouette in dramatic half-shadow with rain or mirror reflection, "
+        "single beam of purple or rose neon illuminating eyes specifically, "
+        "the first frame must hit an emotional nerve — loneliness-made-beautiful, "
+        "viewer must feel something in 1 second before the music explains it, "
+        "purple-rose-black is the stop-scroll palette for dark pop feeds"
+    ),
+    "dark": (
+        "DARK VIRAL FIRST FRAME — maximum atmosphere: "
+        "near-darkness with single neon accent revealing power or face, "
+        "the contrast must be almost violent — maximum black, one vivid neon source, "
+        "viewer stops because their eye has nowhere else to go but the light source"
+    ),
+    "default": (
+        "VIRAL FIRST FRAME — maximum scroll-stopping power: "
+        "anime character face or full figure with neon eyes as brightest point in frame, "
+        "extreme contrast between character and dark background, "
+        "viewer must be unable to keep scrolling in the first 1 second"
+    ),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 4] LOOP DESIGN — composições que estimulam replay
+# Replay = sinal forte de conteúdo bom → algoritmo amplifica
+# ═══════════════════════════════════════════════════════════════════════
+
+LOOP_DESIGN_HINTS: dict[str, str] = {
+    "phonk": (
+        "LOOP OPTIMIZATION — composition designed for seamless replay: "
+        "power aura at build phase matches aura at video start, "
+        "VHS static overlay creates natural visual continuity at loop point, "
+        "the cyclical cowbell rhythm of phonk makes visual loops feel intentional, "
+        "grain texture bridges the cut invisibly — viewer watches again without noticing"
+    ),
+    "trap": (
+        "LOOP OPTIMIZATION — composition loops at power peak: "
+        "character posture at end mirrors first frame with more energy, "
+        "smoke particle drift creates ambient continuity across loop point, "
+        "urban ambiance (distant city sounds, neon flicker) covers the transition"
+    ),
+    "electronic": (
+        "LOOP OPTIMIZATION — tunnel or particle composition loops perfectly: "
+        "infinite tunnel or expanding particle field returns to start seamlessly, "
+        "the hypnotic electronic rhythm makes the brain want to experience the drop again, "
+        "geometric patterns complete one full rotation at video end"
+    ),
+    "darkpop": (
+        "LOOP OPTIMIZATION — emotional wave loops naturally: "
+        "rain continues across loop point, character stillness creates continuity, "
+        "the emotional weight of dark pop makes viewers replay to feel it again, "
+        "mirror reflection or window scene has natural ambient loop quality"
+    ),
+    "dark": (
+        "LOOP OPTIMIZATION — atmospheric darkness loops seamlessly: "
+        "neon flicker or smoke drift bridges the loop point invisibly"
+    ),
+    "default": (
+        "LOOP OPTIMIZATION — designed for seamless replay: "
+        "composition start and end feel continuous — ambient elements bridge cut naturally"
+    ),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 3] BACKGROUNDS POR GÊNERO — substituindo waifu/shounen separados
+# Fundo deve combinar com o gênero, não com o tipo de personagem
+# ═══════════════════════════════════════════════════════════════════════
+
+GENRE_BACKGROUND_MATRIX: dict[str, list[str]] = {
+    "phonk": [
+        # JDM/drift — o background mais viral do phonk em 2025-2026
+        "empty Japanese parking lot (Daikoku-style) at 3am, sodium vapor orange-yellow overhead lights, "
+        "thick night fog at ground level, lone JDM sports car with headlights on in distance, "
+        "wet concrete reflecting distorted lights, VHS film grain atmosphere",
+
+        "mountain pass asphalt at night, tire smoke from drift dissipating, "
+        "purple neon reflections on wet road, guardrail on cliff edge, "
+        "sodium orange streetlights in fog, Memphis phonk VHS atmosphere",
+
+        "rain-soaked Japanese highway overpass at 3am, orange-purple neon reflections, "
+        "JDM car parked below with running lights, mist between pillars, "
+        "abandoned industrial aesthetic, heavy film grain",
+
+        "cyberpunk underground parking structure, purple neon tube lights, "
+        "graffiti on concrete pillars, empty stalls except one spotlight car, "
+        "atmospheric fog, VHS scan lines visible",
+
+        "deserted highway straight cut through industrial zone at night, "
+        "distant city glow at horizon, lone purple neon streetlight, "
+        "heavy fog, VHS grain, Memphis underground phonk aesthetic",
+
+        "rain-soaked cyberpunk neon rooftop at night, kanji neon signs overhead, "
+        "purple and magenta reflections in puddles, city sprawl below, heavy film grain",
+
+        "abandoned concrete building exterior at night, purple graffiti, "
+        "single sodium lamp, VHS distortion overlay, underground phonk atmosphere",
+
+        "dark racing circuit corner at night, purple neon tire barriers, "
+        "smoke from previous drift still clearing, atmospheric fog",
+    ],
+    "trap": [
+        # Urban/hood/beco — padrão viral dominante do trap
+        "dark urban alleyway with single flickering fluorescent light above, "
+        "wet concrete, crimson neon sign reflecting in puddle, "
+        "brick walls with gold graffiti, smoke rising from grates, "
+        "New York / Atlanta underground energy",
+
+        "rooftop of city skyscraper at night, low angle looking up at character, "
+        "city lights sprawling below to horizon, golden neon haze, "
+        "helicopter searchlight cutting through smoke in distance",
+
+        "luxury penthouse interior at night, floor-to-ceiling windows showing golden city, "
+        "dark interior with accent lights, smoke from cigar drifting, "
+        "gold chains and wealth symbols in environment",
+
+        "urban basketball court at night, single floodlight, "
+        "chain-link fence casting shadows, city block visible beyond, "
+        "crimson and gold neon from corner store beyond",
+
+        "subway platform at night, fluorescent flickering, "
+        "crimson graffiti on tiles, gold handrail, train wind pushing smoke",
+
+        "city block corner at night from low angle looking up, "
+        "gold-red neon signs stacked vertically, fire escape above, smoke",
+
+        "warehouse interior with red industrial lighting, "
+        "crates and darkness, single spotlight from above, "
+        "trap boss territory energy",
+
+        "bridge underpass at midnight, city lights reflected in black water below, "
+        "crimson neon from bridge structure, urban fortress energy",
+    ],
+    "electronic": [
+        # Cyberpunk city / tunnel / geometry — padrão viral da eletrônica
+        "infinite cyan neon light tunnel, vanishing point in center, "
+        "small particles floating in air, motion blur going forward, "
+        "deep black space beyond light corridor, hypnotic infinite pull",
+
+        "aerial view of cyberpunk city at night during heavy rain, "
+        "neon signs in Japanese and Korean characters, cyan and magenta reflections, "
+        "dense fog between skyscrapers, blade runner density",
+
+        "abstract 3D geometry space, torus and crystalline forms rotating slowly, "
+        "electric blue and cyan light bouncing off surfaces, "
+        "deep black void with particle field, mathematical precision aesthetic",
+
+        "concert festival main stage mid-laser-show, "
+        "cyan-blue laser grid cutting through smoke, crowd silhouettes below, "
+        "massive LED backdrop showing waveform, electronic deity energy",
+
+        "server room or data center corridor, blue-cyan LED strips, "
+        "endless rack rows to vanishing point, particles like data streams, "
+        "clean geometric precision, cyberpunk tech temple",
+
+        "space or orbit view above neon-lit cyberpunk planet, "
+        "blue-white atmosphere glow at edge, particle nebula above, "
+        "scale that makes power look cosmic",
+
+        "underwater or liquid dimension, cyan light rays penetrating from above, "
+        "particle field like bubbles but electric, geometric crystal formations",
+
+        "neon waveform landscape — music spectrum as terrain, "
+        "cyan peaks with electric blue valleys, character standing at highest peak",
+    ],
+    "darkpop": [
+        # Rain / mirror / loneliness — padrão viral do dark pop
+        "interior dark room, large window with heavy rain streaking down glass, "
+        "exterior neon purple and rose reflections visible through rain, "
+        "interior almost completely dark, cinematic melancholy",
+
+        "shattered mirror composition, fragments reflecting different angles of scene, "
+        "cold blue-violet light source, dark surroundings, "
+        "psychological fragmentation aesthetic, dark pop identity theme",
+
+        "long corridor of gothic mansion at night, candles lining walls, "
+        "moonlight through arched windows, purple shadows, "
+        "horror-elegant atmosphere, roses on floor",
+
+        "empty train station platform at 3am, single purple ceiling light, "
+        "rain visible through gap in roof, solitary bench, "
+        "beautiful isolation aesthetic, cinematic loneliness",
+
+        "rooftop at night, character silhouette facing rain-soaked city, "
+        "purple-rose neon reflecting in puddles on rooftop, "
+        "cinematic pull-back composition, emotional weight",
+
+        "abandoned greenhouse at night, overgrown dark roses, "
+        "moonlight through cracked glass ceiling, purple-silver light, "
+        "gothic romanticism, dark beauty",
+
+        "art gallery at night after hours, single purple spotlight, "
+        "dark paintings on walls, character reflected in polished floor, "
+        "solitude and beauty coexisting",
+
+        "marble staircase of empty baroque building, moonlight from above dome, "
+        "purple shadows in classical architecture, rose petals on steps",
+    ],
+    "dark": [
+        "near-total darkness with single colored neon source, "
+        "deep shadows consuming 90% of frame, maximum high-contrast atmosphere",
+
+        "void space with atmospheric fog and single rim light source, "
+        "maximum cinematic drama, character as only anchor in darkness",
+
+        "underground bunker or cave with bioluminescent neon growth, "
+        "darkness with single source point, maximum mystery",
+    ],
+    "default": [
+        "rain-soaked cyberpunk neon rooftop at night, city sprawl glowing below, kanji signs overhead",
+        "dark void with single neon ring lighting and dense particle field",
+        "cyberpunk underground club with laser grid and smoke atmosphere",
+    ],
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 5] PALETAS POR GÊNERO — validadas por padrão viral
+# ═══════════════════════════════════════════════════════════════════════
+
+GENRE_PALETTE_LOCK: dict[str, str] = {
+    "phonk": (
+        "dominant palette: deep violet purple #7B00FF and void black #050508, "
+        "accent: hot magenta #FF00CC at technique edges only, "
+        "shadow tone: near-black with blue undertone, "
+        "MANDATORY VHS DESATURATION: slightly reduced saturation like old cassette footage, "
+        "sodium orange #FFB347 appears only as streetlight glow in distance, "
+        "the frame must feel like a purple nightmare at 3am"
+    ),
+    "trap": (
+        "dominant palette: blood crimson #FF2222 and absolute black #050505, "
+        "accent: divine gold #FFD700 at chains, jewelry, wealth symbols, "
+        "shadow tone: charcoal #1a0505 with red undertone, "
+        "smoke in gray-blue to separate mid-ground from character, "
+        "the frame must radiate danger and status simultaneously"
+    ),
+    "electronic": (
+        "dominant palette: electric cyan #00EEFF and deep navy #000033, "
+        "accent: hot magenta #FF00AA as secondary contrast neon, "
+        "white #FFFFFF at particle centers and laser endpoints, "
+        "shadow tone: deep blue-black #00000F, "
+        "the frame must radiate futurism and forward motion"
+    ),
+    "darkpop": (
+        "dominant palette: deep wine crimson #660033 and dark purple #1a0030, "
+        "accent: lilac #CCAAFF at light sources and reflections, "
+        "rose pink #FF88CC at emotional peak details only, "
+        "shadow tone: near-black purple #0D0010, "
+        "silver-white moonlight as rim light source, "
+        "the frame must be beautiful and heartbreaking simultaneously"
+    ),
+    "dark": (
+        "dominant palette: absolute black #050508 with 90% shadow coverage, "
+        "single neon accent color occupying maximum 10% of frame, "
+        "maximum contrast ratio between light and dark"
+    ),
+    "default": (
+        "dominant palette: electric teal and hot magenta pink, "
+        "shadow tone: deep navy, classic cyberpunk duality"
+    ),
+}
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 7] PERSONAGENS POR TIER VIRAL
+# Tier 1 = mais reconhecidos + maior comunidade de anime = mais engajamento
+# ═══════════════════════════════════════════════════════════════════════
+
+# Personagens com maior identificação cruzada para o público do canal
+PHONK_TRAP_TIER1_WAIFUS = [
+    "Makima", "Power", "Himiko Toga", "Yuno Gasai", "Maki Zenin",
+    "Nobara Kugisaki", "Daki", "Ryuko Matoi", "Satsuki Kiryuin", "Zero Two",
+    "Raiden Shogun", "Hu Tao", "Kurumi Tokisaki",
+]
+
+PHONK_TRAP_TIER1_SHOUNEN = [
+    "Gojo Satoru", "Ryomen Sukuna", "Itachi Uchiha", "Madara Uchiha (Juubi)",
+    "Ichigo Kurosaki (True Shikai)", "Sosuke Aizen", "Guts (Black Swordsman)",
+    "Sung Jinwoo (Shadow Monarch)", "Eren Yeager (Founding Titan)",
+    "Anos Voldigoad",
+]
+
+ELECTRONIC_TIER1_WAIFUS = [
+    "Raiden Shogun", "Yae Miko", "Kurisu Makise", "Furina", "Nahida",
+    "Rem", "Emilia", "Beatrice", "Frieren", "Fern",
+]
+
+ELECTRONIC_TIER1_SHOUNEN = [
+    "Gojo Satoru", "Killua Zoldyck (Godspeed)", "Roy Mustang (Flame Alchemist)",
+    "Rimuru Tempest", "Anos Voldigoad", "Sasuke Uchiha (Rinnegan)",
+]
+
+DARKPOP_TIER1_WAIFUS = [
+    "Violet Evergarden", "Frieren", "Emilia", "Echidna", "Satella",
+    "Yor Forger", "Mai Sakurajima", "Kaguya Shinomiya", "Zero Two",
+    "Ai Hoshino",
+]
+
+DARKPOP_TIER1_SHOUNEN = [
+    "Itachi Uchiha", "Future Trunks", "Guts (Black Swordsman)",
+    "Choso", "Garou (Cosmic Fear Mode)", "Meruem (Perfect Form)",
+]
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -142,6 +524,8 @@ class PromptContext:
     music_element: str
     waifu_extras: str
     power_extras: str
+    first_frame_hook: str
+    loop_hint: str
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1227,19 +1611,19 @@ def get_emotion_prompt(archetype: EmotionArchetype, char_type: CharType) -> str:
 
 
 WAIFU_EMOTION_WEIGHTS: list[tuple[EmotionArchetype, int]] = [
-    (EmotionArchetype.COLD_QUEEN,     20),
+    (EmotionArchetype.COLD_QUEEN,     22),
     (EmotionArchetype.YANDERE_SMILE,  18),
     (EmotionArchetype.SEDUCTIVE_GAZE, 20),
-    (EmotionArchetype.DOMINANT_VIBE,  15),
+    (EmotionArchetype.DOMINANT_VIBE,  16),
     (EmotionArchetype.PLAYFUL_DANGER, 12),
-    (EmotionArchetype.ETHEREAL_SORROW, 5),
-    (EmotionArchetype.BATTLE_FURY,    7),
-    (EmotionArchetype.SOFT_OBSESSION, 3),
+    (EmotionArchetype.ETHEREAL_SORROW, 4),
+    (EmotionArchetype.BATTLE_FURY,    6),
+    (EmotionArchetype.SOFT_OBSESSION,  2),
 ]
 
 SHOUNEN_EMOTION_WEIGHTS: list[tuple[EmotionArchetype, int]] = [
-    (EmotionArchetype.COLD_RAGE,   20),
-    (EmotionArchetype.I_AM_HIM,    30),
+    (EmotionArchetype.COLD_RAGE,   18),
+    (EmotionArchetype.I_AM_HIM,    32),
     (EmotionArchetype.FINAL_FORM,  35),
     (EmotionArchetype.SILENT_APEX, 15),
 ]
@@ -1265,30 +1649,30 @@ def _weighted_emotion(rng: random.Random, char_type: CharType) -> EmotionArchety
 
 WAIFU_VISUAL_HOOKS: list[tuple[str, int]] = [
     ("NEON GLOWING EYES as primary visual hook — pupils burning with unearthly color neon, "
-     "multiple catchlights, irises radiating power from within, eyes visible from thumbnail distance", 25),
+     "multiple catchlights, irises radiating power from within, eyes visible from thumbnail distance", 28),
     ("MASSIVE AURA EXPLOSION as primary visual hook — power aura erupting outward in massive "
      "expanding ring from center, consuming 60% of frame, silhouette clear against energy", 20),
     ("INTENSE CLOSE-UP EXPRESSION as primary visual hook — face fills upper 40% of frame "
-     "with devastating emotional expression lit dramatically by own power", 18),
+     "with devastating emotional expression lit dramatically by own power", 20),
     ("SIGNATURE WEAPON GLOW as primary visual hook — weapon or technique radiating so much "
      "energy it becomes the brightest object in frame", 15),
     ("DYNAMIC HAIR EXPLOSION as primary visual hook — hair erupting outward from power "
-     "release wind filling frame corners beautifully", 12),
+     "release wind filling frame corners beautifully", 10),
     ("TATTOO OR MARKING GLOW as primary visual hook — power markings across skin activating "
-     "in brilliant neon making entire body a light source", 10),
+     "in brilliant neon making entire body a light source", 7),
 ]
 
 SHOUNEN_VISUAL_HOOKS: list[tuple[str, int]] = [
     ("CATASTROPHIC POWER AURA as primary visual hook — multi-layer power aura erupting "
-     "consuming 70% of frame while character stands at impossible calm center", 30),
+     "consuming 70% of frame while character stands at impossible calm center", 32),
     ("GLOWING TECHNIQUE ACTIVATION as primary visual hook — signature technique charging "
      "or releasing as the single brightest element in composition", 25),
     ("INTENSE LOCKED-ON EYES as primary visual hook — eyes glowing with technique or power "
-     "activated visible from distance, jaw set, locked onto target beyond camera", 20),
+     "activated visible from distance, jaw set, locked onto target beyond camera", 22),
     ("SCALE CONTRAST as primary visual hook — character dwarfed by their own technique, "
-     "summoned entity or aura creating dramatic size contrast showing true power scale", 15),
+     "summoned entity or aura creating dramatic size contrast showing true power scale", 13),
     ("BATTLE DAMAGE POWER SURGE as primary visual hook — injuries visible but power increasing, "
-     "damaged clothes revealing glowing power underneath", 10),
+     "damaged clothes revealing glowing power underneath", 8),
 ]
 
 
@@ -1567,9 +1951,9 @@ PARTICLE_TIER_CATASTROPHIC = (
 )
 
 PARTICLE_TIERS: list[tuple[str, str, int, int]] = [
-    ("medium",       PARTICLE_TIER_MEDIUM,       30, 15),
-    ("heavy",        PARTICLE_TIER_HEAVY,         45, 35),
-    ("catastrophic", PARTICLE_TIER_CATASTROPHIC,  25, 50),
+    ("medium",       PARTICLE_TIER_MEDIUM,       25, 12),
+    ("heavy",        PARTICLE_TIER_HEAVY,         45, 33),
+    ("catastrophic", PARTICLE_TIER_CATASTROPHIC,  30, 55),
 ]
 
 
@@ -1642,7 +2026,7 @@ LIGHTING_STACKS: list[dict] = [
     },
 ]
 
-LIGHTING_WEIGHTS: list[int] = [20, 25, 20, 20, 15]
+LIGHTING_WEIGHTS: list[int] = [18, 28, 22, 20, 12]
 
 
 def _select_lighting(rng: random.Random) -> str:
@@ -1705,44 +2089,13 @@ def _weighted_palette(rng: random.Random, char_type: CharType) -> Palette:
     return valid[0][0]
 
 
-# ═══════════════════════════════════════════════════════════════════════
-# BACKGROUNDS
-# ═══════════════════════════════════════════════════════════════════════
-
-WAIFU_BACKGROUNDS: list[str] = [
-    "rain-soaked cyberpunk neon rooftop at night, city sprawl glowing below, kanji signs overhead",
-    "luxury cyberpunk penthouse interior with floor-to-ceiling windows showing neon city",
-    "cyberpunk underground club with laser grid and smoke atmosphere frozen mid-pulse",
-    "cherry blossom cyberpunk shrine — traditional torii gate absorbing neon energy",
-    "reflective wet alley with fractured neon kanji signs blurring in puddle mirrors",
-    "dark void with single neon ring lighting and dense particle field — pure character focus",
-    "cyberpunk night market with warm amber vendor lights and teal sky above",
-    "elevated highway with distant city below and storm clouds catching neon above",
-    "cyber-shrine courtyard with digital rain falling and traditional lanterns neon-lit",
-    "concert main stage mid-destruction — neon beams and smoke and awe-frozen crowd",
-]
-
-SHOUNEN_BACKGROUNDS: list[str] = [
-    "destroyed urban canyon — buildings shattered outward from technique impact point",
-    "volcanic wasteland with lava channels and smoke atmosphere",
-    "outer space — planetary surface below, stars above, their power visible from orbit",
-    "oceanic cliffside — waves shattered by power output, spray frozen in shockwave",
-    "tournament arena destroyed — crater where stands were, smoke clearing slowly",
-    "dark dimensional space — suspended debris and shattered reality geometry",
-    "ancient battlefield — ruins of previous great conflicts beneath new destruction",
-    "rooftop cityscape — entire block visible below and cracking from technique impact",
-    "mountain range — peaks shearing from shockwave at distance, scale made visible",
-    "final battlefield — all previous destruction visible in layers toward horizon",
-]
-
-
-def _select_background(rng: random.Random, char_type: CharType) -> str:
-    bg_list = WAIFU_BACKGROUNDS if char_type == CharType.WAIFU else SHOUNEN_BACKGROUNDS
-    return rng.choice(bg_list)
+def _get_genre_palette(genre: str) -> Optional[str]:
+    """[VIRAL 5] Retorna paleta por gênero quando disponível."""
+    return GENRE_PALETTE_LOCK.get(genre)
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# GENRE × MOOD MATRIX
+# [VIRAL 8] GENRE × MOOD MATRIX — completamente reescrito
 # ═══════════════════════════════════════════════════════════════════════
 
 GENRE_MAP: dict[str, str] = {
@@ -1756,7 +2109,7 @@ GENRE_MAP: dict[str, str] = {
     "dubstep":    "electronic",
     "house":      "electronic",
     "funk":       "trap",
-    "rock":       "rock",
+    "rock":       "dark",
     "metal":      "dark",
     "cinematic":  "darkpop",
     "lofi":       "darkpop",
@@ -1766,36 +2119,96 @@ GENRE_MAP: dict[str, str] = {
     "hip-hop":    "trap",
     "rap":        "trap",
     "bass":       "phonk",
+    "drift":      "phonk",
+    "phonkbr":    "phonk",
+    "funk br":    "trap",
+    "funk brasileiro": "trap",
 }
 
 GENRE_BOOST_MATRIX: dict[str, tuple[str, str]] = {
     "phonk": (
-        "phonk street queen aesthetic — neon underground, heavy bass energy in pose, aggressive confident feminine dominance, dark neon grit and attitude in every detail",
-        "phonk street king energy — aggressive dominant posture, dark neon underground, gang apex energy, heavy bass weight in every stance, unstoppable cold confidence",
+        # Waifu phonk — underground, VHS, 3am energy
+        "phonk underground aesthetic — neon void at 3am, heavy VHS grain texture throughout, "
+        "violet-purple as the only mercy of light in absolute darkness, "
+        "aggressive feminine dominance like the queen of a drift meet, "
+        "cowbell energy visible in tense posture and electric aura, "
+        "Memphis phonk meets Japanese JDM culture — dirty and beautiful simultaneously, "
+        "the kind of character you'd see in a parking lot at 3am and never forget",
+
+        # Shounen phonk — JDM king, cold dominance
+        "phonk king aesthetic — cold dominant street apex energy, "
+        "heavy VHS scan-line texture consuming the frame, "
+        "violet-purple electric neon as sole light source in void darkness, "
+        "JDM underground culture radiating from posture and environment, "
+        "the kind of sigma male energy that makes everyone stop and stare, "
+        "cowbell rhythm visible as electric tension in every muscle fiber",
     ),
     "trap": (
-        "trap luxury aesthetic — urban neon premium, stylish supreme feminine confidence, warm neon street royalty, beautiful and dangerous in equal measure",
-        "trap boss energy — slow dominant walk, urban apex masculine confidence, every movement deliberate, neon wealth and power radiating from posture",
+        # Waifu trap — luxury danger, gold and shadow
+        "trap luxury aesthetic — urban neon royalty, "
+        "gold and blood-red as symbols of status and danger in equal measure, "
+        "smoke-filled urban environment giving texture to feminine dominance, "
+        "beautiful and dangerous — the queen of the block who doesn't need to prove it, "
+        "street credibility meeting high fashion in dark cyberpunk Atlanta/New York, "
+        "the energy of someone who's already won before the beat drops",
+
+        # Shounen trap — boss energy, slow walk
+        "trap boss energy — every movement deliberate and slow like no threat is real enough to rush for, "
+        "gold chain energy, red-black urban royalty color language, "
+        "smoke rising around dominant male figure claiming all space, "
+        "the most dangerous person in the room is the quietest one, "
+        "street king energy — not trying, already arrived, "
+        "the visual equivalent of 808s hitting before the bass drops",
     ),
     "electronic": (
-        "electronic futurist aesthetic — clean cyber feminine beauty, teal data streams, digital rhythm visualization in air, frequency pulse visible around body",
-        "electronic power aesthetic — futuristic cyber warrior, teal data energy system, digital combat rhythm, clean precise power output matching frequency",
+        # Waifu electronic — cyber goddess, frequency
+        "electronic futurist aesthetic — cyber goddess energy, "
+        "cyan data streams flowing around body like digital aura, "
+        "teal and blue as the language of technology and controlled power, "
+        "the visual equivalent of a perfect drop at 140 BPM, "
+        "futuristic precision — every particle placed like code, every movement algorithmic, "
+        "digital deity commanding frequency and light simultaneously",
+
+        # Shounen electronic — cyber warrior, data combat
+        "electronic power aesthetic — cyber warrior commanding the data dimension, "
+        "teal-cyan as primary power signature in deep blue-black space, "
+        "particle field responding to him like a personal universe, "
+        "the energy of someone who fights at the speed of light, "
+        "digital combat precision — technique as beautiful as mathematics, "
+        "the visual equivalent of a bass drop that makes the ground shake",
     ),
     "darkpop": (
-        "dark pop romantic aesthetic — beautiful lonely neon city, cinematic feminine emotion, warm-cold palette telling story, power and vulnerability in single devastating frame",
-        "dark pop warrior aesthetic — emotional masculine power, neon city isolation making strength visible, cinematic story in single frame, strength through pain",
+        # Waifu dark pop — cinematic emotion, beautiful loneliness
+        "dark pop romantic aesthetic — beautiful loneliness in neon city rain, "
+        "the visual equivalent of a song that makes you cry but you keep listening, "
+        "purple-rose-black as the palette of heartbreak made beautiful, "
+        "cinematic feminine emotion — powerful and vulnerable in the same frame, "
+        "mirror and rain as metaphors made physically stunning, "
+        "the kind of image that makes viewers stop scrolling to feel something",
+
+        # Shounen dark pop — emotional warrior, strength through pain
+        "dark pop warrior aesthetic — strength forged through visible pain, "
+        "the visual story of someone who lost everything and became unstoppable, "
+        "warm-cold palette — neon warmth fighting deep purple cold, "
+        "masculine emotion made beautiful — not hiding it, owning it, "
+        "cinematic isolation that reads as power rather than weakness, "
+        "the visual equivalent of the song that plays when you rise from the bottom",
     ),
     "dark": (
-        "dark atmosphere — dramatic neon shadow play on feminine form, intense emotional presence, single accent neon in near-darkness",
-        "dark power aesthetic — minimal neon punctuating deep shadow, masculine intensity radiating in near-darkness, presence more dangerous than visibility",
+        "dark atmosphere — maximum shadow with single neon accent as mercy, "
+        "mystery and power in near-total darkness, "
+        "presence more threatening than visibility",
+
+        "dark power aesthetic — void darkness with single neon edge revealing apex predator, "
+        "the most dangerous characters don't need light",
     ),
     "rock": (
-        "rock concert energy — electric stage neon on feminine performer, raw passionate power in body language, concert fire and smoke atmosphere, rebellion made beautiful",
-        "rock warrior energy — electric concert stage energy in combat, raw masculine power expression, amp feedback visible as shockwave, rebellion embodied",
+        "rock concert energy — electric stage neon on feminine performer, raw passionate power",
+        "rock warrior energy — electric concert stage energy in combat, rebellion embodied",
     ),
     "default": (
-        "cyberpunk anime aesthetic — cinematic neon contrast on complete feminine figure, premium viral visual quality, maximum emotional resonance in single frame",
-        "cyberpunk anime power aesthetic — cinematic neon on complete masculine warrior, premium viral visual quality, maximum power readability in single frame",
+        "cyberpunk anime aesthetic — cinematic neon contrast, premium viral visual quality",
+        "cyberpunk anime power aesthetic — cinematic neon on complete warrior, maximum power readability",
     ),
 }
 
@@ -1814,22 +2227,24 @@ def _analyze_song_mood(song_name: str, char_type: CharType) -> str:
     base_type = "feminine" if char_type == CharType.WAIFU else "masculine"
 
     if any(w in clean for w in ["dark", "shadow", "ghost", "night", "madrugada", "noite", "darkness"]):
-        return f"haunted neon emotion — lonely {base_type} power, night as ally, shadow particles dense and deliberate"
+        return f"haunted neon emotion — lonely {base_type} power, night as ally, shadow particles dense"
     if any(w in clean for w in ["fire", "burn", "rage", "fury", "inferno", "fogo", "chama"]):
-        return f"controlled fire emotion — contained {base_type} rage radiating as heat, flame particles erupting"
-    if any(w in clean for w in ["love", "heart", "amor", "coracao", "rose", "cherry", "blossom"]):
-        return f"dark romantic emotion — {base_type} longing in neon city, beautiful bittersweet mood, rose particles"
+        return f"controlled fire emotion — contained {base_type} rage radiating as heat"
+    if any(w in clean for w in ["love", "heart", "amor", "coracao", "rose", "cherry"]):
+        return f"dark romantic emotion — {base_type} longing in neon city, bittersweet mood"
     if any(w in clean for w in ["lost", "alone", "lonely", "sozinho", "perdido", "empty"]):
-        return f"beautiful isolation emotion — singular {base_type} figure in vast neon city, cinematic solitude amplifying power"
-    if any(w in clean for w in ["drive", "speed", "run", "race", "corrida", "fast", "rush"]):
-        return f"velocity emotion — {base_type} body mid-movement with speed blur, wind and neon trailing"
+        return f"beautiful isolation emotion — singular {base_type} figure in vast neon city"
+    if any(w in clean for w in ["drive", "speed", "run", "race", "corrida", "drift", "fast"]):
+        return f"velocity emotion — {base_type} body mid-movement with speed blur, neon trailing"
     if any(w in clean for w in ["queen", "king", "boss", "power", "rule", "rei", "rainha", "apex"]):
-        return f"dominant emotion — {base_type} god-tier aura claiming space, neon crown energy, power pose of divine right"
-    if any(w in clean for w in ["blood", "sangue", "war", "guerra", "battle", "fight", "combat"]):
-        return f"battle emotion — {base_type} warrior tired and powerful simultaneously, scars glowing neon"
+        return f"dominant emotion — {base_type} god-tier aura claiming space, neon crown energy"
+    if any(w in clean for w in ["blood", "sangue", "war", "guerra", "battle", "fight"]):
+        return f"battle emotion — {base_type} warrior tired and powerful simultaneously"
     if any(w in clean for w in ["cold", "ice", "freeze", "winter", "frio", "gelo"]):
-        return f"cold precision emotion — absolute {base_type} control, ice aesthetics, every movement calculated and final"
-    return f"intense {base_type} emotion matching music — cyberpunk magnetic presence with particle density matching emotional intensity"
+        return f"cold precision emotion — absolute {base_type} control, ice aesthetics"
+    if any(w in clean for w in ["phonk", "cowbell", "trap", "bass", "808"]):
+        return f"underground {base_type} energy — 3am neon, VHS grain, cowbell tension"
+    return f"intense {base_type} emotion matching music — cyberpunk magnetic presence"
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1850,10 +2265,10 @@ MUSIC_ELEMENTS: list[str] = [
 # ═══════════════════════════════════════════════════════════════════════
 
 CHANNEL_IDENTITY = (
-    "DJ Dark Mark viral phonk trap anime visual, "
-    "ULTIMATE premium cyberpunk anime key visual, "
-    "scroll-stopping viral YouTube Shorts content, "
-    "jaw-dropping cyberpunk anime frame that cannot be scrolled past"
+    "DJ Dark Mark viral anime phonk trap music Short visual, "
+    "ULTIMATE premium cyberpunk anime key visual for 1 million view YouTube Short, "
+    "scroll-stopping viral content that stops thumbs in under 1 second, "
+    "jaw-dropping cinematic anime frame engineered for maximum retention and replay"
 )
 
 WAIFU_CORE_CHARACTER = (
@@ -1902,16 +2317,17 @@ MOTION_LOCK = (
     "dynamic composition where everything is alive and in motion simultaneously"
 )
 
-THUMBNAIL_LOCK = (
-    "optimized for YouTube Shorts thumbnail effectiveness — "
-    "ONE clear visual focal point readable in under 1 second, "
-    "strong character silhouette against contrasting background, "
-    "face or eyes readable at small resolution, "
-    "most important visual element in upper 40% of vertical frame, "
-    "maximum color contrast between character and background"
+# [VIRAL 6] First frame otimizado — o que o espectador vê em 0-1s
+FIRST_FRAME_LOCK = (
+    "FIRST FRAME ENGINEERED FOR MAXIMUM SCROLL-STOP — "
+    "the single most important frame of the Short is the very first one: "
+    "ONE clear focal point readable in 0.5 seconds or less, "
+    "highest contrast element in upper 40% of vertical frame, "
+    "face or glowing eyes as primary anchor readable at tiny thumbnail resolution, "
+    "darkest darks and brightest neons sharing the same frame for extreme contrast, "
+    "the viewer must feel something before the music even registers"
 )
 
-# [FIX 4] GENERATION_SUFFIX limpo — removidos "masterpiece" e "best quality" (tags SD1.5/SDXL)
 GENERATION_SUFFIX = (
     ", beautiful anime character, complete visible body in frame, "
     "detailed costume and iconic design elements fully visible, "
@@ -1921,6 +2337,7 @@ GENERATION_SUFFIX = (
     "no text, no watermark, no logo, no extra people, vertical 9:16 format"
 )
 
+# [VIRAL 10] NEGATIVE_PROMPT expandido — bloqueia elementos que derrubam retenção
 NEGATIVE_PROMPT = (
     "ugly, bad anatomy, bad face, asymmetrical eyes, distorted face, "
     "bad hands, extra fingers, missing fingers, fused limbs, broken limbs, "
@@ -1934,8 +2351,54 @@ NEGATIVE_PROMPT = (
     "text overlay, words in image, logo watermark, signature, letters, "
     "face too small, character too tiny, lost in background, "
     "washed out bloom, muddy colors, desaturated, flat boring lighting, "
-    "generic background, stock photo energy, soulless"
+    "generic background, stock photo energy, soulless expression, "
+    "happy bright cheerful colorful pop aesthetic, "
+    "light background, white background, pastel colors, "
+    "low retention visual, generic anime, forgettable frame, "
+    "busy cluttered composition with no clear focal point, "
+    "amateur editing quality, unprofessional output"
 )
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 7] CHARACTER SELECTION COM TIER VIRAL
+# ═══════════════════════════════════════════════════════════════════════
+
+def _select_viral_character(rng: random.Random, genre: str, char_type: CharType) -> CharacterEntry:
+    """
+    Seleciona personagem com peso maior para tier 1 viral quando disponível.
+    Tier 1 = personagens com maior comunidade + maior reconhecimento no feed.
+    70% de chance de pegar do tier 1, 30% do pool completo.
+    """
+    use_tier1 = rng.random() < 0.70
+
+    if use_tier1:
+        if char_type == CharType.WAIFU:
+            if genre in ("phonk", "trap", "dark"):
+                tier1_names = PHONK_TRAP_TIER1_WAIFUS
+            elif genre == "electronic":
+                tier1_names = ELECTRONIC_TIER1_WAIFUS
+            else:  # darkpop, default
+                tier1_names = DARKPOP_TIER1_WAIFUS
+
+            tier1_chars = [c for c in WAIFU_CHARACTERS if c.name in tier1_names]
+            if tier1_chars:
+                return rng.choice(tier1_chars)
+        else:
+            if genre in ("phonk", "trap", "dark"):
+                tier1_names = PHONK_TRAP_TIER1_SHOUNEN
+            elif genre == "electronic":
+                tier1_names = ELECTRONIC_TIER1_SHOUNEN
+            else:  # darkpop, default
+                tier1_names = DARKPOP_TIER1_SHOUNEN
+
+            tier1_chars = [c for c in SHOUNEN_CHARACTERS if c.name in tier1_names]
+            if tier1_chars:
+                return rng.choice(tier1_chars)
+
+    # Fallback: pool completo
+    pool = WAIFU_CHARACTERS if char_type == CharType.WAIFU else SHOUNEN_CHARACTERS
+    return rng.choice(pool)
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1955,7 +2418,6 @@ def _clean_song_name(filename: str) -> str:
 
 
 def _make_seed(genre: str, filename: str, short_num: int) -> int:
-    # [FIX 7] Seed único por short_num para garantir diversidade
     key = f"{genre}|{filename}|{short_num}|darkmark_{VERSION}"
     return int(hashlib.md5(key.encode()).hexdigest(), 16) % (10 ** 9)
 
@@ -1985,15 +2447,16 @@ def _build_context(
     rng = _make_rng(mapped_genre, filename, short_num)
     song_name = _clean_song_name(filename)
 
+    # [VIRAL] Waifu tem 65% de peso — maior apelo cross-gender nos Shorts musicais
     if force_waifu or char_type == CharType.WAIFU:
         selected_type = CharType.WAIFU
     elif force_shounen or char_type == CharType.SHOUNEN:
         selected_type = CharType.SHOUNEN
     else:
-        selected_type = CharType.WAIFU if rng.random() < 0.55 else CharType.SHOUNEN
+        selected_type = CharType.WAIFU if rng.random() < 0.65 else CharType.SHOUNEN
 
-    pool = WAIFU_CHARACTERS if selected_type == CharType.WAIFU else SHOUNEN_CHARACTERS
-    char = rng.choice(pool)
+    # [VIRAL 7] Seleção com peso por tier viral
+    char = _select_viral_character(rng, mapped_genre, selected_type)
 
     if force_back:
         comp = next(c for c in COMPOSITION_STYLES if c["name"] == "back_view_dramatic")
@@ -2002,35 +2465,57 @@ def _build_context(
     else:
         comp = _weighted_composition_v2(rng, selected_type)
 
-    pose       = _select_pose(rng, selected_type)
-    emotion    = _weighted_emotion(rng, selected_type)
+    pose        = _select_pose(rng, selected_type)
+    emotion     = _weighted_emotion(rng, selected_type)
     visual_hook = _weighted_hook(rng, selected_type)
 
+    # [VIRAL 5] Paleta por gênero tem prioridade
     if force_teal_pink:
-        palette = next(p for p in PALETTES if p.name == "teal_pink")
+        palette_prompt = next(p for p in PALETTES if p.name == "teal_pink").prompt
+        palette_name = "teal_pink"
     elif force_purple_gold:
-        palette = next(p for p in PALETTES if p.name == "purple_gold")
+        palette_prompt = next(p for p in PALETTES if p.name == "purple_gold").prompt
+        palette_name = "purple_gold"
     elif force_crimson_blue:
-        palette = next(p for p in PALETTES if p.name == "crimson_blue")
+        palette_prompt = next(p for p in PALETTES if p.name == "crimson_blue").prompt
+        palette_name = "crimson_blue"
     else:
-        palette = _weighted_palette(rng, selected_type)
+        genre_palette = _get_genre_palette(mapped_genre)
+        if genre_palette:
+            palette_prompt = genre_palette
+            palette_name = f"genre_{mapped_genre}"
+        else:
+            p = _weighted_palette(rng, selected_type)
+            palette_prompt = p.prompt
+            palette_name = p.name
 
-    particle  = _select_particle_tier(rng, selected_type)
-    lighting  = _select_lighting(rng)
-    bg        = _select_background(rng, selected_type)
-    genre_boost = _get_genre_boost(mapped_genre, selected_type)
-    song_mood = _analyze_song_mood(song_name, selected_type)
-    music_el  = rng.choice(MUSIC_ELEMENTS)
+    particle   = _select_particle_tier(rng, selected_type)
+    lighting   = _select_lighting(rng)
+
+    # [VIRAL 3] Background por gênero
+    genre_bgs = GENRE_BACKGROUND_MATRIX.get(mapped_genre, GENRE_BACKGROUND_MATRIX["default"])
+    bg = rng.choice(genre_bgs)
+
+    genre_boost   = _get_genre_boost(mapped_genre, selected_type)
+    song_mood     = _analyze_song_mood(song_name, selected_type)
+    music_el      = rng.choice(MUSIC_ELEMENTS)
     waifu_extras  = _build_waifu_extras(rng) if selected_type == CharType.WAIFU else ""
     power_extras  = _build_shounen_extras(rng) if selected_type == CharType.SHOUNEN else ""
 
+    # [VIRAL 2] Hook de primeiro frame por gênero
+    first_frame_hook = VIRAL_HOOK_MATRIX.get(mapped_genre, VIRAL_HOOK_MATRIX["default"])
+
+    # [VIRAL 4] Dica de loop
+    loop_hint = LOOP_DESIGN_HINTS.get(mapped_genre, LOOP_DESIGN_HINTS["default"])
+
     return PromptContext(
         char=char, composition=comp, pose=pose, emotion=emotion,
-        visual_hook=visual_hook, palette_name=palette.name, palette_prompt=palette.prompt,
+        visual_hook=visual_hook, palette_name=palette_name, palette_prompt=palette_prompt,
         particle_tier=particle, lighting_stack=lighting, background=bg,
         genre=mapped_genre, genre_boost=genre_boost, song_name=song_name,
         song_mood=song_mood, music_element=music_el,
         waifu_extras=waifu_extras, power_extras=power_extras,
+        first_frame_hook=first_frame_hook, loop_hint=loop_hint,
     )
 
 
@@ -2049,12 +2534,13 @@ def _assemble_prompt(ctx: PromptContext) -> str:
         f"character identity: {char.power_phrase}"
     )
 
-    core       = WAIFU_CORE_CHARACTER if char_type == CharType.WAIFU else SHOUNEN_CORE_CHARACTER
+    core         = WAIFU_CORE_CHARACTER if char_type == CharType.WAIFU else SHOUNEN_CORE_CHARACTER
     emotion_text = get_emotion_prompt(ctx.emotion, char_type)
-    extras     = ctx.waifu_extras if char_type == CharType.WAIFU else ctx.power_extras
+    extras       = ctx.waifu_extras if char_type == CharType.WAIFU else ctx.power_extras
 
     parts = [
         CHANNEL_IDENTITY,
+        CHANNEL_DNA,
         core,
         char_block,
         f"composition: {ctx.composition['prompt']}",
@@ -2067,28 +2553,30 @@ def _assemble_prompt(ctx: PromptContext) -> str:
         MOTION_LOCK,
         f"background: {ctx.background}",
         ctx.palette_prompt,
-        f"genre: {ctx.genre}, atmosphere: {ctx.genre_boost}",
+        f"genre atmosphere: {ctx.genre_boost}",
         f"music element: {ctx.music_element}",
         f"song title: {ctx.song_name}, mood: {ctx.song_mood}",
-        THUMBNAIL_LOCK,
+        ctx.first_frame_hook,
+        ctx.loop_hint,
+        FIRST_FRAME_LOCK,
         STYLE_LOCK,
         QUALITY_LOCK,
         "scroll-stopping cyberpunk anime visual, perfect neon and power lighting on complete figure, "
-        "jaw-dropping cinematic composition, no text, no watermark, no logo, no extra people",
+        "jaw-dropping cinematic composition for 1M+ view YouTube Short, "
+        "no text, no watermark, no logo, no extra people",
     ]
 
     return _compact(", ".join(p.strip().strip(",") for p in parts if p.strip()), max_len=3200)
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# CLAUDE PROMPT BUILDER (via API)
+# [VIRAL 9] CLAUDE PROMPT BUILDER — reescrito com foco viral
 # ═══════════════════════════════════════════════════════════════════════
 
 def _build_claude_enhanced_prompt(ctx: PromptContext) -> Optional[str]:
     """
-    [FIX 1] Usa o modelo correto claude-opus-4-5
-    [FIX 5] Limite aumentado para 100-160 palavras
-    [FIX 6] Permite frases descritivas além de vírgulas
+    [VIRAL 1] Usa claude-sonnet-4-6
+    [VIRAL 9] System prompt reescrito com foco em retenção e primeiro frame
     """
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -2102,60 +2590,73 @@ def _build_claude_enhanced_prompt(ctx: PromptContext) -> Optional[str]:
         char_type = ctx.char.char_type
 
         system = (
-            "You are a creative director for a viral YouTube music Shorts channel with anime visuals. "
-            "You write Flux image model prompts that generate scroll-stopping, premium, vivid, "
-            "cinematic anime art. Your prompts are detailed descriptions using both descriptive sentences "
-            "and comma-separated visual elements. The image must always feature exactly one anime "
-            "character as the central subject. Output ONLY the final image prompt in English, "
-            "no explanation, no preamble, no markdown."
+            "You are the creative director of a viral YouTube music Shorts channel called DJ Dark Mark. "
+            "Your channel covers trap, phonk, electronic, and dark pop music with premium anime visuals. "
+            "Your ONLY goal is to write Flux image model prompts that generate images which stop viewers "
+            "scrolling within 0.5 seconds and make them watch until the end — then watch again. "
+            "\n\n"
+            "The key insight: in YouTube Shorts music channels, the VISUAL is the hook. "
+            "The image must communicate the vibe of the music before the audio registers. "
+            "A scroll-stopping first frame for phonk = purple neon + dark + aggression. "
+            "For trap = red/gold + urban power + smoke. "
+            "For electronic = cyan particles + futurism + motion. "
+            "For dark pop = rain + purple + cinematic loneliness. "
+            "\n\n"
+            "Rules: "
+            "1. EXACTLY one anime character as central subject — no other people. "
+            "2. Anime illustration only — NOT photorealistic, NOT 3D. "
+            "3. Dark background always — the channel aesthetic is dark neon, never bright. "
+            "4. Maximum contrast between character and background. "
+            "5. Face or eyes must be readable at small thumbnail resolution. "
+            "6. No text, no watermark, no logos in the image. "
+            "7. Vertical 9:16 format — character takes 80-85% of frame height. "
+            "8. Output ONLY the final prompt in English, 100-160 words, no explanation."
         )
 
         gender_word = "young woman" if char_type == CharType.WAIFU else "young man"
         char_desc   = char.base_description
         sig_el      = char.signature_elements[0]
 
-        user = f"""
-Write a Flux image model prompt for a vertical YouTube music Short visual.
+        user = f"""Write a Flux image model prompt for a {ctx.genre} music YouTube Short visual.
 
 Character: {char.name} from {char.series}
-Character description: {char_desc}
-Signature visual element: {sig_el}
-Character identity: {char.power_phrase}
+Description: {char_desc}
+Signature element: {sig_el}
+Power identity: {char.power_phrase}
 
-Visual context:
-- Composition: {ctx.composition['prompt'][:120]}
-- Pose: {ctx.pose[:100]}
-- Visual hook: {ctx.visual_hook[:120]}
-- Lighting: {ctx.lighting_stack[:120]}
-- Background: {ctx.background}
-- Color palette: {ctx.palette_prompt}
-- Particle density: {ctx.particle_tier[:80]}
-- Genre atmosphere: {ctx.genre_boost[:100]}
-- Song title: {ctx.song_name}, emotional mood: {ctx.song_mood[:80]}
+Context:
+- Composition: {ctx.composition['prompt'][:100]}
+- Pose: {ctx.pose[:90]}
+- Visual hook: {ctx.visual_hook[:100]}
+- Lighting: {ctx.lighting_stack[:100]}
+- Background: {ctx.background[:120]}
+- Color palette: {ctx.palette_prompt[:100]}
+- Genre atmosphere: {ctx.genre_boost[:120]}
+- Song: {ctx.song_name}, mood: {ctx.song_mood[:70]}
+- First frame goal: {ctx.first_frame_hook[:120]}
 
 Requirements:
-- Exactly one {gender_word} as central subject — no other people
-- Anime illustration style only — NOT photorealistic, NOT 3D
-- Vivid neon cyberpunk colors, cinematic dramatic lighting
-- Expressive detailed anime face visible at thumbnail scale
-- Complete outfit and signature elements fully visible
-- Vertical 9:16 format, character centered and dominant
-- No text, no watermark, no logos
-- 100 to 160 words describing the scene in detail
+- One {gender_word} as the ONLY subject
+- Anime illustration style, dark neon cyberpunk
+- Maximum scroll-stop power in first frame
+- Dark background (#050508) with neon contrast
+- Detailed expressive anime face readable at small size
+- 9:16 vertical, character dominant in frame
+- 100-160 words describing the complete scene
 """
 
         resp = client.messages.create(
-            model=get_anthropic_model(),  # [FIX 1]
+            model=get_anthropic_model(),
             max_tokens=300,
             system=system,
             messages=[{"role": "user", "content": user}],
         )
         prompt = resp.content[0].text.strip().strip('"').strip("'")
-        logger.info(f"[Claude] Prompt gerado ({len(prompt)} chars)")
+        logger.info(f"[Claude] Prompt gerado ({len(prompt)} chars) — modelo: {get_anthropic_model()}")
         return _compact(prompt, max_len=2000)
 
     except Exception as e:
-        logger.warning(f"[Claude] Falha ao gerar prompt: {e} — usando fallback estático")
+        logger.warning(f"[Claude] Falha: {e} — usando fallback estático")
         return None
 
 
@@ -2185,13 +2686,44 @@ def build_ai_prompt(
         force_full_body=force_full_body, force_waifu=force_waifu, force_shounen=force_shounen,
     )
 
-    # Tenta Claude primeiro, fallback para estático
     if use_claude:
         claude_prompt = _build_claude_enhanced_prompt(ctx)
         if claude_prompt:
             return claude_prompt
 
     return _assemble_prompt(ctx)
+
+
+# ═══════════════════════════════════════════════════════════════════════
+# [VIRAL 12] build_viral_short_prompt() — NOVA FUNÇÃO PRINCIPAL
+# Combina tudo otimizado para 1M+ views
+# ═══════════════════════════════════════════════════════════════════════
+
+def build_viral_short_prompt(
+    genre: str,
+    song_filename: str,
+    short_num: int = 1,
+    force_waifu: bool = False,
+    force_shounen: bool = False,
+    use_claude: bool = True,
+) -> str:
+    """
+    Função principal otimizada para máximo viral.
+    Aplica todos os sistemas de viral enhancement em sequência.
+
+    Uso:
+        prompt = build_viral_short_prompt("phonk", "dark phonk banger.mp3", short_num=1)
+        image_path = generate_image(prompt, "output/short_01.png")
+    """
+    logger.info(f"[VIRAL] Gerando prompt viral — gênero: {genre} | short: {short_num}")
+    return build_ai_prompt(
+        style=genre,
+        filename=song_filename,
+        short_num=short_num,
+        force_waifu=force_waifu,
+        force_shounen=force_shounen,
+        use_claude=use_claude,
+    )
 
 
 def build_waifu_prompt(style: str = "phonk", short_num: int = 1, filename: str = "song.mp3") -> str:
@@ -2203,7 +2735,7 @@ def build_shounen_prompt(style: str = "phonk", short_num: int = 1, filename: str
 
 
 # ═══════════════════════════════════════════════════════════════════════
-# IMAGE GENERATION (REPLICATE) — [FIX 2, 3, 7, 8, 9]
+# IMAGE GENERATION (REPLICATE)
 # ═══════════════════════════════════════════════════════════════════════
 
 SAVE_DIR = Path("temp")
@@ -2217,7 +2749,6 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
     output_path = output_path or str(SAVE_DIR / f"ai_bg_{int(time.time())}.png")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    # [FIX 4] Sem "masterpiece"/"best quality" no suffix
     full_prompt = _compact(prompt + GENERATION_SUFFIX, max_len=3500)
 
     headers = {
@@ -2226,19 +2757,17 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
         "Prefer": "wait",
     }
 
-    # [FIX 7] Seed varia por tentativa para garantir diversidade
     base_seed = random.randint(1000, 999_999)
 
     for model_idx, model in enumerate(REPLICATE_MODELS):
-        # [FIX 3] Parâmetros corretos por modelo
         if "flux-dev" in model:
             model_input = {
                 **FLUX_DEV_PARAMS,
                 "prompt": full_prompt,
-                "negative_prompt": NEGATIVE_PROMPT,  # [FIX 9]
+                "negative_prompt": NEGATIVE_PROMPT,
                 "seed": base_seed + model_idx,
             }
-        else:  # flux-schnell
+        else:
             model_input = {
                 **FLUX_SCHNELL_PARAMS,
                 "prompt": full_prompt,
@@ -2249,7 +2778,6 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
             try:
                 logger.info(f"[Replicate] Tentativa {attempt}/3 — {model.split('/')[-1]}")
 
-                # [FIX 8] Endpoint correto
                 resp = requests.post(
                     f"https://api.replicate.com/v1/models/{model}/predictions",
                     headers=headers,
@@ -2264,7 +2792,6 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
                     or f"https://api.replicate.com/v1/predictions/{pred['id']}"
                 )
 
-                # Polling com backoff
                 for poll in range(180):
                     time.sleep(2.0 if poll < 30 else 3.0)
                     sr = requests.get(poll_url, headers=headers, timeout=30)
@@ -2283,7 +2810,6 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
                         Path(output_path).write_bytes(img_resp.content)
 
                         size = Path(output_path).stat().st_size
-                        # [NEW 2] Validação mais rigorosa: mínimo 80KB
                         if size < 80_000:
                             logger.warning(f"[Replicate] Imagem suspeita: {size} bytes — descartando")
                             Path(output_path).unlink(missing_ok=True)
@@ -2293,7 +2819,7 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
                         return output_path
 
                     if status == "failed":
-                        raise RuntimeError(data.get("error", "Erro desconhecido do Replicate"))
+                        raise RuntimeError(data.get("error", "Erro desconhecido"))
 
                     if status not in ("starting", "processing"):
                         raise RuntimeError(f"Status inesperado: {status}")
@@ -2303,7 +2829,6 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
             except Exception as e:
                 wait = 4 * attempt
                 logger.error(f"[Replicate] Tentativa {attempt} falhou: {e}. Aguardando {wait}s…")
-                # [NEW 1] Muda seed em cada tentativa
                 model_input["seed"] = base_seed + model_idx + attempt * 37
                 time.sleep(wait)
 
@@ -2397,7 +2922,8 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser(description=f"AI Image Generator — DJ DARK MARK {VERSION}")
-    parser.add_argument("--style",              default="phonk")
+    parser.add_argument("--style",              default="phonk",
+                        choices=["phonk","trap","electronic","darkpop","dark","rock","drift","funk"])
     parser.add_argument("--filename",           default="dark phonk.mp3")
     parser.add_argument("--short-num",          type=int, default=1)
     parser.add_argument("--output",             default="assets/background.png")
@@ -2409,30 +2935,40 @@ if __name__ == "__main__":
     parser.add_argument("--back",               action="store_true")
     parser.add_argument("--full-body",          action="store_true")
     parser.add_argument("--prompt-only",        action="store_true")
-    parser.add_argument("--no-claude",          action="store_true", help="Pular API Claude")
+    parser.add_argument("--no-claude",          action="store_true")
     parser.add_argument("--list-waifus",        action="store_true")
     parser.add_argument("--list-shounen",       action="store_true")
     parser.add_argument("--batch",              action="store_true")
     parser.add_argument("--batch-n",            type=int, default=3)
+    parser.add_argument("--viral",              action="store_true",
+                        help="Usa build_viral_short_prompt() — otimizado para 1M+ views")
+    parser.add_argument("--formula",            action="store_true",
+                        help="Imprime a fórmula visual do canal")
 
     args = parser.parse_args()
+
+    if args.formula:
+        print(CHANNEL_FORMULA)
+        raise SystemExit(0)
 
     if args.list_waifus:
         print(f"═══ {len(WAIFU_CHARACTERS)} WAIFU CHARACTERS ═══")
         for i, c in enumerate(WAIFU_CHARACTERS, 1):
-            print(f"  {i:3d}. {c.name} ({c.series})")
+            tier = " ★TIER1" if c.name in PHONK_TRAP_TIER1_WAIFUS or c.name in ELECTRONIC_TIER1_WAIFUS or c.name in DARKPOP_TIER1_WAIFUS else ""
+            print(f"  {i:3d}. {c.name} ({c.series}){tier}")
             print(f"       → {c.power_phrase}")
         raise SystemExit(0)
 
     if args.list_shounen:
         print(f"═══ {len(SHOUNEN_CHARACTERS)} SHOUNEN CHARACTERS ═══")
         for i, c in enumerate(SHOUNEN_CHARACTERS, 1):
-            print(f"  {i:3d}. {c.name} ({c.series})")
+            tier = " ★TIER1" if c.name in PHONK_TRAP_TIER1_SHOUNEN or c.name in ELECTRONIC_TIER1_SHOUNEN or c.name in DARKPOP_TIER1_SHOUNEN else ""
+            print(f"  {i:3d}. {c.name} ({c.series}){tier}")
             print(f"       → {c.power_phrase}")
         raise SystemExit(0)
 
     if args.batch:
-        genres = ["phonk", "trap", "dark", "darkpop", "electronic", "rock"]
+        genres = ["phonk", "trap", "dark", "darkpop", "electronic"]
         results = generate_background_batch(
             styles=genres, variants_per_style=args.batch_n,
             force_waifu=args.waifu, force_shounen=args.shounen,
@@ -2441,27 +2977,40 @@ if __name__ == "__main__":
             print(f"  {genre}: {len(paths)} generated")
         raise SystemExit(0)
 
-    prompt = build_ai_prompt(
-        style=args.style, filename=args.filename, styles=[args.style],
-        short_num=args.short_num,
-        force_teal_pink=args.force_teal_pink, force_purple_gold=args.force_purple_gold,
-        force_crimson_blue=args.force_crimson_blue, force_back=args.back,
-        force_full_body=getattr(args, "full_body", False),
-        force_waifu=args.waifu, force_shounen=args.shounen,
-        use_claude=not args.no_claude,
-    )
+    if args.viral:
+        prompt = build_viral_short_prompt(
+            genre=args.style,
+            song_filename=args.filename,
+            short_num=args.short_num,
+            force_waifu=args.waifu,
+            force_shounen=args.shounen,
+            use_claude=not args.no_claude,
+        )
+    else:
+        prompt = build_ai_prompt(
+            style=args.style, filename=args.filename, styles=[args.style],
+            short_num=args.short_num,
+            force_teal_pink=args.force_teal_pink, force_purple_gold=args.force_purple_gold,
+            force_crimson_blue=args.force_crimson_blue, force_back=args.back,
+            force_full_body=getattr(args, "full_body", False),
+            force_waifu=args.waifu, force_shounen=args.shounen,
+            use_claude=not args.no_claude,
+        )
 
     if args.prompt_only:
         print(f"═══ PROMPT {VERSION} ═══")
         print(prompt)
-        print(f"\nPrompt length: {len(prompt)} chars")
+        print(f"\n[Prompt length: {len(prompt)} chars]")
         print(f"\n═══ NEGATIVE PROMPT ═══")
         print(NEGATIVE_PROMPT)
         print(f"\n═══ STATS ═══")
-        print(f"  Waifu characters:   {len(WAIFU_CHARACTERS)}")
-        print(f"  Shounen characters: {len(SHOUNEN_CHARACTERS)}")
-        print(f"  Total characters:   {len(ALL_CHARACTERS)}")
-        print(f"  Waifu poses:        {len(WAIFU_POSES)}")
-        print(f"  Shounen poses:      {len(SHOUNEN_POSES)}")
+        print(f"  Waifu characters:    {len(WAIFU_CHARACTERS)}")
+        print(f"  Shounen characters:  {len(SHOUNEN_CHARACTERS)}")
+        print(f"  Total characters:    {len(ALL_CHARACTERS)}")
+        print(f"  Waifu poses:         {len(WAIFU_POSES)}")
+        print(f"  Shounen poses:       {len(SHOUNEN_POSES)}")
+        print(f"  Genre backgrounds:   {sum(len(v) for v in GENRE_BACKGROUND_MATRIX.values())}")
+        print(f"\n═══ FÓRMULA DO CANAL ═══")
+        print(CHANNEL_FORMULA)
     else:
         generate_image(prompt, args.output)
