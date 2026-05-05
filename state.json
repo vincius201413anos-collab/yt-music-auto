@@ -1156,9 +1156,9 @@
       "id": "1nGIvcSpkdp0uXdpg3HrLYxp48RIX5TcZ",
       "name": "star (1).mp3",
       "key": "1nGIvcSpkdp0uXdpg3HrLYxp48RIX5TcZ",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "star"
     },
     {
