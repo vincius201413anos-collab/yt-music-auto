@@ -1166,9 +1166,9 @@
       "name": "star.mp3",
       "key": "1v4gkOurGCzdh8gykwRPdae9f3fxcisfz",
       "name_key": "star",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "16cyyy3AcHBe7VIGTPG7rRBIW1_W0PfOt",
