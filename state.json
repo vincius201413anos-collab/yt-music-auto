@@ -1210,9 +1210,9 @@
       "id": "1laiTu7IZCQB3VEklKP16ptRc72zNgrn4",
       "name": "Glass Ocean (1).mp3",
       "key": "1laiTu7IZCQB3VEklKP16ptRc72zNgrn4",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "glass ocean"
     },
     {
