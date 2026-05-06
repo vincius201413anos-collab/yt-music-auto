@@ -1246,9 +1246,9 @@
       "id": "1nhK6jDXwT7mdb2uabBX0XofiFLqlGo0T",
       "name": "Bass From Hell.mp3",
       "key": "1nhK6jDXwT7mdb2uabBX0XofiFLqlGo0T",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "bass from hell"
     },
     {
