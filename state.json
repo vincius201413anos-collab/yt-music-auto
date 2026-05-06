@@ -1256,9 +1256,9 @@
       "name": "Bass From Hell.wav",
       "key": "1m27ULit_leRxtDjVpCk76V88zVjWGpwG",
       "name_key": "bass from hell",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1QYBPgNaz7FBpMez_3hjaHkumE8T8MVa6",
