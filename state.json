@@ -1292,9 +1292,9 @@
       "name": "Quiet Poison.mp3",
       "key": "1GN3YTKgR46WzBFD2PSua0L2sVfoJWx-k",
       "name_key": "quiet poison",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "110DHVs8gAbyWxIXu9a4K8PZzfaIyzGwR",
