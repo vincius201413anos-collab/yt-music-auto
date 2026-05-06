@@ -1238,9 +1238,9 @@
       "name": "Grave Destroyer.mp3",
       "key": "1YiJ8IWIUowVSbayaZZy7sP5Btc4U562N",
       "name_key": "grave destroyer",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1nhK6jDXwT7mdb2uabBX0XofiFLqlGo0T",
