@@ -1282,9 +1282,9 @@
       "id": "1oSUSPQu1w5y5Vy2_QElD-CbWA8AuREd9",
       "name": "Quiet Poison (1).mp3",
       "key": "1oSUSPQu1w5y5Vy2_QElD-CbWA8AuREd9",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "quiet poison"
     },
     {
