@@ -1328,9 +1328,9 @@
       "name": "Whispery minimal.mp3",
       "key": "1AMs1Oxorf33e6EPRbuE8tBddKBhlesue",
       "name_key": "whispery minimal",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1AI1b82sGZIhbZxdAcJaKi-4TBUyL5pZI",
