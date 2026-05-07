@@ -1372,9 +1372,9 @@
       "id": "1KJxd5NjvjlGzZXTabVftBXCjUbLv0q-U",
       "name": "Velvet Nights (1).mp3",
       "key": "1KJxd5NjvjlGzZXTabVftBXCjUbLv0q-U",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "velvet nights"
     },
     {
