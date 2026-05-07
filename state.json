@@ -1354,9 +1354,9 @@
       "id": "1qjMj6e1tylLp9Voklg3k-sYyMhIt3_Wd",
       "name": "Electric Heart (1).mp3",
       "key": "1qjMj6e1tylLp9Voklg3k-sYyMhIt3_Wd",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "electric heart"
     },
     {
