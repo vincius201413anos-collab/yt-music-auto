@@ -1336,9 +1336,9 @@
       "id": "1AI1b82sGZIhbZxdAcJaKi-4TBUyL5pZI",
       "name": "Bad Blood (1).mp3",
       "key": "1AI1b82sGZIhbZxdAcJaKi-4TBUyL5pZI",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "bad blood"
     },
     {
