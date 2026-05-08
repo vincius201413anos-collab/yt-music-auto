@@ -1436,9 +1436,9 @@
       "name": "Lights Will Guide You.mp3",
       "key": "10Pz8oKhjPOkiEuGMO_ISVNTHN4DqQE_V",
       "name_key": "lights will guide you",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1JVABxdOjJv9Z_itaiN9lQVCgLzSOIJe7",
