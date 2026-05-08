@@ -1391,9 +1391,9 @@
       "name": "Young and Reckless (1).mp3",
       "key": "1jqspoNEtkVGOwh6WiWPoxlq2G1NABtbs",
       "name_key": "young and reckless",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1GiFExE4YU6gyoz02WuDlAluB_-LLMTo_",
