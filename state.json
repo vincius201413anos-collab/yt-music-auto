@@ -1426,9 +1426,9 @@
       "id": "1tyr-OfMpZ6n7KCYPHPUJpxPJKhk9bGuh",
       "name": "Lights Will Guide You (1).mp3",
       "key": "1tyr-OfMpZ6n7KCYPHPUJpxPJKhk9bGuh",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "lights will guide you"
     },
     {
