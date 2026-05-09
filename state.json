@@ -1508,9 +1508,9 @@
       "name": "Count the Stars With Me.mp3",
       "key": "1gQaa_KOtvUbvXGqCTWySvFk-1dmJPQBE",
       "name_key": "count the stars with me",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1xpB8tuZs5Ww4RiXm3Mq69AbLKVMeiwR2",
