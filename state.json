@@ -1498,9 +1498,9 @@
       "id": "1rNiatV84EXXeoaOMERZov9NT3n_K-E-W",
       "name": "Count the Stars With Me (1).mp3",
       "key": "1rNiatV84EXXeoaOMERZov9NT3n_K-E-W",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "count the stars with me"
     },
     {
