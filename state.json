@@ -1580,9 +1580,9 @@
       "name": "Wildfire Heart.mp3",
       "key": "1LIx7dxHFKLCUmTMp3ftb8OI7hRHPTMLG",
       "name_key": "wildfire heart",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "16akor_HXcOvaWHlP2ZXgomUFHV3wAIQE",
