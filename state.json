@@ -1526,9 +1526,9 @@
       "name": "Ride the Dark.mp3",
       "key": "1_26uaRAJKAuBUYp-riwWAUdL9YQFHU1G",
       "name_key": "ride the dark",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1En-D6Zmy17NfhLB1q5gFyrlZrM4z316j",
