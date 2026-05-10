@@ -1552,9 +1552,9 @@
       "id": "19YwjtgsRWJLpHGdz4K_4tlk38HSz5Ihy",
       "name": "Signal Fire (1).mp3",
       "key": "19YwjtgsRWJLpHGdz4K_4tlk38HSz5Ihy",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic",
       "name_key": "signal fire"
     },
     {
