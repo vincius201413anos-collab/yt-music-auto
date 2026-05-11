@@ -220,17 +220,6 @@ COMPOSITION_STYLES: list[dict] = [
         "waifu_weight": 5,
         "shounen_weight": 5,
     },
-    {
-        "name": "back_view_dramatic",
-        "prompt": (
-            "3/4 BACK WITH PROFILE — character mostly from behind but face turned 45° showing eye, "
-            "eye visible and glowing even in partial profile, "
-            "full aura/technique consuming vista ahead, "
-            "AVOID if eye glow cannot be seen — default to bust shot instead"
-        ),
-        "waifu_weight": 2,
-        "shounen_weight": 2,
-    },
 ]
 
 
@@ -1327,12 +1316,11 @@ def build_ai_prompt(
     force_waifu: bool = False,
     force_shounen: bool = False,
     use_claude: bool = True,
-    styles: Optional[list] = None,  # compatibilidade v52
-    char_type=None,  # compatibilidade v52
+    styles: Optional[list] = None,
+    char_type=None,
     force_teal_pink: bool = False,
     force_purple_gold: bool = False,
     force_crimson_blue: bool = False,
-    force_back: bool = False,
     force_full_body: bool = False,
 ) -> str:
 
@@ -1351,9 +1339,7 @@ def build_ai_prompt(
     char = _select_viral_character(rng, mapped_genre, selected_type)
 
     # Composição — close-up tem peso 45%
-    if force_back:
-        comp = next(c for c in COMPOSITION_STYLES if c["name"] == "back_view_dramatic")
-    elif force_full_body:
+    if force_full_body:
         comp = next(c for c in COMPOSITION_STYLES if c["name"] == "full_body_power")
     else:
         comp = _weighted_composition(rng, selected_type)
@@ -1558,14 +1544,6 @@ def generate_background_batch(
 # CLI
 # ═══════════════════════════════════════════════════════════════════════
 
-CHANNEL_DNA = (
-    "DJ Dark Mark viral anime phonk trap music channel — "
-    "scroll-stopping 9:16 vertical Short thumbnail image, "
-    "cinematic anime face dominating the frame, "
-    "glowing eyes as the single most powerful visual element, "
-    "dark neon underground premium aesthetic"
-)
-
 if __name__ == "__main__":
     import argparse
 
@@ -1577,7 +1555,6 @@ if __name__ == "__main__":
     parser.add_argument("--output", default="assets/background.png")
     parser.add_argument("--waifu", action="store_true")
     parser.add_argument("--shounen", action="store_true")
-    parser.add_argument("--back", action="store_true")
     parser.add_argument("--full-body", action="store_true")
     parser.add_argument("--prompt-only", action="store_true")
     parser.add_argument("--no-claude", action="store_true")
