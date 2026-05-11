@@ -1634,9 +1634,9 @@
       "name": "Burn With Me Tonight.mp3",
       "key": "1ny3eLiwglkg8yy1UC69B7VVBLhMbHz4y",
       "name_key": "burn with me tonight",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1UY76OfODBfYL16cIhT9VpFNhE-XYdyeW",
