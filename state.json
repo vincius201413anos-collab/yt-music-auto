@@ -1652,9 +1652,9 @@
       "name": "Nobody Sees Me.mp3",
       "key": "1wWs8R1xecXsjw0SrJ0KOwt-olcfjoHpV",
       "name_key": "nobody sees me",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1amuvcob8R65CV7G_6-th5Uw9SUrRWbq3",
