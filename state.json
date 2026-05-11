@@ -1669,9 +1669,9 @@
       "id": "1dzcYvlvN786EVgTlIpe_D7RbI4Vts9Gk",
       "name": "Golden For You (.mp3",
       "key": "1dzcYvlvN786EVgTlIpe_D7RbI4Vts9Gk",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "golden for you ("
     },
     {
