@@ -1624,9 +1624,9 @@
       "id": "1HkVos7CAoa_ToDSqwR8cB_6-AspZIrog",
       "name": "Burn With Me Tonight (1).mp3",
       "key": "1HkVos7CAoa_ToDSqwR8cB_6-AspZIrog",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "burn with me tonight"
     },
     {
