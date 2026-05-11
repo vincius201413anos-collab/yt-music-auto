@@ -1,5 +1,5 @@
 """
-ai_image_generator.py — DJ DARK MARK v53.0 ██ THUMBNAIL-FIRST EDITION ██
+ai_image_generator.py — DJ DARK MARK v53.1 ██ FIXED BOT COMPAT EDITION ██
 ══════════════════════════════════════════════════════════════════════════
 
 ANÁLISE v52 → v53:
@@ -71,11 +71,11 @@ FLUX_SCHNELL_PARAMS: dict = {
     "disable_safety_checker": True,
 }
 
-VERSION = "v53.0-THUMBNAIL-FIRST"
+VERSION = "v53.1-THUMBNAIL-FIRST-BOT-COMPAT"
 
 
 def get_anthropic_model() -> str:
-    return os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-20250514")
+    return os.getenv("ANTHROPIC_MODEL", "claude-sonnet-4-6")
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -1312,24 +1312,72 @@ def _assemble_prompt(
 def build_ai_prompt(
     style: str = "phonk",
     filename: str = "song.mp3",
+    styles: Optional[list] = None,
     short_num: int = 1,
     force_waifu: bool = False,
     force_shounen: bool = False,
     use_claude: bool = True,
-    styles: Optional[list] = None,
     char_type=None,
     force_teal_pink: bool = False,
     force_purple_gold: bool = False,
     force_crimson_blue: bool = False,
+    force_back: bool = False,
     force_full_body: bool = False,
+    **kwargs,
 ) -> str:
+    """Build one Flux prompt for the bot.
 
-    mapped_genre = GENRE_MAP.get(style.lower().strip(), "default")
-    rng = _make_rng(mapped_genre, filename, short_num)
-    song_name = _clean_song_name(filename)
+    IMPORTANT COMPATIBILITY FIX v53.1:
+    main.py in this repo calls:
+        build_ai_prompt(style, filename, styles, short_num=short_num)
+    The broken v53 had `short_num` before `styles`, which caused:
+        TypeError: got multiple values for argument 'short_num'
+    This signature keeps the old bot call working while preserving the v53 prompt system.
+    """
 
-    # Tipo de personagem — waifu 65% cross-gender
-    if force_waifu:
+    # Backward safety: if some older caller passed short_num as the 3rd positional arg.
+    if isinstance(styles, int) and short_num == 1:
+        short_num = styles
+        styles = None
+
+    # Defensive normalization: never let malformed inputs kill the bot.
+    style_raw = str(style or "phonk").lower().strip()
+    secondary_styles = [str(x).lower().strip() for x in (styles or []) if str(x).strip()]
+
+    mapped_genre = GENRE_MAP.get(style_raw, "default")
+
+    # Use secondary genre hints from main.py/detect_genre_multi when primary is weak/default.
+    if mapped_genre == "default" and secondary_styles:
+        for sec in secondary_styles:
+            if sec in GENRE_MAP:
+                mapped_genre = GENRE_MAP[sec]
+                break
+
+    # Filename can correct obvious genre mistakes without touching main.py.
+    clean_file = str(filename or "song.mp3").lower()
+    if any(w in clean_file for w in ["electronic", "edm", "techno", "house", "rave", "cyber", "laser", "club", "dubstep"]):
+        mapped_genre = "electronic"
+    elif any(w in clean_file for w in ["trap", "808", "drill", "street", "plug", "rage", "carti", "hood"]):
+        mapped_genre = "trap"
+    elif any(w in clean_file for w in ["phonk", "drift", "cowbell", "memphis"]):
+        mapped_genre = "phonk"
+    elif any(w in clean_file for w in ["darkpop", "dark pop", "love", "heart", "rose", "sad", "rain"]):
+        mapped_genre = "darkpop"
+
+    try:
+        short_num = int(short_num)
+    except Exception:
+        short_num = 1
+
+    rng = _make_rng(mapped_genre, str(filename or "song.mp3"), short_num)
+    song_name = _clean_song_name(str(filename or "song.mp3"))
+
+    # Tipo de personagem — waifu 65% cross-gender, unless forced.
+    if char_type in (CharType.WAIFU, "waifu", "female", "girl"):
+        selected_type = CharType.WAIFU
+    elif char_type in (CharType.SHOUNEN, "shounen", "male", "boy"):
+        selected_type = CharType.SHOUNEN
+    elif force_waifu:
         selected_type = CharType.WAIFU
     elif force_shounen:
         selected_type = CharType.SHOUNEN
@@ -1338,9 +1386,13 @@ def build_ai_prompt(
 
     char = _select_viral_character(rng, mapped_genre, selected_type)
 
-    # Composição — close-up tem peso 45%
+    # v53 insight: close-up is default. Full body only when explicitly forced.
     if force_full_body:
         comp = next(c for c in COMPOSITION_STYLES if c["name"] == "full_body_power")
+    elif force_back:
+        # Back view is intentionally NOT supported because it killed retention.
+        logger.warning("force_back ignorado: back view derrubou views; usando close/3-4 readable face.")
+        comp = _weighted_composition(rng, selected_type)
     else:
         comp = _weighted_composition(rng, selected_type)
 
@@ -1371,7 +1423,11 @@ def build_ai_prompt(
             char_type=selected_type,
         )
         if claude_prompt:
-            return claude_prompt
+            # Add hard locks outside Claude output so Claude cannot forget the retention fixes.
+            return _compact(
+                claude_prompt + ", " + THUMBNAIL_CONTRAST_LOCK + ", " + GENERATION_SUFFIX,
+                max_len=3200,
+            )
 
     return _assemble_prompt(
         char=char, composition=comp, emotion=emotion,
@@ -1382,7 +1438,6 @@ def build_ai_prompt(
         music_element=music_element, char_type=selected_type,
     )
 
-
 def build_viral_short_prompt(
     genre: str,
     song_filename: str,
@@ -1390,14 +1445,19 @@ def build_viral_short_prompt(
     force_waifu: bool = False,
     force_shounen: bool = False,
     use_claude: bool = True,
+    force_full_body: bool = False,
 ) -> str:
-    logger.info(f"[VIRAL v53] genre={genre} | short={short_num}")
+    logger.info(f"[VIRAL v53.1] genre={genre} | short={short_num}")
     return build_ai_prompt(
-        style=genre, filename=song_filename, short_num=short_num,
-        force_waifu=force_waifu, force_shounen=force_shounen,
+        style=genre,
+        filename=song_filename,
+        styles=[genre] if genre else None,
+        short_num=short_num,
+        force_waifu=force_waifu,
+        force_shounen=force_shounen,
         use_claude=use_claude,
+        force_full_body=force_full_body,
     )
-
 
 def build_waifu_prompt(style: str = "phonk", short_num: int = 1, filename: str = "song.mp3") -> str:
     return build_ai_prompt(style=style, filename=filename, short_num=short_num, force_waifu=True)
@@ -1415,6 +1475,14 @@ SAVE_DIR = Path("temp")
 
 
 def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[str]:
+    """Generate image with Replicate, with safer fallbacks.
+
+    Improvements in v53.1:
+    - Does not crash the whole bot when Replicate rejects one input field.
+    - Retries Flux Dev with a sanitized input if 400/422 happens.
+    - Then falls back to Flux Schnell.
+    - Always returns None instead of raising, so main.py can use local background fallback.
+    """
     if not REPLICATE_API_TOKEN:
         logger.error("❌ REPLICATE_API_TOKEN não configurado!")
         return None
@@ -1422,7 +1490,7 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
     output_path = output_path or str(SAVE_DIR / f"ai_bg_{int(time.time())}.png")
     Path(output_path).parent.mkdir(parents=True, exist_ok=True)
 
-    full_prompt = _compact(prompt + GENERATION_SUFFIX, max_len=3500)
+    full_prompt = _compact(str(prompt or "") + GENERATION_SUFFIX, max_len=3500)
     headers = {
         "Authorization": f"Token {REPLICATE_API_TOKEN}",
         "Content-Type": "application/json",
@@ -1430,63 +1498,104 @@ def generate_image(prompt: str, output_path: Optional[str] = None) -> Optional[s
     }
     base_seed = random.randint(1000, 999_999)
 
-    for model_idx, model in enumerate(REPLICATE_MODELS):
-        if "flux-dev" in model:
-            model_input = {
-                **FLUX_DEV_PARAMS,
-                "prompt": full_prompt,
-                "negative_prompt": NEGATIVE_PROMPT,
-                "seed": base_seed + model_idx,
-            }
-        else:
-            model_input = {**FLUX_SCHNELL_PARAMS, "prompt": full_prompt, "seed": base_seed + model_idx}
+    def _download_result(data: dict) -> Optional[str]:
+        output = data.get("output")
+        image_url = output[0] if isinstance(output, list) and output else output
+        if not image_url:
+            raise RuntimeError("Output vazio")
+        img_resp = requests.get(image_url, timeout=90)
+        img_resp.raise_for_status()
+        Path(output_path).write_bytes(img_resp.content)
+        size = Path(output_path).stat().st_size
+        if size < 50_000:
+            Path(output_path).unlink(missing_ok=True)
+            raise RuntimeError(f"Imagem pequena: {size} bytes")
+        logger.info(f"✅ Salvo: {output_path} ({size // 1024}KB)")
+        return output_path
 
+    def _wait_prediction(poll_url: str) -> Optional[str]:
+        for poll in range(180):
+            time.sleep(2.0 if poll < 30 else 3.0)
+            sr = requests.get(poll_url, headers=headers, timeout=30)
+            sr.raise_for_status()
+            data = sr.json()
+            status = data.get("status")
+
+            if status == "succeeded":
+                return _download_result(data)
+            if status == "failed":
+                raise RuntimeError(data.get("error", "Erro desconhecido no Replicate"))
+            if status not in ("starting", "processing"):
+                raise RuntimeError(f"Status inesperado: {status}")
+        raise TimeoutError("Timeout aguardando imagem do Replicate")
+
+    def _post_prediction(model: str, model_input: dict) -> Optional[str]:
+        resp = requests.post(
+            f"https://api.replicate.com/v1/models/{model}/predictions",
+            headers=headers,
+            json={"input": model_input},
+            timeout=60,
+        )
+        if resp.status_code >= 400:
+            logger.error(f"[Replicate] HTTP {resp.status_code}: {resp.text[:600]}")
+        resp.raise_for_status()
+        pred = resp.json()
+
+        # If Replicate waited and already finished, use output immediately.
+        if pred.get("status") == "succeeded" and pred.get("output"):
+            return _download_result(pred)
+
+        poll_url = pred.get("urls", {}).get("get") or f"https://api.replicate.com/v1/predictions/{pred['id']}"
+        return _wait_prediction(poll_url)
+
+    # Inputs ordered from best quality to safest compatibility.
+    attempts: list[tuple[str, dict]] = []
+
+    flux_dev_rich = {
+        **FLUX_DEV_PARAMS,
+        "prompt": full_prompt,
+        "negative_prompt": NEGATIVE_PROMPT,
+        "seed": base_seed,
+    }
+    attempts.append(("black-forest-labs/flux-dev", flux_dev_rich))
+
+    # Some Replicate model versions reject negative_prompt/disable_safety_checker/guidance.
+    flux_dev_safe = {
+        "prompt": full_prompt,
+        "aspect_ratio": "9:16",
+        "num_inference_steps": 40,
+        "output_format": "png",
+        "output_quality": 100,
+        "seed": base_seed + 101,
+    }
+    attempts.append(("black-forest-labs/flux-dev", flux_dev_safe))
+
+    flux_schnell_safe = {
+        "prompt": full_prompt,
+        "aspect_ratio": "9:16",
+        "num_inference_steps": 4,
+        "go_fast": True,
+        "output_format": "png",
+        "output_quality": 100,
+        "seed": base_seed + 202,
+    }
+    attempts.append(("black-forest-labs/flux-schnell", flux_schnell_safe))
+
+    last_error: Optional[Exception] = None
+    for idx, (model, model_input) in enumerate(attempts, start=1):
         for attempt in range(1, 4):
             try:
-                logger.info(f"[Replicate] Tentativa {attempt}/3 — {model.split('/')[-1]}")
-                resp = requests.post(
-                    f"https://api.replicate.com/v1/models/{model}/predictions",
-                    headers=headers, json={"input": model_input}, timeout=45,
-                )
-                resp.raise_for_status()
-                pred = resp.json()
-                poll_url = pred.get("urls", {}).get("get") or f"https://api.replicate.com/v1/predictions/{pred['id']}"
-
-                for poll in range(180):
-                    time.sleep(2.0 if poll < 30 else 3.0)
-                    sr = requests.get(poll_url, headers=headers, timeout=30)
-                    sr.raise_for_status()
-                    data = sr.json()
-                    status = data.get("status")
-
-                    if status == "succeeded":
-                        output = data.get("output")
-                        image_url = output[0] if isinstance(output, list) else output
-                        if not image_url:
-                            raise RuntimeError("Output vazio")
-                        img_resp = requests.get(image_url, timeout=90)
-                        img_resp.raise_for_status()
-                        Path(output_path).write_bytes(img_resp.content)
-                        size = Path(output_path).stat().st_size
-                        if size < 80_000:
-                            Path(output_path).unlink(missing_ok=True)
-                            raise RuntimeError(f"Imagem pequena: {size} bytes")
-                        logger.info(f"✅ Salvo: {output_path} ({size // 1024}KB)")
-                        return output_path
-                    if status == "failed":
-                        raise RuntimeError(data.get("error", "Erro"))
-                    if status not in ("starting", "processing"):
-                        raise RuntimeError(f"Status: {status}")
-
+                logger.info(f"[Replicate] Plano {idx}/{len(attempts)} tentativa {attempt}/3 — {model.split('/')[-1]}")
+                return _post_prediction(model, model_input)
             except Exception as e:
-                wait = 4 * attempt
-                logger.error(f"[Replicate] Tentativa {attempt} falhou: {e}. Aguardando {wait}s…")
-                model_input["seed"] = base_seed + model_idx + attempt * 37
+                last_error = e
+                wait = min(4 * attempt, 12)
+                logger.error(f"[Replicate] Falhou: {e}. Aguardando {wait}s…")
+                model_input["seed"] = int(model_input.get("seed", base_seed)) + attempt * 37
                 time.sleep(wait)
 
-    logger.error("❌ Todas as tentativas falharam")
+    logger.error(f"❌ Todas as tentativas falharam: {last_error}")
     return None
-
 
 def generate_background_image(
     style: str = "phonk",
@@ -1573,6 +1682,7 @@ if __name__ == "__main__":
         prompt = build_viral_short_prompt(
             genre=args.style, song_filename=args.filename, short_num=args.short_num,
             force_waifu=args.waifu, force_shounen=args.shounen, use_claude=not args.no_claude,
+            force_full_body=args.full_body,
         )
         print(f"═══ PROMPT {VERSION} ═══")
         print(prompt)
@@ -1595,5 +1705,6 @@ if __name__ == "__main__":
         prompt = build_viral_short_prompt(
             genre=args.style, song_filename=args.filename, short_num=args.short_num,
             force_waifu=args.waifu, force_shounen=args.shounen, use_claude=not args.no_claude,
+            force_full_body=args.full_body,
         )
         generate_image(prompt, args.output)
