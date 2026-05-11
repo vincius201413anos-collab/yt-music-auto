@@ -1588,9 +1588,9 @@
       "id": "16akor_HXcOvaWHlP2ZXgomUFHV3wAIQE",
       "name": "Beautiful Wreckage (1).mp3",
       "key": "16akor_HXcOvaWHlP2ZXgomUFHV3wAIQE",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "beautiful wreckage"
     },
     {
