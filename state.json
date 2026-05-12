@@ -1688,9 +1688,9 @@
       "name": "Chasing What Burns.mp3",
       "key": "1F0fakBE6lsilia4FliCuTfBDwLmpmoQX",
       "name_key": "chasing what burns",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1HIDH2doM5jIJ3RaGtvXyunh_K9NVK_XL",
