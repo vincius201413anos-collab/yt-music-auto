@@ -1706,9 +1706,9 @@
       "name": "Kingdom of Ash.mp3",
       "key": "12eXjtQBM6YcLBkbxsNdTsiQxQ1Y7Zxnc",
       "name_key": "kingdom of ash",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1L9qDlfQy7EhwtMhSoQ1U9izVYWmr__XA",
