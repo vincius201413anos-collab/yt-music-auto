@@ -1732,9 +1732,9 @@
       "id": "1N2tsD-NlURp0Z-Kxm43G4tBkLS86JqEK",
       "name": "Silk and Sorrow (1).mp3",
       "key": "1N2tsD-NlURp0Z-Kxm43G4tBkLS86JqEK",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "silk and sorrow"
     },
     {
