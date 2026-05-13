@@ -1750,9 +1750,9 @@
       "id": "1QEVYYZ7xKAUz3YVHqdjjg0F0mPVd6R36",
       "name": "The Ticking (1).mp3",
       "key": "1QEVYYZ7xKAUz3YVHqdjjg0F0mPVd6R36",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "the ticking"
     },
     {
