@@ -1786,9 +1786,9 @@
       "id": "1GMvABmi7fN5m4h-xXK-yWSYtoRqCAYl6",
       "name": "Porcelain God (1).mp3",
       "key": "1GMvABmi7fN5m4h-xXK-yWSYtoRqCAYl6",
-      "done": 0,
-      "is_new": true,
-      "genre": null,
+      "done": 1,
+      "is_new": false,
+      "genre": "trap",
       "name_key": "porcelain god"
     },
     {
