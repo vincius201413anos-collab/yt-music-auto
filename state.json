@@ -1805,9 +1805,9 @@
       "name": "DARK PHONK (1).mp3",
       "key": "1-EfVW5UY_q7kXVvsb1wXiev7neSOvy_9",
       "name_key": "dark phonk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1zeX1XKj33BDvolZny0dNr9Z6eZLAjUlt",
