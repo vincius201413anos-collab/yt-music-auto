@@ -1841,9 +1841,9 @@
       "name": "EUPHORIA (1).mp3",
       "key": "1ZP9ORnkgYCwvQ855_Cdt5rTJEPNW3Ny1",
       "name_key": "euphoria",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1UdEjew2RW-1ZEWLv4vISGFgzYiI2wa-4",
