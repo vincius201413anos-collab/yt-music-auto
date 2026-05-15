@@ -1877,9 +1877,9 @@
       "name": "HYPERPOP (2).mp3",
       "key": "1wkG7LyXMG20H3kKO7Y8eU8zv9snbUOYg",
       "name_key": "hyperpop",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1814gCJMOU9ek9lSBrr5zPQbvGD4-21h9",
