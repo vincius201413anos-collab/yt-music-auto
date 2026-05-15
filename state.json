@@ -1868,9 +1868,9 @@
       "name": "PHONK MOT.mp3",
       "key": "1WGMQQ8aicq36W7ZrtmcOz812f1oecNXM",
       "name_key": "phonk mot",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1wkG7LyXMG20H3kKO7Y8eU8zv9snbUOYg",
