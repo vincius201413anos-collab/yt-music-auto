@@ -1967,9 +1967,9 @@
       "name": "DARK BALLAD.mp3",
       "key": "1iE_BKsr60FwobbMxwgRX7PAtDdE5O9rf",
       "name_key": "dark ballad",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "12TwAJuhr3b1ILvQTG6_5fFgsWMAEg7kA",
