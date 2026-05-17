@@ -2021,9 +2021,9 @@
       "name": "LAMBORGHINI.mp3",
       "key": "13UK9DMWM9au8j622F5ZmUBoCC7rw_sKW",
       "name_key": "lamborghini",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1ADFLhYQT0Q_9YgigWWBGS_TwIhaWeGPM",
