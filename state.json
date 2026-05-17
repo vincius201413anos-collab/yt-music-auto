@@ -2048,9 +2048,9 @@
       "name": "BANGER (1).mp3",
       "key": "1WHLIl_1neO3L0hb90KCgXcscK3H-fHsF",
       "name_key": "banger",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "16CNGXr2z9BoyGLrBZ_iBa2KANX2it5AV",
