@@ -2003,9 +2003,9 @@
       "name": "SCARY MONSTERS.mp3",
       "key": "1Euu3xshe4p4cmtGKN_kDwO7UlkriutC_",
       "name_key": "scary monsters",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1b-zSgEqlnATvarbQjJVAhsQbFha3P6it",
