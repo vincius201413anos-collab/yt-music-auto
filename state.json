@@ -2066,9 +2066,9 @@
       "name": "NROK (1).mp3",
       "key": "16A-F3eEXunJ-HK_UiHaosbc6HVLE6ZcC",
       "name_key": "nrok",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1vIjrEquiQXv9S_JgvDcXANLNsPQmVCbQ",
