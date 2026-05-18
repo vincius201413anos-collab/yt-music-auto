@@ -2084,9 +2084,9 @@
       "name": "FACES (1).mp3",
       "key": "1y0w27eXlGgf5wYYOzBJw6-37NAh0UGIU",
       "name_key": "faces",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1H88azvQw95hWNBy4gunJ_SbWo7uK0LVB",
