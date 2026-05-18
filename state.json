@@ -2102,9 +2102,9 @@
       "name": "FEED THE MACHINE (1).mp3",
       "key": "1WaksvT6YnlB20k0tO2B_f2dz0MjTjDGk",
       "name_key": "feed the machine",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1WcoHCNvhYhUGjEeoyXI4wo0vELFyhF0f",
