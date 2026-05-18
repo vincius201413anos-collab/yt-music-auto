@@ -2093,9 +2093,9 @@
       "name": "FACES.mp3",
       "key": "1H88azvQw95hWNBy4gunJ_SbWo7uK0LVB",
       "name_key": "faces",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1WaksvT6YnlB20k0tO2B_f2dz0MjTjDGk",
