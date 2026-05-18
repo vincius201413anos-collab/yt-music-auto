@@ -2075,9 +2075,9 @@
       "name": "NROK.mp3",
       "key": "1vIjrEquiQXv9S_JgvDcXANLNsPQmVCbQ",
       "name_key": "nrok",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1y0w27eXlGgf5wYYOzBJw6-37NAh0UGIU",
