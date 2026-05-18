@@ -2111,9 +2111,9 @@
       "name": "FEED THE MACHINE.mp3",
       "key": "1WcoHCNvhYhUGjEeoyXI4wo0vELFyhF0f",
       "name_key": "feed the machine",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1hXq3P_fKi5HPJ4lzObaNAiRXFuHWCXa7",
