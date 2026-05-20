@@ -2219,9 +2219,9 @@
       "name": "SHIT (1).mp3",
       "key": "1p_TtrmuL7vJWuCz6JrPv1blBroUj1KI2",
       "name_key": "shit",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1uG0_nhhvevAaYsl09NbhPxJaia_nUAMt",
