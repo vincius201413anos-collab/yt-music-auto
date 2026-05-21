@@ -2264,9 +2264,9 @@
       "name": "me down.mp3",
       "key": "1r68iQlI_wverzOpNkSiu3U2IUuwd6mOG",
       "name_key": "me down",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1fswhcHXhmFqp0qJGsq-xEz1QeGHMR07y",
