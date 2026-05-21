@@ -2273,9 +2273,9 @@
       "name": "damage.mp3",
       "key": "1fswhcHXhmFqp0qJGsq-xEz1QeGHMR07y",
       "name_key": "damage",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1Wv6Zi0CwZ0lB4XLX63BGkyfzcaBvQ5Jb",
