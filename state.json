@@ -2327,9 +2327,9 @@
       "name": "FINAL.mp3",
       "key": "1e2aFYqCPl36o_QHj9l-O0OGLQ8ULQLwl",
       "name_key": "final",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1uEnUEJ74_BjT9OOdD-61YFSWrCEFkeE8",
