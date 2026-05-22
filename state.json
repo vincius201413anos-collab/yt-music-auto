@@ -2300,9 +2300,9 @@
       "name": "FINAL (3).mp3",
       "key": "1vDjmyYXqeQfYtkq68JsSpjDYr3uJ69Af",
       "name_key": "final",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1gbQv87glo2qfnwq7c7ioBy8MqY5RUPj7",
