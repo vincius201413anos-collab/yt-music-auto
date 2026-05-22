@@ -2336,9 +2336,9 @@
       "name": "Come As Nothing (1).mp3",
       "key": "1uEnUEJ74_BjT9OOdD-61YFSWrCEFkeE8",
       "name_key": "come as nothing",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1NDoqOc9bojBiFjzBAKg7LzCUZiZpOm-3",
