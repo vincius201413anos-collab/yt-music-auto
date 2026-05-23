@@ -2399,9 +2399,9 @@
       "name": "Lithium Sky (1).mp3",
       "key": "1CTKJEtuTEGCDTj2UU3IsEetRJG3LwQho",
       "name_key": "lithium sky",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1L0lpebYBbjQ5KYMpgS9OTX8runrDPpU2",
