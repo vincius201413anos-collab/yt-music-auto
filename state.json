@@ -2453,9 +2453,9 @@
       "name": "_CRAWLER PHONK (1).mp3",
       "key": "1L529RpDc6mwWBD7KxrVn5nMC7j-HBrfJ",
       "name_key": "crawler phonk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1wxrZPCgPUHOpbKp5Kx1cucRKx7o-XrtK",
