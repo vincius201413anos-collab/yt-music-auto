@@ -2516,9 +2516,9 @@
       "name": "VOLTAGE PHONK.mp3",
       "key": "1R2p2iVnE5E_JN8zC2LIwBKOIBJKzteJc",
       "name_key": "voltage phonk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1gT5ePigKeX-ZPNK6srZDr5OHBB77GZ2_",
