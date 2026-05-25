@@ -2489,9 +2489,9 @@
       "name": "ZERO GRAVITY DROP (1).mp3",
       "key": "1BH1AjkLtrxspnmiruJRhbIwDt8YApnTE",
       "name_key": "zero gravity drop",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "1yZwFGCNnl2KYLREoqR5vS332VeFjPhoO",
