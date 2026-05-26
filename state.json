@@ -2534,9 +2534,9 @@
       "name": "NETHER FREQUENCY.mp3",
       "key": "1Zau-CWdDWcblIAoD-4OmVrEv9kWGM5WL",
       "name_key": "nether frequency",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1sMXeS8HgnoGCGBd9lnMBuBN6Hy7LEggH",
