@@ -2561,9 +2561,9 @@
       "name": "OMEGA PHONK (1).mp3",
       "key": "1rPNiNYCH4Co4Hkeq1xxoHiMohKnm8J8t",
       "name_key": "omega phonk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1uBqmAVOyYQ38IeZAaJxwcWDt5P4M0JWb",
