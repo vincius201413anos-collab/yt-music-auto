@@ -2588,9 +2588,9 @@
       "name": "OMEGA PHONK.mp3",
       "key": "1WFW22dDNKPN2nSXGK_0mD55_kjHYHWRH",
       "name_key": "omega phonk",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "phonk"
     },
     {
       "id": "1LISd5yMVT3MFFCOqwzOILt_gMWSmdJFF",
