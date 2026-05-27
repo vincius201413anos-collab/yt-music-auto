@@ -2597,9 +2597,9 @@
       "name": "PRESSURE TEST (1).mp3",
       "key": "1LISd5yMVT3MFFCOqwzOILt_gMWSmdJFF",
       "name_key": "pressure test",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1jl3EojniYhZZXFLaCfPxYZjIjX54kg8D",
