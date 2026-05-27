@@ -2615,9 +2615,9 @@
       "name": "Wobble Addiction (2).mp3",
       "key": "1dpYqEI2CYRpKwqsoISbNl1LSFpwqlGcW",
       "name_key": "wobble addiction",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1MfzKWZYyL5yBIcc8fLgUUtwzDD0PVfbm",
