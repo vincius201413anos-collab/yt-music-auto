@@ -2651,9 +2651,9 @@
       "name": "Wobble Virus.mp3",
       "key": "1NV_NnwOzKUpAcwW5xpPZqirtVpTiVHFy",
       "name_key": "wobble virus",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1IbrHTTRF3KYt9eWScIA35yvst91Pz7mh",
