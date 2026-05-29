@@ -2678,9 +2678,9 @@
       "name": "Drop Addict (1).mp3",
       "key": "1mp3EkaHvbt7D_FkSpqw8CUwD8GOD9gqL",
       "name_key": "drop addict",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "electronic"
     },
     {
       "id": "17_TlKy2FZzDkqW88R7UHxU7FOWBl15Q0",
