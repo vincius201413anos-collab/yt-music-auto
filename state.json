@@ -2669,9 +2669,9 @@
       "name": "Bassline Overdose.mp3",
       "key": "12T7IuXuSHRhxdD9zAlY_3MpjxCZvI3L-",
       "name_key": "bassline overdose",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1mp3EkaHvbt7D_FkSpqw8CUwD8GOD9gqL",
