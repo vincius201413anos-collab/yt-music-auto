@@ -2759,9 +2759,9 @@
       "name": "Under The Wobble.mp3",
       "key": "1gZdElInHb_dGePns8MwDcfisCTrQw2GK",
       "name_key": "under the wobble",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1K41x7TLNll7Y4lEE9m_FHtJFhbIg5pU-",
