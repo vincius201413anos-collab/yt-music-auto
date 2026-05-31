@@ -2804,9 +2804,9 @@
       "name": "Obsession Frequency.mp3",
       "key": "1Z4TE0UiecUoAmc9MV-GHTT9n7A1rfzpD",
       "name_key": "obsession frequency",
-      "done": 0,
-      "is_new": true,
-      "genre": null
+      "done": 1,
+      "is_new": false,
+      "genre": "trap"
     },
     {
       "id": "1GdiMxEk-loOp4FhyRESphzEve3FJbdEN",
